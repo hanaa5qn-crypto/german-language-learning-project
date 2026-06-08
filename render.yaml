@@ -1,0 +1,21 @@
+# Render deployment blueprint for Vivid Lingua.
+#
+# This deploys the WHOLE app — website + AI backend — as one free web service.
+# Render reads this file automatically when you create a "Blueprint" from your
+# GitHub repo. (You can also configure the same values by hand in the dashboard.)
+services:
+  - type: web
+    name: vivid-lingua
+    runtime: node
+    plan: free
+    # --include=dev forces build tools (vite, esbuild, typescript) to install
+    # even though they're devDependencies, so the production build can run.
+    buildCommand: npm install --include=dev && npm run build
+    startCommand: npm start
+    autoDeploy: true
+    envVars:
+      # Your Gemini API key for the AI features. Marked secret (sync:false), so
+      # you paste it in the Render dashboard — it is never committed to git.
+      # The app still boots without it; AI features fall back to offline mode.
+      - key: GEMINI_API_KEY
+        sync: false

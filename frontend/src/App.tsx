@@ -1,10 +1,11 @@
-import { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import {
   Volume2, Play, Pause, CheckCircle, X, XCircle, AlertCircle,
   BookOpen, Headphones, Mic, Edit3, Languages, Settings, LogOut,
   Check, RotateCcw, Lightbulb, Flame, Award, ArrowRight, ArrowLeft,
   ChevronRight, Sparkles, HelpCircle, GraduationCap, ExternalLink, Search, Library,
-  Square, AudioLines, Gauge, SpellCheck, MessageSquareText, ThumbsUp, Target
+  Square, AudioLines, Gauge, SpellCheck, MessageSquareText, ThumbsUp, Target,
+  Mail, Lock, Loader2
 } from 'lucide-react';
 import { TabType, VocabularyWord, WordClass, CEFRLevel } from './types';
 import {
@@ -16,6 +17,13 @@ import {
   Level, ReadingItem, ListeningItem, WritingItem, SpeakingItem
 } from './library';
 import { EXAMS, EXAM_LEVEL_ORDER, ExamLevel } from './exams';
+import TestDafExam from './TestDafExam';
+import { UserProfile, DEFAULT_PROFILES } from './profiles';
+import LoginScreen from './LoginScreen';
+import {
+  subscribeToAuthedProfile, logOutUser, saveProfileProgress,
+} from './auth';
+import { isFirebaseConfigured } from './firebase';
 
 // Union of all exam item types — they all share `topic`, `title`, `titleMn`.
 type ExamItem = ReadingItem | ListeningItem | WritingItem | SpeakingItem;
@@ -188,11 +196,44 @@ function MCQBlock({
 }
 
 export default function App() {
+  // Whether the user is logged in is now driven by Firebase Authentication.
+  // The signed-in user's profile + progress lives in Firestore (users/{uid}),
+  // so it follows them across devices and survives every redeploy.
+  const isTest = process.env.NODE_ENV === 'test';
+
+  // User Profile State — populated by the Firebase auth listener below.
+  const [currentUser, setCurrentUser] = useState<UserProfile | null>(
+    isTest ? DEFAULT_PROFILES[0] : null
+  );
+  // True until Firebase reports whether a saved session exists, so we can show a
+  // loading screen instead of briefly flashing the login page on refresh.
+  const [authLoading, setAuthLoading] = useState<boolean>(!isTest);
+
   // Session & UI States
   const [activeTab, setActiveTab] = useState<TabType>('read');
-  const [streak, setStreak] = useState<number>(15);
-  const [lessonProgress, setLessonProgress] = useState<number>(45);
+  const [streak, setStreak] = useState<number>(isTest ? DEFAULT_PROFILES[0].streak : 0);
+  const [lessonProgress, setLessonProgress] = useState<number>(isTest ? DEFAULT_PROFILES[0].progress : 0);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  // Listen for login / logout / restored sessions. Skipped in tests (no Firebase)
+  // and before the config is filled in (so the app still boots and shows the
+  // "set up Firebase" notice on the login screen).
+  useEffect(() => {
+    if (isTest) return;
+    if (!isFirebaseConfigured) { setAuthLoading(false); return; }
+    const unsubscribe = subscribeToAuthedProfile((profile) => {
+      if (profile) {
+        setCurrentUser(profile);
+        setStreak(profile.streak);
+        setLessonProgress(profile.progress);
+        setActiveTab('profile');
+      } else {
+        setCurrentUser(null);
+      }
+      setAuthLoading(false);
+    });
+    return unsubscribe;
+  }, []);
 
   // Active Lesson Mode / Standard mode toggler (Screen 1 quick core lesson overlay)
   const [coreLessonActive, setCoreLessonActive] = useState(false);
@@ -316,6 +357,24 @@ export default function App() {
     setDictVisible(24);
   }, [dictSearch, dictClass, dictLevel]);
 
+  // Sync stats back to the user's profile and persist them to Firestore so the
+  // progress is saved in the cloud (not just this browser).
+  useEffect(() => {
+    if (isTest) return;
+    if (!currentUser) return;
+    if (currentUser.streak === streak && currentUser.progress === lessonProgress) return;
+    const updated = {
+      ...currentUser,
+      streak,
+      progress: lessonProgress,
+      completedLessons: Math.floor(lessonProgress / 2.5)
+    };
+    setCurrentUser(updated);
+    saveProfileProgress(updated).catch((err) => {
+      console.warn('Could not save progress to Firestore:', err);
+    });
+  }, [streak, lessonProgress, currentUser]);
+
   // Dedicated Professional Translator states
   const [translationInput, setTranslationInput] = useState('');
   const [translationLoading, setTranslationLoading] = useState(false);
@@ -340,6 +399,8 @@ export default function App() {
 
   // CEFR level-based exams (A1–C2) — test tab
   const [examLevelSel, setExamLevelSel] = useState<ExamLevel | null>(null);
+  // Бүрэн TestDaF загвар шалгалтын симуляци (бүрэн дэлгэц overlay).
+  const [testdafOpen, setTestdafOpen] = useState(false);
   const [examSec, setExamSec] = useState<'reading' | 'listening' | 'writing' | 'speaking'>('reading');
   const [examItemIdx, setExamItemIdx] = useState(0);
   const [examItemAns, setExamItemAns] = useState<number | null>(null);
@@ -760,6 +821,13 @@ export default function App() {
     resetWritingFeedback();
   };
 
+  const logoutUser = () => {
+    // The auth listener clears currentUser once Firebase signs out; we reset the
+    // tab immediately so the UI feels responsive.
+    setActiveTab('read');
+    logOutUser().catch((err) => console.warn('Sign out failed:', err));
+  };
+
   // ---------------------------------------------------------------------------
   // Shared AI speaking-judge UI. `target` is the German model sentence the recording
   // (or typed text) is graded against. Reused by every library item AND the detailed
@@ -1105,8 +1173,301 @@ export default function App() {
     )
   );
 
+
+  // Render Profile / Dashboard View
+  const renderProfileTab = () => {
+    if (!currentUser) return null;
+
+    // We draw an SVG line chart representing study hours (learningCurve)
+    const maxHours = Math.max(...currentUser.learningCurve.map(c => c.hours), 4);
+    const points = currentUser.learningCurve.map((c, i) => {
+      const x = 40 + i * (520 / 6);
+      const y = 160 - (c.hours / maxHours) * 120;
+      return { x, y, day: c.day, hours: c.hours };
+    });
+
+    const linePath = points.map((p, i) => (i === 0 ? `M ${p.x} ${p.y}` : `L ${p.x} ${p.y}`)).join(' ');
+    
+    // Draw horizontal grid lines
+    const gridLines = [0, 0.25, 0.5, 0.75, 1].map((ratio, i) => {
+      const y = 160 - ratio * 120;
+      const label = (ratio * maxHours).toFixed(1) + 'ц';
+      return { y, label };
+    });
+
+    return (
+      <div className="w-full pb-24 space-y-8 animate-fade-in text-white select-none">
+        {/* Welcome Header Hero Banner */}
+        <div className="relative overflow-hidden bg-gradient-to-r from-purple-900/30 to-blue-900/30 border-2 border-white/10 rounded-3xl p-6 md:p-8 block-shadow">
+          <div className="absolute top-0 right-0 w-96 h-96 bg-purple-500/10 rounded-full blur-[100px] pointer-events-none"></div>
+          
+          <div className="flex flex-col lg:flex-row items-center gap-6 relative z-10">
+            <div className="w-20 h-20 md:w-24 md:h-24 rounded-full overflow-hidden border-4 border-purple-500/50 shadow-lg shrink-0">
+              <img src={currentUser.avatar} alt={currentUser.name} className="w-full h-full object-cover bg-slate-800" />
+            </div>
+            <div className="text-center lg:text-left space-y-1">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-purple-950/60 border border-purple-500/30 text-[10px] font-black font-space rounded-full uppercase tracking-wider text-purple-300">
+                <GraduationCap className="w-3.5 h-3.5" /> {currentUser.role}
+              </span>
+              <h1 className="text-2xl md:text-3xl font-extrabold text-white">Тавтай морил, {currentUser.name}!</h1>
+              <p className="text-sm text-slate-400 max-w-xl leading-relaxed font-semibold">
+                Герман хэлний сургалтын хувийн танхимд тавтай морилно уу. Таны суралцах зорилго болон одоогийн явцыг доор нэгтгэв.
+              </p>
+            </div>
+
+            <div className="lg:ml-auto flex items-center gap-3 shrink-0">
+              <div className="text-center bg-white/5 border border-white/10 rounded-xl px-4 py-3 block-shadow">
+                <span className="text-[10px] font-bold text-slate-400 uppercase font-space block mb-0.5">Зорилтот Түвшин</span>
+                <p className="text-2xl font-black text-secondary">{currentUser.targetLevel}</p>
+              </div>
+              <button 
+                onClick={logoutUser}
+                className="px-4 py-3 bg-red-950/20 hover:bg-red-900/30 border border-red-500/30 hover:border-red-500/50 text-red-300 text-sm font-bold rounded-xl transition-all cursor-pointer flex items-center gap-1.5"
+              >
+                <LogOut className="w-4 h-4" /> Гарах
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Info Cards Row */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* Streak */}
+          <div className="bg-white/5 border border-white/10 rounded-2xl p-6 block-shadow flex items-center gap-4">
+            <div className="w-12 h-12 rounded-xl bg-orange-500/10 border border-orange-500/30 flex items-center justify-center text-orange-400">
+              <Flame className="w-6 h-6 fill-orange-500/20" />
+            </div>
+            <div>
+              <p className="text-xs text-slate-400 font-bold uppercase font-space">Streak</p>
+              <h3 className="text-xl font-black">{streak} өдөр дараалан</h3>
+              <p className="text-[11px] text-orange-300 font-bold">Өдөр бүр зорилгодоо хүрээрэй!</p>
+            </div>
+          </div>
+
+          {/* Lesson Progress */}
+          <div className="bg-white/5 border border-white/10 rounded-2xl p-6 block-shadow flex items-center gap-4">
+            <div className="w-12 h-12 rounded-xl bg-purple-500/10 border border-purple-500/30 flex items-center justify-center text-purple-400">
+              <CheckCircle className="w-6 h-6" />
+            </div>
+            <div className="flex-grow">
+              <p className="text-xs text-slate-400 font-bold uppercase font-space">Прогресс</p>
+              <h3 className="text-xl font-black">{lessonProgress}% дууссан</h3>
+              {/* Progress bar inside card */}
+              <div className="w-full h-1.5 bg-white/5 rounded-full mt-1.5 overflow-hidden">
+                <div className="h-full bg-purple-500 rounded-full" style={{ width: `${lessonProgress}%` }} />
+              </div>
+            </div>
+          </div>
+
+          {/* Goals Completed */}
+          <div className="bg-white/5 border border-white/10 rounded-2xl p-6 block-shadow flex items-center gap-4">
+            <div className="w-12 h-12 rounded-xl bg-blue-500/10 border border-blue-500/30 flex items-center justify-center text-blue-400">
+              <Award className="w-6 h-6" />
+            </div>
+            <div>
+              <p className="text-xs text-slate-400 font-bold uppercase font-space">Судлагдсан сэдэв</p>
+              <h3 className="text-xl font-black">{currentUser.completedLessons} хичээл</h3>
+              <p className="text-[11px] text-blue-300 font-bold">Нийт амжилттай хаалт хийсэн</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Goal and Suggestions */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          {/* Main Goal and Learning Curve Chart */}
+          <div className="lg:col-span-8 bg-white/5 border border-white/10 rounded-2xl p-6 md:p-8 backdrop-blur-md block-shadow space-y-6">
+            <div>
+              <h2 className="text-xl font-extrabold flex items-center gap-2 text-purple-300 mb-2 font-sans">
+                <Target className="w-5 h-5" /> Суралцах Гол Зорилго
+              </h2>
+              <div className="bg-purple-950/20 border border-purple-500/20 rounded-xl p-4 text-sm font-bold text-purple-200">
+                "{currentUser.learningGoal}"
+              </div>
+            </div>
+
+            {/* Learning Curve SVG Chart */}
+            <div className="space-y-3 pt-2">
+              <h3 className="text-base font-extrabold flex items-center gap-2 text-blue-300">
+                <Gauge className="w-5 h-5 text-blue-400" /> Суралцах хурд / Давтамжийн муруй (Study Hours)
+              </h3>
+              <p className="text-slate-400 text-xs font-semibold">
+                Долоо хоногийн хоногоор тооцсон хичээллэсэн цагийн график. Муруйн хэлбэр хүн бүрийн суралцах хэмнэлээс хамааран өөр байна.
+              </p>
+
+              {/* Chart container */}
+              <div className="bg-slate-950/60 border border-white/5 rounded-xl p-4 relative overflow-x-auto">
+                <svg className="w-full min-w-[500px] h-[220px]" viewBox="0 0 600 200">
+                  {/* Grid Lines */}
+                  {gridLines.map((line, i) => (
+                    <g key={i}>
+                      <line 
+                        x1="40" 
+                        y1={line.y} 
+                        x2="560" 
+                        y2={line.y} 
+                        className="stroke-white/10" 
+                        strokeDasharray="4 4" 
+                      />
+                      <text 
+                        x="10" 
+                        y={line.y + 4} 
+                        className="fill-slate-500 text-[10px] font-space font-bold"
+                      >
+                        {line.label}
+                      </text>
+                    </g>
+                  ))}
+
+                  {/* Shaded Area Under Line */}
+                  <path
+                    d={`M ${points[0].x} 160 ${linePath} L ${points[points.length - 1].x} 160 Z`}
+                    fill="url(#chart-glow)"
+                    className="opacity-20"
+                  />
+
+                  {/* Line Connection */}
+                  <path
+                    d={linePath}
+                    fill="none"
+                    className="stroke-purple-400"
+                    strokeWidth="3.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+
+                  {/* Points & Labels */}
+                  {points.map((p, i) => (
+                    <g key={i} className="group/point">
+                      {/* Hours Bubble Label on top of point */}
+                      <text
+                        x={p.x}
+                        y={p.y - 12}
+                        textAnchor="middle"
+                        className="fill-purple-300 text-[11px] font-space font-bold transition-all"
+                      >
+                        {p.hours}ц
+                      </text>
+                      
+                      {/* Glowing Dot */}
+                      <circle
+                        cx={p.x}
+                        cy={p.y}
+                        r="6"
+                        className="fill-purple-400 stroke-[#020205] stroke-2 shadow-lg"
+                      />
+                      <circle
+                        cx={p.x}
+                        cy={p.y}
+                        r="12"
+                        className="fill-purple-400/20 stroke-none animate-pulse"
+                      />
+
+                      {/* Day Label at bottom */}
+                      <text
+                        x={p.x}
+                        y="182"
+                        textAnchor="middle"
+                        className="fill-slate-450 text-[11px] font-bold"
+                      >
+                        {p.day}
+                      </text>
+                    </g>
+                  ))}
+
+                  {/* Definitions for Gradients */}
+                  <defs>
+                    <linearGradient id="chart-glow" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#c084fc" />
+                      <stop offset="100%" stopColor="#c084fc" stopOpacity="0" />
+                    </linearGradient>
+                  </defs>
+                </svg>
+              </div>
+            </div>
+          </div>
+
+          {/* Right Column: Tailored Suggestions */}
+          <div className="lg:col-span-4 bg-white/5 border border-white/10 rounded-2xl p-6 md:p-8 backdrop-blur-md block-shadow space-y-6 flex flex-col justify-between">
+            <div>
+              <h2 className="text-xl font-extrabold flex items-center gap-2 text-blue-300 mb-2 font-sans">
+                <Lightbulb className="w-5 h-5 text-blue-400" /> Хувийн зөвлөмж
+              </h2>
+              <p className="text-slate-450 text-xs mb-4 font-semibold">
+                Таны сонгосон сэдэв болон түвшинд тохируулж манай системээс дараах зөвлөмжүүдийг өгч байна:
+              </p>
+
+              <div className="space-y-4">
+                {currentUser.suggestions.map((suggestion, i) => (
+                  <div key={i} className="flex gap-3 items-start bg-white/5 p-4 rounded-xl border border-white/15 block-shadow hover:border-blue-500/30 transition-colors">
+                    <span className="w-6 h-6 rounded-full bg-blue-500/10 border border-blue-500/30 flex items-center justify-center shrink-0 text-blue-400 font-bold text-xs mt-0.5 font-space">
+                      {i + 1}
+                    </span>
+                    <p className="text-sm font-bold text-slate-205 leading-relaxed">
+                      {suggestion}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Quick Actions Router */}
+            <div className="pt-4 border-t border-white/5">
+              <h3 className="text-xs font-bold text-slate-450 uppercase tracking-wider mb-3 font-space">Хичээл рүү шилжих</h3>
+              <div className="grid grid-cols-2 gap-2">
+                <button 
+                  onClick={() => selectTab('read')} 
+                  className="py-2.5 px-3 text-center bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-bold rounded-lg cursor-pointer transition-colors"
+                >
+                  Унших дасгал
+                </button>
+                <button 
+                  onClick={() => selectTab('listen')} 
+                  className="py-2.5 px-3 text-center bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-bold rounded-lg cursor-pointer transition-colors"
+                >
+                  Сонсох дасгал
+                </button>
+                <button 
+                  onClick={() => selectTab('speak')} 
+                  className="py-2.5 px-3 text-center bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-bold rounded-lg cursor-pointer transition-colors animate-pulse text-purple-300"
+                >
+                  Дуут AI Багш
+                </button>
+                <button 
+                  onClick={() => selectTab('write')} 
+                  className="py-2.5 px-3 text-center bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-bold rounded-lg cursor-pointer transition-colors"
+                >
+                  Бичих дасгал
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // While Firebase is checking for a saved session, show a brief loading screen
+  // so we don't flash the login page at an already-signed-in user.
+  if (authLoading) {
+    return (
+      <div className="bg-[#020205] text-white font-sans min-h-screen flex flex-col justify-center items-center gap-4">
+        <h1 className="text-3xl font-black font-space tracking-tight">
+          <span className="bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">Vivid</span> Lingua
+        </h1>
+        <Loader2 className="w-7 h-7 text-purple-400 animate-spin" />
+      </div>
+    );
+  }
+
+  if (!currentUser) {
+    return <LoginScreen />;
+  }
+
   return (
     <div className="bg-background text-white font-sans min-h-screen flex flex-col md:flex-row relative overflow-x-hidden">
+
+      {/* TestDaF бүрэн загвар шалгалт — бүрэн дэлгэц overlay (sidebar-аас дээгүүр) */}
+      {testdafOpen && <TestDafExam onExit={() => setTestdafOpen(false)} />}
 
       {/* Standalone Duolingo Core Quiz Overlay (Matches Screen 1 format explicitly) */}
       {coreLessonActive && (
@@ -1298,19 +1659,34 @@ export default function App() {
         </div>
 
         {/* User Context Avatar Panel */}
-        <div className="flex items-center gap-3 bg-white/5 p-3 rounded-xl border border-white/10">
-          <div className="w-12 h-12 rounded-full overflow-hidden flex-shrink-0 border border-white/20">
-            <img 
-              alt="Profile" 
-              className="w-full h-full object-cover" 
-              src="https://lh3.googleusercontent.com/aida-public/AB6AXuDGo9hHrBej5CE-2Zqv7WKD_WlNnMPp5LhLhoWYQnISE98hKpqouHR1fXi-1_b6aTvvHEagN1LYfh_9xXd4hi4rf1fT-FFwWLpLL3XAc5F9M3l_bolycDYkpJQc3jkJliRnkmfii5Pm67hZsN3lVfrph5SlOW-VscKA9zxEhkPIMGpopxB5T3c5c2GcjfFOpJscEmBFYn7Mr2LPCoErVxKtHlEi7EzLzeLLczv-M3FW4TgsDn-Ay6CMDaucbHBIbyXCkG63NTo5oys"
-            />
+        {currentUser ? (
+          <div className="flex items-center gap-3 bg-white/5 p-3 rounded-xl border border-white/10 cursor-pointer hover:bg-white/10 transition-colors" onClick={() => selectTab('profile')}>
+            <div className="w-12 h-12 rounded-full overflow-hidden flex-shrink-0 border-2 border-purple-500/50">
+              <img 
+                alt="Profile" 
+                className="w-full h-full object-cover bg-slate-800" 
+                src={currentUser.avatar}
+              />
+            </div>
+            <div className="overflow-hidden">
+              <p className="text-[10px] font-black uppercase text-purple-400 tracking-wider flex items-center gap-1">
+                <Target className="w-2.5 h-2.5" /> {currentUser.targetLevel} ТҮВШИН
+              </p>
+              <h2 className="text-[15px] font-extrabold truncate text-white leading-tight">{currentUser.name}</h2>
+              <p className="text-[11px] text-slate-400 truncate leading-none mt-0.5">{currentUser.role}</p>
+            </div>
           </div>
-          <div>
-            <p className="text-xs text-slate-400">Сайн байна уу?</p>
-            <h2 className="text-[16px] font-bold">Өдрийн мэнд!</h2>
+        ) : (
+          <div className="flex items-center gap-3 bg-white/5 p-3 rounded-xl border border-white/10">
+            <div className="w-12 h-12 rounded-full overflow-hidden flex-shrink-0 border border-white/20 flex items-center justify-center bg-white/5 text-slate-400">
+              <span className="material-symbols-outlined">account_circle</span>
+            </div>
+            <div>
+              <p className="text-xs text-slate-400">Сайн байна уу?</p>
+              <h2 className="text-[16px] font-bold">Нэвтрээгүй</h2>
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Dynamic Streak Badge Card */}
         <div onClick={() => setStreak(prev => prev + 1)} className="cursor-pointer">
@@ -1323,17 +1699,23 @@ export default function App() {
           </div>
         </div>
 
-        {/* Launch standalone quick quiz */}
-        <button 
-          onClick={() => setCoreLessonActive(true)}
-          className="w-full bg-gradient-to-r from-purple-900/40 to-blue-950/40 hover:from-purple-900/70 hover:to-blue-950/70 text-purple-200 hover:text-white font-bold p-3.5 rounded-xl text-[14px] block-shadow flex items-center justify-center gap-2 border border-purple-500/20 hover:border-purple-500/40 transition-all cursor-pointer select-none"
-        >
-          <Sparkles className="w-4 h-4 fill-current text-purple-400" />
-          Хичээл эхлэх (Screen 1)
-        </button>
-
         {/* Tabs Lists layout */}
-        <ul className="flex flex-col gap-2 flex-grow mt-2">
+        <ul className="flex flex-col gap-2 flex-grow mt-2 overflow-y-auto pr-1">
+          {currentUser && (
+            <li>
+              <button 
+                onClick={() => selectTab('profile')}
+                className={`flex items-center gap-3 py-3 w-full text-left font-bold pl-4 transition-all rounded-r-lg group cursor-pointer ${
+                  activeTab === 'profile' 
+                    ? 'text-on-primary border-l-4 border-secondary bg-white/15' 
+                    : 'text-on-primary-container hover:text-secondary-fixed hover:bg-white/5'
+                }`}
+              >
+                <Target className={`w-5 h-5 ${activeTab === 'profile' ? 'text-secondary-fixed' : ''}`} />
+                <span className="text-[14px] font-bold">Хяналтын самбар</span>
+              </button>
+            </li>
+          )}
           <li>
             <button 
               onClick={() => selectTab('read')}
@@ -1438,10 +1820,15 @@ export default function App() {
             <Settings className="w-4 h-4 text-outline" />
             <span className="text-sm">Тохиргоо</span>
           </button>
-          <a href="#" className="flex items-center gap-3 py-2 px-4 rounded-lg font-bold text-left text-on-primary-container hover:text-error hover:bg-white/5 transition-colors">
-            <LogOut className="w-4 h-4 text-outline" />
-            <span className="text-sm">Гарах</span>
-          </a>
+          {currentUser && (
+            <button 
+              onClick={logoutUser}
+              className="flex items-center gap-3 py-2 px-4 rounded-lg font-bold text-left text-on-primary-container hover:text-error hover:bg-white/5 transition-colors cursor-pointer w-full"
+            >
+              <LogOut className="w-4 h-4 text-outline" />
+              <span className="text-sm">Гарах</span>
+            </button>
+          )}
         </div>
       </nav>
 
@@ -1455,13 +1842,13 @@ export default function App() {
         </button>
         <h1 className="text-xl font-black text-primary tracking-tight">Vivid Lingua</h1>
         <div className="flex items-center gap-2">
-          <button onClick={() => setCoreLessonActive(true)} className="flex items-center justify-center p-2 rounded-full hover:bg-surface-container-low text-secondary transition-all cursor-pointer">
+          <div className="flex items-center justify-center p-2 text-secondary select-none">
             <Flame className="w-5 h-5 text-orange-500 fill-orange-500 animate-pulse" />
             <span className="text-xs font-black text-on-background ml-1">{streak}</span>
-          </button>
-          <button className="p-2 text-on-background hover:bg-surface-container-low rounded-full">
-            <span className="material-symbols-outlined fill text-yellow-500 text-lg">military_tech</span>
-          </button>
+          </div>
+          <div className="p-2 text-yellow-500 select-none">
+            <span className="material-symbols-outlined fill text-lg">military_tech</span>
+          </div>
         </div>
       </header>
 
@@ -1482,27 +1869,40 @@ export default function App() {
               </button>
             </div>
 
-            <div className="bg-white/5 p-3 rounded-xl border border-white/10 mx-2 flex gap-3">
-              <div className="w-10 h-10 rounded-full overflow-hidden bg-white/20">
-                <img alt="User" className="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDGo9hHrBej5CE-2Zqv7WKD_WlNnMPp5LhLhoWYQnISE98hKpqouHR1fXi-1_b6aTvvHEagN1LYfh_9xXd4hi4rf1fT-FFwWLpLL3XAc5F9M3l_bolycDYkpJQc3jkJliRnkmfii5Pm67hZsN3lVfrph5SlOW-VscKA9zxEhkPIMGpopxB5T3c5c2GcjfFOpJscEmBFYn7Mr2LPCoErVxKtHlEi7EzLzeLLczv-M3FW4TgsDn-Ay6CMDaucbHBIbyXCkG63NTo5oys" />
+            {currentUser ? (
+              <div className="bg-white/5 p-3 rounded-xl border border-white/10 mx-2 flex gap-3 items-center cursor-pointer hover:bg-white/10" onClick={() => selectTab('profile')}>
+                <div className="w-10 h-10 rounded-full overflow-hidden bg-white/20 border border-purple-500/50 flex-shrink-0">
+                  <img alt="User" className="w-full h-full object-cover" src={currentUser.avatar} />
+                </div>
+                <div className="overflow-hidden">
+                  <h3 className="text-sm font-bold truncate text-white leading-tight">{currentUser.name}</h3>
+                  <p className="text-[10px] text-purple-300 font-bold truncate leading-none mt-0.5">{currentUser.role}</p>
+                </div>
               </div>
-              <div>
-                <p className="text-xs text-on-primary-container">Танд өдрийн мэнд!</p>
-                <h3 className="text-sm font-bold">Сайн байна уу?</h3>
+            ) : (
+              <div className="bg-white/5 p-3 rounded-xl border border-white/10 mx-2 flex gap-3 items-center">
+                <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-slate-400">
+                  <span className="material-symbols-outlined">account_circle</span>
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-white">Нэвтрээгүй</h3>
+                  <p className="text-[10px] text-slate-400">Сайн байна уу?</p>
+                </div>
               </div>
-            </div>
+            )}
 
-            <button 
-              onClick={() => {
-                setMobileMenuOpen(false);
-                setCoreLessonActive(true);
-              }}
-              className="mx-2 bg-secondary-container text-on-secondary-container font-bold p-3 rounded-xl text-[13px] block-shadow border-2 border-on-background cursor-pointer"
-            >
-              Хичээл эхлэх (Screen 1)
-            </button>
-
-            <ul className="flex flex-col gap-2 mt-4 flex-grow px-2">
+            <ul className="flex flex-col gap-2 mt-4 flex-grow px-2 overflow-y-auto">
+              {currentUser && (
+                <li>
+                  <button 
+                    onClick={() => selectTab('profile')}
+                    className={`flex items-center gap-3 py-3 w-full text-left font-bold pl-4 rounded-xl cursor-pointer ${activeTab === 'profile' ? 'bg-white/15' : 'text-on-primary-container'}`}
+                  >
+                    <Target className="w-5 h-5" />
+                    <span>Хяналтын самбар</span>
+                  </button>
+                </li>
+              )}
               <li>
                 <button 
                   onClick={() => selectTab('read')}
@@ -1568,7 +1968,7 @@ export default function App() {
               </li>
             </ul>
 
-            <div className="border-t border-white/10 pt-4 px-2">
+            <div className="border-t border-white/10 pt-4 px-2 flex flex-col gap-1 shrink-0">
               <button 
                 onClick={() => selectTab('settings')}
                 className="flex items-center gap-3 py-2 w-full text-left text-on-primary-container hover:text-white"
@@ -1576,6 +1976,18 @@ export default function App() {
                 <Settings className="w-4 h-4" />
                 <span>Тохиргоо</span>
               </button>
+              {currentUser && (
+                <button 
+                  onClick={() => {
+                    logoutUser();
+                    setMobileMenuOpen(false);
+                  }}
+                  className="flex items-center gap-3 py-2 w-full text-left text-on-primary-container hover:text-error cursor-pointer"
+                >
+                  <LogOut className="w-4 h-4 text-outline" />
+                  <span>Гарах</span>
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -1590,7 +2002,7 @@ export default function App() {
         <div className="w-full max-w-[1200px] mx-auto flex flex-col h-full relative z-10">
 
           {/* Unified Lesson Progress Bar - Screen 2/3 style */}
-          {activeTab !== 'settings' && (
+          {activeTab !== 'settings' && activeTab !== 'profile' && (
             <div className="w-full mb-8 flex items-center gap-4 bg-white/5 p-4 rounded-2xl border border-white/10 block-shadow">
               <div className="h-4 flex-grow bg-white/5 border border-white/10 rounded-full overflow-hidden relative shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]">
                 <div 
@@ -1607,6 +2019,9 @@ export default function App() {
           )}
 
           {/* Render Active View Modules */}
+
+          {/* Tab 0: Профайл / Хяналтын самбар */}
+          {activeTab === 'profile' && renderProfileTab()}
 
           {/* Tab 1: Унших (Reading) - Screen 3 layout */}
           {activeTab === 'read' && (
@@ -3215,7 +3630,25 @@ export default function App() {
               {/* LEVEL SELECTOR */}
               {examLevelSel === null && (
                 <>
-                  <p className="text-sm text-on-surface-variant mb-5 max-w-2xl">Түвшингээ сонгоно уу. Түвшин бүр <b className="text-on-surface">Унших, Сонсох, Бичих, Ярих</b> гэсэн дөрвөн хэсэгтэй бөгөөд хэсэг бүрт 5+ тест байна. Доош нь A1 хамгийн хялбар, C2 хамгийн хүнд.</p>
+                  {/* TestDaF бүрэн загвар шалгалтын симуляци */}
+                  <button onClick={() => setTestdafOpen(true)}
+                    className="w-full text-left mb-6 bg-gradient-to-br from-violet-600 to-fuchsia-600 border-2 border-on-background rounded-2xl p-5 md:p-6 block-shadow hover:scale-[1.01] active:scale-95 transition-transform cursor-pointer">
+                    <div className="flex items-start gap-4">
+                      <div className="w-12 h-12 rounded-xl bg-white/15 border-2 border-on-background flex items-center justify-center shrink-0">
+                        <GraduationCap className="w-7 h-7 text-yellow-300" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h3 className="text-lg md:text-xl font-black font-space text-white">TestDaF — Бүрэн загвар шалгалт</h3>
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-yellow-300 text-violet-900">Prüfungssimulation</span>
+                        </div>
+                        <p className="text-xs text-white/85 leading-relaxed mt-1">Жинхэнэ шалгалтын бүтэц: <b className="text-white">Унших</b> 60′/30, <b className="text-white">Сонсох</b> 40′/25, <b className="text-white">Бичих</b> 60′/график-эссэ, <b className="text-white">Ярих</b> 35′/7 ситуаци. Цаг хэмжсэн, дараалсан, AI үнэлгээтэй.</p>
+                        <span className="inline-flex items-center gap-1 mt-2 text-xs font-bold text-white bg-white/15 border border-on-background px-3 py-1 rounded-full">Симуляци эхлүүлэх <ArrowRight className="w-3.5 h-3.5" /></span>
+                      </div>
+                    </div>
+                  </button>
+
+                  <p className="text-sm text-on-surface-variant mb-5 max-w-2xl">Эсвэл <b className="text-on-surface">CEFR түвшнээ</b> сонгоно уу. Түвшин бүр <b className="text-on-surface">Унших, Сонсох, Бичих, Ярих</b> гэсэн дөрвөн хэсэгтэй бөгөөд хэсэг бүрт 5+ тест байна. Доош нь A1 хамгийн хялбар, C2 хамгийн хүнд.</p>
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     {EXAM_LEVEL_ORDER.map((lv) => {
                       const ex = EXAMS[lv];

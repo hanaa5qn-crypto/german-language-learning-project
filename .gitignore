@@ -7,6 +7,9 @@ coverage/
 .env*
 !.env.example
 
+# Firebase CLI cache (deploy logs / hosting cache)
+.firebase/
+
 # Local tooling / agent artifacts (not part of the app)
 .antigravity/
 .playwright-mcp/
