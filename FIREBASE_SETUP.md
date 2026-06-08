@@ -30,6 +30,12 @@ You only have to do the setup below **once**. After that, deploying is one comma
 3. Start in **production mode** (our security rules in `firestore.rules` will be
    applied in Step 6). Click **Create**.
 
+## Step 3b — Create Storage (for speaking audio uploads)
+
+1. Left sidebar: **Build → Storage → Get started**.
+2. Start in **production mode** (our security rules in `storage.rules` will protect it).
+3. Choose a location (ideally the same as your Firestore database) and click **Done**.
+
 ## Step 4 — Get your web config and paste it in
 
 1. Click the **gear icon ⚙ → Project settings**.
@@ -59,14 +65,15 @@ firebase login
 
 Open **`.firebaserc`** and replace `PASTE_YOUR_PROJECT_ID` with your real Project
 ID (you'll find it in **Project settings**, top of the page). Then publish the
-database security rules:
+database and storage security rules:
 
 ```bash
-firebase deploy --only firestore:rules
+firebase deploy --only firestore:rules,storage
 ```
 
 > Prefer no command line? You can instead paste the contents of `firestore.rules`
-> into the Firebase console under **Firestore Database → Rules → Publish**.
+> into the Firebase console under **Firestore Database → Rules → Publish**, and the contents
+> of `storage.rules` under **Storage → Rules → Publish**.
 
 ## Step 7 — Deploy the actual website
 
@@ -113,7 +120,8 @@ where the site is hosted. Nothing to "connect" by hand.
 - [ ] Firebase project created
 - [ ] Email/Password sign-in enabled
 - [ ] Firestore database created
+- [ ] Firebase Storage bucket created
 - [ ] `frontend/src/firebaseConfig.ts` filled in
 - [ ] `.firebaserc` Project ID filled in
-- [ ] Firestore rules published (`firebase deploy --only firestore:rules`, or via the console)
+- [ ] Firestore & Storage rules published (`firebase deploy --only firestore:rules,storage`, or via the console)
 - [ ] Website deployed on Render — see `DEPLOY.md`

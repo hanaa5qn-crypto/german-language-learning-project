@@ -23,7 +23,8 @@ import LoginScreen from './LoginScreen';
 import {
   subscribeToAuthedProfile, logOutUser, saveProfileProgress,
 } from './auth';
-import { isFirebaseConfigured } from './firebase';
+import { isFirebaseConfigured, getStorageInstance, getAuthInstance } from './firebase';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 // Union of all exam item types — they all share `topic`, `title`, `titleMn`.
 type ExamItem = ReadingItem | ListeningItem | WritingItem | SpeakingItem;
@@ -72,10 +73,7 @@ interface WritingFeedback {
   improvements?: string[];
 }
 
-// Decode a recorded audio Blob (webm/opus, mp4/aac, …) and re-encode it as a
-// 16 kHz mono 16-bit WAV, returned base64-encoded. WAV is the format Gemini
-// reliably accepts, so this sidesteps browser codec/container differences.
-async function audioBlobToWavBase64(blob: Blob): Promise<string> {
+async function audioBlobToWavBlob(blob: Blob): Promise<Blob> {
   const arrayBuffer = await blob.arrayBuffer();
   const AudioCtx = (window as any).AudioContext || (window as any).webkitAudioContext;
   const ctx: AudioContext = new AudioCtx();
@@ -107,8 +105,17 @@ async function audioBlobToWavBase64(blob: Blob): Promise<string> {
   view.setUint16(34, 16, true); writeStr(36, 'data'); view.setUint32(40, dataLen, true);
   for (let i = 0; i < samples.length; i++) view.setInt16(44 + i * 2, samples[i], true);
 
+  return new Blob([buffer], { type: 'audio/wav' });
+}
+
+// Decode a recorded audio Blob (webm/opus, mp4/aac, …) and re-encode it as a
+// 16 kHz mono 16-bit WAV, returned base64-encoded. WAV is the format Gemini
+// reliably accepts, so this sidesteps browser codec/container differences.
+async function audioBlobToWavBase64(blob: Blob): Promise<string> {
+  const wavBlob = await audioBlobToWavBlob(blob);
+  const arrayBuffer = await wavBlob.arrayBuffer();
   // Base64-encode the WAV bytes in chunks (avoids call-stack limits on big files).
-  const bytes = new Uint8Array(buffer);
+  const bytes = new Uint8Array(arrayBuffer);
   let binary = '';
   const chunk = 0x8000;
   for (let i = 0; i < bytes.length; i += chunk) {
@@ -574,15 +581,36 @@ export default function App() {
     setSpeakingLoading(true);
     setVoiceSupportMessage('AI таны дуу хоолойг сонсож, дүн шинжилгээ хийж байна...');
     try {
-      const wavBase64 = await audioBlobToWavBase64(blob);
+      const wavBlob = await audioBlobToWavBlob(blob);
+      const bodyData: any = {
+        sentence: target,
+        mimeType: 'audio/wav',
+      };
+
+      if (isFirebaseConfigured) {
+        try {
+          const storage = getStorageInstance();
+          const auth = getAuthInstance();
+          const userId = auth.currentUser?.uid || 'anonymous';
+          const fileRef = ref(storage, `audio-evaluations/${userId}/${Date.now()}-${Math.random().toString(36).substring(2)}.wav`);
+          
+          await uploadBytes(fileRef, wavBlob);
+          const downloadUrl = await getDownloadURL(fileRef);
+          bodyData.audioUrl = downloadUrl;
+        } catch (storageErr) {
+          console.error('Firebase Storage upload failed, falling back to base64:', storageErr);
+          const wavBase64 = await audioBlobToWavBase64(blob);
+          bodyData.audio = wavBase64;
+        }
+      } else {
+        const wavBase64 = await audioBlobToWavBase64(blob);
+        bodyData.audio = wavBase64;
+      }
+
       const response = await fetch('/api/evaluate-speaking', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          sentence: target,
-          audio: wavBase64,
-          mimeType: 'audio/wav',
-        })
+        body: JSON.stringify(bodyData)
       });
       const data = await response.json();
       setSpeakingEvaluation(data);

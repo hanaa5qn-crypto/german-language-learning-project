@@ -6,17 +6,20 @@
 import { initializeApp, type FirebaseApp } from 'firebase/app';
 import { getAuth, type Auth } from 'firebase/auth';
 import { getFirestore, type Firestore } from 'firebase/firestore';
+import { getStorage, type FirebaseStorage } from 'firebase/storage';
 import { firebaseConfig, isFirebaseConfigured } from './firebaseConfig';
 
 let app: FirebaseApp | null = null;
 let authInstance: Auth | null = null;
 let dbInstance: Firestore | null = null;
+let storageInstance: FirebaseStorage | null = null;
 
 function ensureInitialized() {
   if (!app) {
     app = initializeApp(firebaseConfig);
     authInstance = getAuth(app);
     dbInstance = getFirestore(app);
+    storageInstance = getStorage(app);
   }
 }
 
@@ -28,6 +31,11 @@ export function getAuthInstance(): Auth {
 export function getDb(): Firestore {
   ensureInitialized();
   return dbInstance!;
+}
+
+export function getStorageInstance(): FirebaseStorage {
+  ensureInitialized();
+  return storageInstance!;
 }
 
 export { isFirebaseConfigured };
