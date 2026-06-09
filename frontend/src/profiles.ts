@@ -10,6 +10,18 @@ export interface UserProfile {
   learningGoal: string;
   suggestions: string[];
   learningCurve: { day: string; hours: number }[];
+  completedActivityIds?: string[];
+  studyDays?: string[];
+  studySecondsByDate?: Record<string, number>;
+  createdAt?: string;
+  lastActiveAt?: string;
+  billing?: {
+    plan?: string;
+    status?: string;
+    monthlyAmountCents?: number;
+    lifetimeValueCents?: number;
+    currency?: string;
+  };
 }
 
 export const DEFAULT_PROFILES: UserProfile[] = [
@@ -121,6 +133,7 @@ export function createCustomProfile(
   targetLevel: string,
   learningGoal: string
 ): UserProfile {
+  const now = new Date().toISOString();
   // Generate suggestions based on chosen goal/role type
   let suggestions: string[] = [];
   const goalClean = learningGoal.toLowerCase();
@@ -152,15 +165,8 @@ export function createCustomProfile(
     ];
   }
 
-  // Generate a mock learning curve
   const days = ['Даваа', 'Мягмар', 'Лхагва', 'Пүрэв', 'Баасан', 'Бямба', 'Ням'];
-  const learningCurve = days.map((day) => {
-    // Weekend gets a bit more study time on average
-    const isWeekend = day === 'Бямба' || day === 'Ням';
-    const base = isWeekend ? 1.5 : 0.8;
-    const hours = Number((base + Math.random() * 1.5).toFixed(1));
-    return { day, hours };
-  });
+  const learningCurve = days.map((day) => ({ day, hours: 0 }));
 
   // Start new profiles from scratch
   const streak = 0;
@@ -178,6 +184,18 @@ export function createCustomProfile(
     completedLessons,
     learningGoal,
     suggestions,
-    learningCurve
+    learningCurve,
+    completedActivityIds: [],
+    studyDays: [],
+    studySecondsByDate: {},
+    createdAt: now,
+    lastActiveAt: now,
+    billing: {
+      plan: 'Free',
+      status: 'free',
+      monthlyAmountCents: 0,
+      lifetimeValueCents: 0,
+      currency: 'USD'
+    }
   };
 }

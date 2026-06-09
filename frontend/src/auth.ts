@@ -37,16 +37,26 @@ export async function signUpWithProfile(
 ): Promise<UserProfile> {
   const profile = createCustomProfile(email.trim(), name.trim(), targetLevel, learningGoal);
   pendingSignupProfile = profile;
+  let cred;
   try {
-    const cred = await createUserWithEmailAndPassword(getAuthInstance(), email.trim(), password);
-    await setDoc(profileRef(cred.user.uid), profile);
-    return profile;
+    cred = await createUserWithEmailAndPassword(getAuthInstance(), email.trim(), password);
   } catch (err) {
-    // Sign-up failed (e.g. email already in use) — don't leave a stale profile
-    // around for the next person who logs in on this page.
+    // Sign-up failed before Firebase created the account (e.g. email already in
+    // use) — don't leave a stale profile around for the next login attempt.
     pendingSignupProfile = null;
     throw err;
   }
+
+  try {
+    await setDoc(profileRef(cred.user.uid), profile, { merge: true });
+  } catch (err) {
+    // The Auth account now exists, so do not report signup failure just because
+    // the deployment's Firestore setup is missing rules/database access. The
+    // auth listener below will still let the user in with the pending profile.
+    console.warn('Could not create Firestore profile after signup:', err);
+  }
+
+  return profile;
 }
 
 export async function logInWithEmail(email: string, password: string): Promise<void> {
@@ -113,8 +123,15 @@ export function subscribeToAuthedProfile(
         await setDoc(profileRef(user.uid), fallback);
         onProfile(fallback);
       }
-    } catch {
-      onProfile(null);
+    } catch (err) {
+      console.warn('Could not load Firestore profile; using an in-memory fallback:', err);
+      const fallback = createCustomProfile(
+        user.email ?? '',
+        (user.email ?? 'Суралцагч').split('@')[0],
+        'A1',
+        'Ерөнхий сургалт',
+      );
+      onProfile(fallback);
     }
   });
 }

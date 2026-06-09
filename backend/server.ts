@@ -46,4 +46,11 @@ async function startServer() {
   });
 }
 
-if (process.env.NODE_ENV !== 'test' && !process.env.VERCEL) startServer();
+if (process.env.NODE_ENV !== 'test') {
+  const isServerless = process.env.VERCEL && !process.env.PORT;
+  if (!isServerless) {
+    startServer();
+  }
+}
+
+export default app;
