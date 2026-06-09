@@ -1,10 +1,10 @@
 // =============================================================================
 // Vivid-Lingua subscription plans (Free / Pro / Max) + founder override.
 // -----------------------------------------------------------------------------
-// • Free  — танилцуулга эрх: шалгалтын сангийн зөвхөн эхний 10 асуулт, AI байхгүй.
-// • Pro   — бүх контент нээлттэй, гэхдээ AI боломжууд (орчуулагч, ярих/бичих
-//           AI үнэлгээ) хаалттай.
-// • Max   — бүгд нээлттэй (AI орчуулагч + AI үнэлгээ).
+// • Free  — өдөр тутмын зуршил: үгийн сан бүрэн, хичээлүүд A1 түвшинд,
+//           шалгалтын сангийн эхний 10 асуулт, сард 2 AI туршилт.
+// • Pro   — бүх контент (A1–C2 сан, TestDaF симуляци), сард 5 AI туршилт.
+// • Max   — бүгд + хязгааргүй AI (орчуулагч, ярих/бичих үнэлгээ).
 // • Founder — имэйлээр таних; бүх эрх үргэлж нээлттэй, төлбөр шаардахгүй.
 // Display prices here are defaults; the authoritative charge amount always
 // comes from the backend (/api/payments/methods).
@@ -16,6 +16,7 @@ import { EXAMS, EXAM_LEVEL_ORDER, type ExamLevel } from './exams';
 export type PlanId = 'free' | 'pro' | 'max';
 export type EffectivePlan = PlanId | 'founder';
 export type ExamSection = 'reading' | 'listening' | 'writing' | 'speaking';
+export type BillingInterval = 'month' | 'year';
 
 // Founder accounts: always full access, no payment needed.
 export const FOUNDER_EMAILS = ['hanaa5qn@icloud.com'];
@@ -23,11 +24,15 @@ export const FOUNDER_EMAILS = ['hanaa5qn@icloud.com'];
 // Free tier: only the first N questions of the exam question bank.
 export const FREE_QUESTION_LIMIT = 10;
 
+// Monthly AI teaser quota (server-enforced; these are the display defaults).
+export const AI_TEASER: Record<PlanId, number | null> = { free: 2, pro: 5, max: null };
+
 export interface PlanInfo {
   id: PlanId;
   name: string;
   nameMn: string;
-  defaultAmountMnt: number; // fallback display price; server price wins
+  defaultAmountMnt: number;     // monthly fallback price; server price wins
+  defaultYearAmountMnt: number; // annual fallback price (2 months free)
   taglineMn: string;
   featuresMn: string[];
   missingMn: string[];
@@ -41,46 +46,50 @@ export const PLANS: Record<PlanId, PlanInfo> = {
     name: 'Free',
     nameMn: 'Үнэгүй',
     defaultAmountMnt: 0,
-    taglineMn: 'Танилцах эрх',
+    defaultYearAmountMnt: 0,
+    taglineMn: 'Өдөр бүр үнэгүй суралц',
     featuresMn: [
+      'Үгийн сан, толь бичиг — бүрэн, хязгааргүй',
+      'A1 түвшний бүх хичээл (унших/сонсох/ярих/бичих)',
       `Шалгалтын сангийн эхний ${FREE_QUESTION_LIMIT} асуулт`,
-      'Үндсэн хичээлийн орчин',
+      'Сард 2 AI туршилт',
     ],
     missingMn: [
-      'Бүрэн шалгалтын сан (A1–C2)',
+      'A2–C2 хичээл, шалгалтын сан',
       'TestDaF загвар шалгалт',
-      'AI орчуулагч',
-      'Ярих / бичих AI үнэлгээ',
+      'Хязгааргүй AI',
     ],
   },
   pro: {
     id: 'pro',
     name: 'Pro',
     nameMn: 'Pro багц',
-    defaultAmountMnt: 29900,
+    defaultAmountMnt: 19900,
+    defaultYearAmountMnt: 199000,
     taglineMn: 'Бүх контент нээлттэй',
     featuresMn: [
+      'Бүх түвшний хичээл (A1–B1 сан бүрэн)',
       'Бүрэн шалгалтын сан (A1–C2)',
       'TestDaF загвар шалгалт',
-      'Бүх унших / сонсох / бичих / ярих сан',
       'Загвар хариултууд',
+      'Сард 5 AI туршилт',
     ],
     missingMn: [
-      'AI орчуулагч',
-      'Ярих / бичих AI үнэлгээ',
+      'Хязгааргүй AI орчуулагч, AI үнэлгээ',
     ],
   },
   max: {
     id: 'max',
     name: 'Max',
     nameMn: 'Max багц',
-    defaultAmountMnt: 49900,
-    taglineMn: 'Бүгд + AI боломжууд',
+    defaultAmountMnt: 39900,
+    defaultYearAmountMnt: 399000,
+    taglineMn: 'Бүгд + хязгааргүй AI',
     featuresMn: [
       'Pro багцын бүх боломж',
-      'AI орчуулагч (дүрмийн задаргаатай)',
-      'Ярих дасгалын AI үнэлгээ',
-      'Бичих дасгалын AI засвар, оноо',
+      'AI орчуулагч — хязгааргүй',
+      'Ярих дасгалын AI үнэлгээ — хязгааргүй',
+      'Бичих дасгалын AI засвар, оноо — хязгааргүй',
     ],
     missingMn: [],
   },
@@ -110,6 +119,8 @@ export function effectivePlan(profile: UserProfile | null): EffectivePlan {
   return plan ? 'max' : 'free';
 }
 
+// Unlimited AI (Max/founder). Free/Pro still get a monthly teaser quota,
+// enforced server-side and surfaced via /api/ai/quota.
 export function canUseAi(profile: UserProfile | null): boolean {
   const plan = effectivePlan(profile);
   return plan === 'max' || plan === 'founder';
@@ -117,6 +128,12 @@ export function canUseAi(profile: UserProfile | null): boolean {
 
 export function canAccessAllContent(profile: UserProfile | null): boolean {
   return effectivePlan(profile) !== 'free';
+}
+
+// Skill-library lessons: Free accounts only get A1 content.
+export function isLessonLocked(profile: UserProfile | null, level: string): boolean {
+  if (canAccessAllContent(profile)) return false;
+  return level !== 'A1';
 }
 
 // How a question is positioned in the global exam bank order: levels A1→C2,

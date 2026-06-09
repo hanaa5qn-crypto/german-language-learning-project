@@ -35,7 +35,8 @@ import {
 import { buildInflectedLookup } from './inflect';
 import {
   PLANS, PLAN_ORDER, PlanId, effectivePlan, isFounder as isFounderProfile,
-  canUseAi, canAccessAllContent, isExamQuestionLocked, FREE_QUESTION_LIMIT,
+  canUseAi, canAccessAllContent, isExamQuestionLocked, isLessonLocked,
+  FREE_QUESTION_LIMIT, type BillingInterval,
 } from './plans';
 import OnboardingWizard from './OnboardingWizard';
 import GrammarTipCard from './GrammarTipCard';
@@ -184,8 +185,8 @@ interface PaymentMethodsResponse {
     id: 'pro' | 'max';
     name: string;
     amountMnt: number;
+    yearAmountMnt: number;
     currency: string;
-    interval: string;
     aiAccess: boolean;
   }>;
   qpay: {
@@ -210,6 +211,7 @@ interface DummyCheckoutResponse {
   provider: 'dummy';
   senderInvoiceNo: string;
   plan: 'pro' | 'max';
+  interval?: BillingInterval;
   amountMnt: number;
   currency: 'MNT';
 }
@@ -439,14 +441,22 @@ function LearnerApp() {
   const [paymentMessage, setPaymentMessage] = useState<{ type: 'info' | 'success' | 'error'; text: string } | null>(null);
   const [qpayCheckout, setQpayCheckout] = useState<QPayCheckoutResponse | null>(null);
   const [dummyInvoice, setDummyInvoice] = useState<DummyCheckoutResponse | null>(null);
+  // Monthly vs annual pricing toggle on the plan cards.
+  const [billingInterval, setBillingInterval] = useState<BillingInterval>('month');
+  // Monthly AI teaser quota reported by /api/ai/quota (null until loaded; limit
+  // null = unlimited). Free 2/month, Pro 5/month, Max/founder unlimited.
+  const [aiQuota, setAiQuota] = useState<{ plan: string; limit: number | null; used: number; remaining: number | null } | null>(null);
 
   // Subscription entitlements — what the signed-in account may open right now.
-  // Free: first FREE_QUESTION_LIMIT exam-bank questions, no AI. Pro: all content,
-  // no AI. Max/founder: everything.
+  // Free: A1 lessons + first FREE_QUESTION_LIMIT exam-bank questions. Pro: all
+  // content. Max/founder: everything + unlimited AI.
   const userPlan = effectivePlan(currentUser);
   const founderAccess = isFounderProfile(currentUser);
   const aiAllowed = canUseAi(currentUser);
   const fullContent = canAccessAllContent(currentUser);
+  // AI buttons stay live while teaser uses remain; until the quota has loaded
+  // we let the server be the judge rather than blocking optimistically.
+  const aiUsable = aiAllowed || (aiQuota ? (aiQuota.remaining ?? 1) > 0 : true);
 
   // Session & UI States
   const [activeTab, setActiveTab] = useState<TabType>('read');
@@ -807,6 +817,20 @@ function LearnerApp() {
     }
   };
 
+  // Refresh the monthly AI teaser counter (cheap read; never consumes a use).
+  const refreshAiQuota = async () => {
+    try {
+      const headers = await aiAuthHeaders();
+      if (!headers.Authorization) return;
+      const response = await fetch('/api/ai/quota', { headers });
+      if (!response.ok) return;
+      const data = await response.json();
+      if (typeof data?.used === 'number') setAiQuota(data);
+    } catch {
+      // Non-fatal: the counter just stays stale until the next AI call.
+    }
+  };
+
   const translateText = async (textToTranslate?: string) => {
     const targetText = textToTranslate !== undefined ? textToTranslate : translationInput;
     if (!targetText.trim()) return;
@@ -821,16 +845,19 @@ function LearnerApp() {
       });
 
       if (!response.ok) {
-        throw new Error('Орчуулгын серверээс алдаа ирлээ.');
+        const errBody = await response.json().catch(() => ({}));
+        if (errBody?.quota) setAiQuota(errBody.quota);
+        throw new Error(errBody?.error || 'Орчуулгын серверээс алдаа ирлээ.');
       }
 
       const data = await response.json();
       setTranslationResult(data);
     } catch (err: any) {
       console.error(err);
-      setTranslationError('Орчуулга түр амжилтгүй боллоо. Сүлжээгээ шалгаад хэсэг хугацааны дараа дахин оролдоно уу.');
+      setTranslationError(err?.message || 'Орчуулга түр амжилтгүй боллоо. Сүлжээгээ шалгаад хэсэг хугацааны дараа дахин оролдоно уу.');
     } finally {
       setTranslationLoading(false);
+      refreshAiQuota();
     }
   };
 
@@ -993,6 +1020,7 @@ function LearnerApp() {
       }
     } finally {
       setSpeakingLoading(false);
+      refreshAiQuota();
     }
   };
 
@@ -1043,6 +1071,7 @@ function LearnerApp() {
       setVoiceSupportMessage('Дуу хоолой шинжлэхэд алдаа гарлаа. Доорх талбарт шивж туршина уу.');
     } finally {
       setSpeakingLoading(false);
+      refreshAiQuota();
     }
   };
 
@@ -1168,6 +1197,7 @@ function LearnerApp() {
       });
     } finally {
       setWriteFeedbackLoading(false);
+      refreshAiQuota();
     }
   };
 
@@ -1304,7 +1334,8 @@ function LearnerApp() {
   useEffect(() => {
     if (!currentUser || isTest) return;
     loadPaymentMethods();
-  }, [currentUser?.email, isTest]);
+    refreshAiQuota();
+  }, [currentUser?.email, currentUser?.billing?.plan, isTest]);
 
   const getCurrentIdToken = async () => {
     if (!isFirebaseConfigured) throw new Error('Firebase тохиргоо дутуу байна.');
@@ -1339,7 +1370,7 @@ function LearnerApp() {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ plan: planId }),
+        body: JSON.stringify({ plan: planId, interval: billingInterval }),
       });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(data.error || 'QPay төлбөр эхлүүлэхэд алдаа гарлаа.');
@@ -1368,7 +1399,7 @@ function LearnerApp() {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ plan: planId }),
+        body: JSON.stringify({ plan: planId, interval: billingInterval }),
       });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(data.error || 'Туршилтын нэхэмжлэл үүсгэхэд алдаа гарлаа.');
@@ -1466,15 +1497,34 @@ function LearnerApp() {
     </div>
   );
 
+  // What the AI lock card says: quota ran out vs. plain Max-only pitch.
+  const aiLockDesc = (feature: string) =>
+    aiQuota && aiQuota.limit !== null
+      ? `Энэ сарын үнэгүй AI туршилт (${aiQuota.limit}) дууслаа. ${feature} Max багцад хязгааргүй.`
+      : `${feature} Max багцад хязгааргүй нээлттэй.`;
+
+  // Small counter strip shown above AI features while teaser uses remain.
+  const renderAiTeaserBanner = () =>
+    !aiAllowed && aiQuota && aiQuota.limit !== null && (aiQuota.remaining ?? 0) > 0 ? (
+      <div className="w-full flex flex-wrap items-center justify-center gap-2 px-4 py-2 mb-3 bg-primary-container/60 border-2 border-on-background rounded-xl text-xs font-bold text-on-surface block-shadow">
+        <Sparkles className="w-3.5 h-3.5" />
+        Энэ сарын үнэгүй AI туршилт: {aiQuota.remaining}/{aiQuota.limit} үлдсэн
+        <button onClick={() => setActiveTab('profile')} className="text-secondary underline cursor-pointer font-black">
+          Max багцаар хязгааргүй
+        </button>
+      </div>
+    ) : null;
+
   // ---------------------------------------------------------------------------
   // Shared AI speaking-judge UI. `target` is the German model sentence the recording
   // (or typed text) is graded against. Reused by every library item AND the detailed
   // lesson, so importing new speaking resources gets the AI judge automatically.
-  // AI review is a Max-plan feature; Free/Pro accounts see the upgrade card.
+  // Free/Pro accounts spend monthly teaser uses; once exhausted, the upgrade
+  // card replaces the judge until next month.
   // ---------------------------------------------------------------------------
-  const renderSpeakingJudge = (target: string) => !aiAllowed ? renderPlanLockCard(
+  const renderSpeakingJudge = (target: string) => !aiUsable ? renderPlanLockCard(
     'Дуут AI багш',
-    'Ярианы дасгалын AI үнэлгээ (дуудлага, оноо, зөвлөмж) зөвхөн Max багцад нээлттэй.',
+    aiLockDesc('Ярианы дасгалын AI үнэлгээ (дуудлага, оноо, зөвлөмж)'),
     'max',
   ) : (
     // Microphone Interface Area — real voice recording for the AI coach
@@ -1483,6 +1533,8 @@ function LearnerApp() {
       <span className="inline-flex items-center gap-1.5 px-3 py-1 mb-4 bg-primary-container border-2 border-on-background text-[11px] font-black font-space rounded-full uppercase tracking-wider block-shadow">
         <AudioLines className="w-3.5 h-3.5" /> Дуут AI багш
       </span>
+
+      <div className="px-6 w-full flex justify-center">{renderAiTeaserBanner()}</div>
 
       <div className="relative flex items-center justify-center mb-6">
         <button
@@ -1668,13 +1720,14 @@ function LearnerApp() {
   const renderWritingChecker = (
     text: string,
     ctx: { prompt: string; points: string[]; modelAnswer: string; level: string },
-  ) => !aiAllowed ? renderPlanLockCard(
+  ) => !aiUsable ? renderPlanLockCard(
     'AI бичгийн засвар',
-    'Бичсэн зохиолын AI үнэлгээ, засвар, оноо зөвхөн Max багцад нээлттэй.',
+    aiLockDesc('Бичсэн зохиолын AI үнэлгээ, засвар, оноо'),
     'max',
   ) : (
     <>
       <div className="mt-4">
+        {renderAiTeaserBanner()}
         <button
           onClick={() => checkComposition(text, ctx)}
           disabled={!text.trim() || writeFeedbackLoading}
@@ -1826,7 +1879,13 @@ function LearnerApp() {
     const qpayReady = paymentMethods?.qpay.status === 'ready';
     const qrSrc = qpayQrImageSrc(qpayCheckout?.qrImage);
     // Server-configured price wins; the local catalog is only the fallback.
-    const planPriceMnt = (id: 'pro' | 'max') => paymentMethods?.plans?.[id]?.amountMnt ?? PLANS[id].defaultAmountMnt;
+    const planPriceMnt = (id: 'pro' | 'max') => {
+      const server = paymentMethods?.plans?.[id];
+      return billingInterval === 'year'
+        ? server?.yearAmountMnt ?? PLANS[id].defaultYearAmountMnt
+        : server?.amountMnt ?? PLANS[id].defaultAmountMnt;
+    };
+    const monthlyPriceMnt = (id: 'pro' | 'max') => paymentMethods?.plans?.[id]?.amountMnt ?? PLANS[id].defaultAmountMnt;
     const currentPlanLabel = founderAccess ? 'FOUNDER' : PLANS[userPlan as PlanId]?.name?.toUpperCase() ?? userPlan.toUpperCase();
 
     return (
@@ -1860,6 +1919,24 @@ function LearnerApp() {
           </p>
         )}
 
+        {/* Monthly / annual toggle — annual ≈ 2 months free */}
+        <div className="flex items-center justify-center gap-2">
+          {(['month', 'year'] as BillingInterval[]).map((iv) => (
+            <button
+              key={iv}
+              onClick={() => setBillingInterval(iv)}
+              className={`px-4 py-2 rounded-full text-xs font-black border transition-colors cursor-pointer ${
+                billingInterval === iv
+                  ? 'bg-white text-slate-950 border-white'
+                  : 'bg-white/5 text-slate-300 border-white/10 hover:bg-white/10'
+              }`}
+            >
+              {iv === 'month' ? 'Сараар' : 'Жилээр'}
+              {iv === 'year' && <span className="ml-1.5 px-1.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px]">2 сар үнэгүй</span>}
+            </button>
+          ))}
+        </div>
+
         {/* Plan tiers */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {PLAN_ORDER.map((id) => {
@@ -1872,17 +1949,24 @@ function LearnerApp() {
                 highlight ? 'bg-purple-500/10 border-purple-400/40' : 'bg-slate-950/50 border-white/10'
               } ${isCurrent ? 'ring-2 ring-emerald-400/60' : ''}`}>
                 {highlight && (
-                  <span className="absolute -top-2.5 right-4 px-2.5 py-0.5 rounded-full text-[10px] font-black bg-purple-400 text-slate-950 uppercase">AI бүрэн</span>
+                  <span className="absolute -top-2.5 right-4 px-2.5 py-0.5 rounded-full text-[10px] font-black bg-purple-400 text-slate-950 uppercase">Хамгийн эрэлттэй</span>
                 )}
                 <div className="flex items-center justify-between mb-1">
                   <p className="text-base font-black text-white font-space">{info.name}</p>
                   {isCurrent && <span className="text-[10px] font-black text-emerald-300 bg-emerald-500/10 border border-emerald-500/30 px-2 py-0.5 rounded-full">ИДЭВХТЭЙ</span>}
                 </div>
                 <p className="text-[11px] text-slate-400 font-bold mb-3">{info.taglineMn}</p>
-                <p className="text-xl font-black text-white mb-4">
+                <p className="text-xl font-black text-white mb-1">
                   {price === 0 ? '0₮' : formatMnt(price)}
-                  {price !== 0 && <span className="text-[11px] text-slate-400 font-bold"> / сар</span>}
+                  {price !== 0 && <span className="text-[11px] text-slate-400 font-bold"> / {billingInterval === 'year' ? 'жил' : 'сар'}</span>}
                 </p>
+                {price !== 0 && billingInterval === 'year' ? (
+                  <p className="text-[11px] text-emerald-300 font-bold mb-3">
+                    ≈ {formatMnt(Math.round(price / 12))} / сар · {formatMnt(monthlyPriceMnt(id as 'pro' | 'max') * 12 - price)} хэмнэнэ
+                  </p>
+                ) : (
+                  <div className="mb-3" />
+                )}
                 <ul className="space-y-1.5 mb-2">
                   {info.featuresMn.map((f, i) => (
                     <li key={i} className="flex items-start gap-2 text-[12px] text-slate-200 font-semibold">
@@ -1956,7 +2040,9 @@ function LearnerApp() {
             <div className="space-y-3">
               <div className="bg-white/5 border border-white/10 rounded-xl p-4">
                 <p className="text-[10px] text-slate-500 font-black uppercase font-space mb-1">Туршилтын нэхэмжлэл</p>
-                <p className="text-sm font-extrabold text-white">{PLANS[dummyInvoice.plan].name} багц — {formatMnt(dummyInvoice.amountMnt)}</p>
+                <p className="text-sm font-extrabold text-white">
+                  {PLANS[dummyInvoice.plan].name} багц ({dummyInvoice.interval === 'year' ? 'жилээр' : 'сараар'}) — {formatMnt(dummyInvoice.amountMnt)}
+                </p>
                 <p className="text-[10px] text-slate-500 font-mono mt-1">{dummyInvoice.senderInvoiceNo}</p>
               </div>
               <button
@@ -3257,7 +3343,7 @@ function LearnerApp() {
                       </div>
                       <div className="flex flex-col gap-2 max-h-[55vh] overflow-y-auto pr-1">
                         {filtered.map(r => {
-                          const isLocked = lockedActivityIds.read.has(r.id) && r.level === currentUser?.targetLevel;
+                          const isLocked = (lockedActivityIds.read.has(r.id) && r.level === currentUser?.targetLevel) || isLessonLocked(currentUser, r.level);
                           return (
                             <button key={r.id} onClick={() => { setLibReadId(r.id); setLibReadAnswer(null); setLibReadTrans(readTranslateEnabled); }}
                               className={`text-left p-2.5 rounded-lg border-2 border-on-background cursor-pointer transition-colors ${r.id === libReadId ? 'bg-secondary-container' : 'bg-surface-container hover:bg-surface-container-high'}`}>
@@ -3277,7 +3363,7 @@ function LearnerApp() {
 
                     {/* Reader */}
                     <section className="lg:col-span-8 border-2 border-on-background rounded-xl p-6 md:p-8 block-shadow text-on-surface">
-                      {lockedActivityIds.read.has(item.id) && item.level === currentUser?.targetLevel ? (
+                      {isLessonLocked(currentUser, item.level) ? renderPlanLockCard('Энэ хичээл Pro багцад нээлттэй', item.level + ' түвшний хичээлүүд үнэгүй эрхэд хаалттай. Үнэгүй эрхээр A1 түвшний бүх хичээл, үгийн сан нээлттэй.', 'pro') : lockedActivityIds.read.has(item.id) && item.level === currentUser?.targetLevel ? (
                         <div className="flex flex-col items-center justify-center py-16 text-center space-y-4">
                           <div className="w-16 h-16 rounded-full bg-surface-container-high flex items-center justify-center text-on-surface-variant">
                             <Shield className="w-8 h-8" />
@@ -3398,7 +3484,7 @@ function LearnerApp() {
                       </div>
                       <div className="flex flex-col gap-2 max-h-[55vh] overflow-y-auto pr-1">
                         {filtered.map(r => {
-                          const isLocked = lockedActivityIds.listen.has(r.id) && r.level === currentUser?.targetLevel;
+                          const isLocked = (lockedActivityIds.listen.has(r.id) && r.level === currentUser?.targetLevel) || isLessonLocked(currentUser, r.level);
                           return (
                             <button key={r.id} onClick={() => { setLibListenId(r.id); setLibListenAnswer(null); setLibListenTrans(readTranslateEnabled); }}
                               className={`text-left p-2.5 rounded-lg border-2 border-on-background cursor-pointer transition-colors ${r.id === libListenId ? 'bg-secondary-container' : 'bg-surface-container hover:bg-surface-container-high'}`}>
@@ -3417,7 +3503,7 @@ function LearnerApp() {
                     </aside>
 
                     <section className="lg:col-span-8 border-2 border-on-background rounded-xl p-6 md:p-8 block-shadow text-on-surface">
-                      {lockedActivityIds.listen.has(item.id) && item.level === currentUser?.targetLevel ? (
+                      {isLessonLocked(currentUser, item.level) ? renderPlanLockCard('Энэ хичээл Pro багцад нээлттэй', item.level + ' түвшний хичээлүүд үнэгүй эрхэд хаалттай. Үнэгүй эрхээр A1 түвшний бүх хичээл, үгийн сан нээлттэй.', 'pro') : lockedActivityIds.listen.has(item.id) && item.level === currentUser?.targetLevel ? (
                         <div className="flex flex-col items-center justify-center py-16 text-center space-y-4">
                           <div className="w-16 h-16 rounded-full bg-surface-container-high flex items-center justify-center text-on-surface-variant">
                             <Shield className="w-8 h-8" />
@@ -3552,7 +3638,7 @@ function LearnerApp() {
                       </div>
                       <div className="flex flex-col gap-2 max-h-[55vh] overflow-y-auto pr-1">
                         {filtered.map(r => {
-                          const isLocked = lockedActivityIds.speak.has(r.id) && r.level === currentUser?.targetLevel;
+                          const isLocked = (lockedActivityIds.speak.has(r.id) && r.level === currentUser?.targetLevel) || isLessonLocked(currentUser, r.level);
                           return (
                             <button key={r.id} onClick={() => { setLibSpeakId(r.id); setLibSpeakReveal(false); resetSpeakingJudge(); }}
                               className={`text-left p-2.5 rounded-lg border-2 border-on-background cursor-pointer transition-colors ${r.id === libSpeakId ? 'bg-secondary-container' : 'bg-surface-container hover:bg-surface-container-high'}`}>
@@ -3571,7 +3657,7 @@ function LearnerApp() {
                     </aside>
 
                     <section className="lg:col-span-8 border-2 border-on-background rounded-xl p-6 md:p-8 block-shadow text-on-surface">
-                      {lockedActivityIds.speak.has(item.id) && item.level === currentUser?.targetLevel ? (
+                      {isLessonLocked(currentUser, item.level) ? renderPlanLockCard('Энэ хичээл Pro багцад нээлттэй', item.level + ' түвшний хичээлүүд үнэгүй эрхэд хаалттай. Үнэгүй эрхээр A1 түвшний бүх хичээл, үгийн сан нээлттэй.', 'pro') : lockedActivityIds.speak.has(item.id) && item.level === currentUser?.targetLevel ? (
                         <div className="flex flex-col items-center justify-center py-16 text-center space-y-4">
                           <div className="w-16 h-16 rounded-full bg-surface-container-high flex items-center justify-center text-on-surface-variant">
                             <Shield className="w-8 h-8" />
@@ -3668,7 +3754,7 @@ function LearnerApp() {
                       </div>
                       <div className="flex flex-col gap-2 max-h-[55vh] overflow-y-auto pr-1">
                         {filtered.map(r => {
-                          const isLocked = lockedActivityIds.write.has(r.id) && r.level === currentUser?.targetLevel;
+                          const isLocked = (lockedActivityIds.write.has(r.id) && r.level === currentUser?.targetLevel) || isLessonLocked(currentUser, r.level);
                           return (
                             <button key={r.id} onClick={() => { setLibWriteId(r.id); setLibWriteText(''); setLibWriteReveal(false); resetWritingFeedback(); }}
                               className={`text-left p-2.5 rounded-lg border-2 border-on-background cursor-pointer transition-colors ${r.id === libWriteId ? 'bg-secondary-container' : 'bg-surface-container hover:bg-surface-container-high'}`}>
@@ -3687,7 +3773,7 @@ function LearnerApp() {
                     </aside>
 
                     <section className="lg:col-span-8 border-2 border-on-background rounded-xl p-6 md:p-8 block-shadow text-on-surface">
-                      {lockedActivityIds.write.has(item.id) && item.level === currentUser?.targetLevel ? (
+                      {isLessonLocked(currentUser, item.level) ? renderPlanLockCard('Энэ хичээл Pro багцад нээлттэй', item.level + ' түвшний хичээлүүд үнэгүй эрхэд хаалттай. Үнэгүй эрхээр A1 түвшний бүх хичээл, үгийн сан нээлттэй.', 'pro') : lockedActivityIds.write.has(item.id) && item.level === currentUser?.targetLevel ? (
                         <div className="flex flex-col items-center justify-center py-16 text-center space-y-4">
                           <div className="w-16 h-16 rounded-full bg-surface-container-high flex items-center justify-center text-on-surface-variant">
                             <Shield className="w-8 h-8" />
@@ -4182,18 +4268,20 @@ function LearnerApp() {
           )}
 
           {/* Tab: Орчуулагч (Professional Translation & Lingua Helper) */}
-          {/* AI translator is Max-only: Free/Pro accounts get the upgrade card. */}
-          {activeTab === 'translate' && !aiAllowed && (
+          {/* AI translator: Free/Pro spend monthly teaser uses, Max is unlimited.
+              Once the teaser runs out the upgrade card replaces the workspace. */}
+          {activeTab === 'translate' && !aiUsable && (
             <div className="max-w-2xl mx-auto w-full pb-24 animate-fade-in">
               {renderPlanLockCard(
                 'AI Орчуулагч',
-                'Дүрмийн задаргаатай ухаалаг орчуулагч зөвхөн Max багцад нээлттэй. Pro багц бүх хичээл, шалгалтын санг нээдэг ч AI боломжуудыг агуулдаггүй.',
+                aiLockDesc('Дүрмийн задаргаатай ухаалаг орчуулагч'),
                 'max',
               )}
             </div>
           )}
-          {activeTab === 'translate' && aiAllowed && (
+          {activeTab === 'translate' && aiUsable && (
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start pb-24 animate-fade-in font-sans">
+              <div className="lg:col-span-12">{renderAiTeaserBanner()}</div>
               
               {/* Left Side: Translation Workspace */}
               <div className="lg:col-span-12 xl:col-span-7 flex flex-col gap-6">

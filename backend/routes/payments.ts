@@ -15,7 +15,7 @@ import {
   type QPayPaymentCheckResponse,
   type QPayPaymentRow,
 } from '../lib/payments/qpay';
-import { getPaidPlans, parsePaidPlanId } from '../lib/plans';
+import { getPaidPlans, parsePaidPlanId, parseBillingInterval, type BillingInterval } from '../lib/plans';
 
 interface PendingInvoice {
   provider: 'qpay' | 'dummy';
@@ -25,6 +25,7 @@ interface PendingInvoice {
   customerEmail: string;
   customerName?: string;
   plan: string;
+  interval?: BillingInterval; // older invoices predate annual billing → month
   amountMnt: number;
   amountCents: number;
   currency: 'MNT';
@@ -100,7 +101,7 @@ async function activatePaidInvoice(
   if (!admin) throw new Error(firebaseAdminMissingMessage());
 
   const now = new Date();
-  const currentPeriodEnd = addMonths(now, 1).toISOString();
+  const currentPeriodEnd = addMonths(now, invoice.interval === 'year' ? 12 : 1).toISOString();
   const paymentId = String(paidPayment.payment_id || invoice.providerInvoiceId);
   const paymentRef = admin.db.collection('payments').doc(sanitizeDocId(`${invoice.provider}_${paymentId}`));
   const userRef = admin.db.collection('users').doc(invoice.userId);
@@ -126,6 +127,7 @@ async function activatePaidInvoice(
       billing: {
         plan: invoice.plan,
         status: 'active',
+        interval: invoice.interval ?? 'month',
         monthlyAmountCents: invoice.amountCents,
         lifetimeValueCents: FieldValue.increment(invoice.amountCents),
         currency: invoice.currency,
@@ -147,6 +149,7 @@ async function activatePaidInvoice(
   return {
     plan: invoice.plan,
     status: 'active',
+    interval: invoice.interval ?? 'month',
     monthlyAmountCents: invoice.amountCents,
     currency: invoice.currency,
     provider: invoice.provider,
@@ -231,10 +234,12 @@ export function registerPaymentsRoute(app: Express) {
     if (!planId) {
       return res.status(400).json({ error: 'Багцаа сонгоно уу (pro эсвэл max).', methods: paymentMethodsPayload() });
     }
+    const interval = parseBillingInterval(req.body?.interval);
     const plan = getPaidPlans()[planId];
+    const amountMnt = interval === 'year' ? plan.yearAmountMnt : plan.amountMnt;
 
     const senderInvoiceNo = senderInvoiceNoFor(user.uid);
-    const description = `${plan.name} access - Vivid Lingua`;
+    const description = `${plan.name} ${interval === 'year' ? 'annual' : 'monthly'} access - Vivid Lingua`;
 
     try {
       const qpayInvoice = await createQPayInvoice({
@@ -243,7 +248,7 @@ export function registerPaymentsRoute(app: Express) {
         receiverName: user.name,
         receiverEmail: user.email,
         description,
-        amountMnt: plan.amountMnt,
+        amountMnt,
         callbackUrl: callbackUrlFor(req, senderInvoiceNo),
       });
 
@@ -251,7 +256,7 @@ export function registerPaymentsRoute(app: Express) {
         return res.status(502).json({ error: 'QPay did not return an invoice_id.', qpayInvoice });
       }
 
-      const amountCents = amountMntToCents(plan.amountMnt);
+      const amountCents = amountMntToCents(amountMnt);
       await admin.db.collection('paymentInvoices').doc(senderInvoiceNo).set({
         provider: 'qpay',
         providerInvoiceId: qpayInvoice.invoice_id,
@@ -260,7 +265,8 @@ export function registerPaymentsRoute(app: Express) {
         customerEmail: user.email ?? '',
         customerName: user.name ?? '',
         plan: planId,
-        amountMnt: plan.amountMnt,
+        interval,
+        amountMnt,
         amountCents,
         currency: 'MNT',
         status: 'pending',
@@ -274,7 +280,8 @@ export function registerPaymentsRoute(app: Express) {
         senderInvoiceNo,
         providerInvoiceId: qpayInvoice.invoice_id,
         plan: planId,
-        amountMnt: plan.amountMnt,
+        interval,
+        amountMnt,
         currency: 'MNT',
         qrText: qpayInvoice.qr_text,
         qrImage: qpayInvoice.qr_image,
@@ -334,10 +341,12 @@ export function registerPaymentsRoute(app: Express) {
     if (!planId) {
       return res.status(400).json({ error: 'Багцаа сонгоно уу (pro эсвэл max).' });
     }
+    const interval = parseBillingInterval(req.body?.interval);
     const plan = getPaidPlans()[planId];
+    const amountMnt = interval === 'year' ? plan.yearAmountMnt : plan.amountMnt;
 
     const senderInvoiceNo = senderInvoiceNoFor(user.uid);
-    const amountCents = amountMntToCents(plan.amountMnt);
+    const amountCents = amountMntToCents(amountMnt);
 
     await admin.db.collection('paymentInvoices').doc(senderInvoiceNo).set({
       provider: 'dummy',
@@ -347,7 +356,8 @@ export function registerPaymentsRoute(app: Express) {
       customerEmail: user.email ?? '',
       customerName: user.name ?? '',
       plan: planId,
-      amountMnt: plan.amountMnt,
+      interval,
+      amountMnt,
       amountCents,
       currency: 'MNT',
       status: 'pending',
@@ -360,7 +370,8 @@ export function registerPaymentsRoute(app: Express) {
       senderInvoiceNo,
       providerInvoiceId: `dummy_${senderInvoiceNo}`,
       plan: planId,
-      amountMnt: plan.amountMnt,
+      interval,
+      amountMnt,
       currency: 'MNT',
     });
   });

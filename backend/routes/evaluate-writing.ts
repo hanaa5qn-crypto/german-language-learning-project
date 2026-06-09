@@ -14,7 +14,7 @@ export function registerEvaluateWritingRoute(app: Express) {
 
     const access = await checkAiAccess(req);
     if (!access.allowed) {
-      return res.status(access.status).json({ error: access.error });
+      return res.status(access.status).json({ error: access.error, code: access.code, quota: access.quota });
     }
 
     const promptText = clampText(req.body?.promptText);
