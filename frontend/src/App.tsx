@@ -18,6 +18,7 @@ import {
 } from './library';
 import { EXAMS, EXAM_LEVEL_ORDER, ExamLevel } from './exams';
 import TestDafExam from './TestDafExam';
+import AdminDashboard from './AdminDashboard';
 import { UserProfile, DEFAULT_PROFILES } from './profiles';
 import LoginScreen from './LoginScreen';
 import {
@@ -28,6 +29,100 @@ import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 // Union of all exam item types — they all share `topic`, `title`, `titleMn`.
 type ExamItem = ReadingItem | ListeningItem | WritingItem | SpeakingItem;
+
+const WEEKDAY_LABELS = ['Ням', 'Даваа', 'Мягмар', 'Лхагва', 'Пүрэв', 'Баасан', 'Бямба'];
+const STUDY_TABS: TabType[] = ['read', 'listen', 'speak', 'write', 'vocab', 'translate', 'exam'];
+const ACTIVE_IDLE_LIMIT_MS = 2 * 60 * 1000;
+const STUDY_SAVE_THRESHOLD_SECONDS = 120;
+const TRACKABLE_ACTIVITY_TOTAL =
+  4 + // core quick lesson + detailed reading/listening/writing lessons
+  DICTIONARY.filter((w) => w.mongolian.trim().length > 0).length +
+  READING_LIBRARY.length +
+  LISTENING_LIBRARY.length +
+  SPEAKING_LIBRARY.length +
+  WRITING_LIBRARY.length +
+  Object.values(EXAMS).reduce(
+    (sum, exam) => sum + exam.reading.length + exam.listening.length + exam.speaking.length + exam.writing.length,
+    0,
+  );
+
+function localDateKey(date = new Date()): string {
+  const year = date.getFullYear();
+  const month = `${date.getMonth() + 1}`.padStart(2, '0');
+  const day = `${date.getDate()}`.padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function dateFromLocalKey(key: string): Date {
+  const [year, month, day] = key.split('-').map(Number);
+  return new Date(year, month - 1, day);
+}
+
+function addDays(date: Date, days: number): Date {
+  const next = new Date(date);
+  next.setDate(next.getDate() + days);
+  return next;
+}
+
+function buildLearningCurve(studySecondsByDate: Record<string, number> = {}): UserProfile['learningCurve'] {
+  const today = new Date();
+  return Array.from({ length: 7 }).map((_, index) => {
+    const date = addDays(today, index - 6);
+    const key = localDateKey(date);
+    const seconds = Math.max(0, studySecondsByDate[key] ?? 0);
+    return {
+      day: WEEKDAY_LABELS[date.getDay()],
+      hours: Number((seconds / 3600).toFixed(1)),
+    };
+  });
+}
+
+function calculateStreak(studyDays: string[] = [], today = new Date()): number {
+  const daySet = new Set(studyDays);
+  let cursor = localDateKey(today);
+
+  if (!daySet.has(cursor)) {
+    const yesterday = localDateKey(addDays(today, -1));
+    if (!daySet.has(yesterday)) return 0;
+    cursor = yesterday;
+  }
+
+  let count = 0;
+  let date = dateFromLocalKey(cursor);
+  while (daySet.has(localDateKey(date))) {
+    count += 1;
+    date = addDays(date, -1);
+  }
+  return count;
+}
+
+function calculateProgress(completedActivityIds: string[] = []): number {
+  if (TRACKABLE_ACTIVITY_TOTAL <= 0) return 0;
+  const uniqueCompleted = new Set(completedActivityIds).size;
+  return Math.min(100, Math.round((uniqueCompleted / TRACKABLE_ACTIVITY_TOTAL) * 100));
+}
+
+function activityKey(prefix: string, value: string | number): string {
+  return `${prefix}:${String(value).trim().toLowerCase().replace(/\s+/g, '-').slice(0, 96)}`;
+}
+
+function normalizeProfileMetrics(profile: UserProfile): UserProfile {
+  const completedActivityIds = Array.from(new Set(profile.completedActivityIds ?? []));
+  const studyDays = Array.from(new Set(profile.studyDays ?? [])).sort();
+  const studySecondsByDate = profile.studySecondsByDate ?? {};
+  const streak = calculateStreak(studyDays);
+  const progress = calculateProgress(completedActivityIds);
+  return {
+    ...profile,
+    completedActivityIds,
+    studyDays,
+    studySecondsByDate,
+    streak,
+    progress,
+    completedLessons: completedActivityIds.length,
+    learningCurve: buildLearningCurve(studySecondsByDate),
+  };
+}
 
 // Rich AI feedback returned by /api/evaluate-speaking. All text fields are
 // Mongolian except `transcript` (German). Optional fields keep the older
@@ -164,45 +259,85 @@ function MCQBlock({
   
   const displayFeedback = feedbackText !== undefined
     ? feedbackText
-    : (isCorrect ? '✓ Зөв байна!' : `✗ Зөв хариулт: ${choices[correctIndex]}`);
+    : (isCorrect ? 'Та зөв сонголтыг хийлээ.' : `Зөв хариулт нь: "${choices[correctIndex]}"`);
 
   return (
     <>
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-4">
         {choices.map((c, i) => {
           const isSel = selectedAnswer === i;
           const isOptionCorrect = i === correctIndex;
-          let cls = 'bg-surface-container text-on-surface border-on-background';
-          if (answered && isOptionCorrect) {
-            cls = 'bg-secondary-container border-secondary text-on-surface';
-          } else if (answered && isSel && !isOptionCorrect) {
-            cls = 'bg-error-container border-error text-error';
+          
+          let containerClass = "bg-white";
+          let circleClass = "bg-white";
+          let borderEffect = null;
+          
+          if (answered) {
+            if (isOptionCorrect) {
+              containerClass = "bg-secondary-container text-on-secondary-fixed border-secondary";
+              circleClass = "bg-secondary text-white";
+              borderEffect = <div className="absolute inset-0 border-2 border-secondary rounded-xl pointer-events-none"></div>;
+            } else if (isSel) {
+              containerClass = "bg-error-container text-on-error-container border-error";
+              circleClass = "bg-error text-white";
+              borderEffect = <div className="absolute inset-0 border-2 border-error rounded-xl pointer-events-none"></div>;
+            } else {
+              containerClass = "bg-white opacity-60 border-on-background/40";
+            }
           }
+          
           return (
             <button
               key={i}
+              disabled={answered}
               onClick={() => { if (!answered) onSelect(i); }}
-              className={`flex items-center gap-3 p-3 border-2 rounded-lg text-left text-sm font-semibold transition-colors ${cls} ${answered ? 'cursor-default' : 'cursor-pointer hover:border-secondary'}`}
+              className={`relative flex items-center p-4 border-2 border-on-background rounded-xl text-left transition-all group block-shadow select-none text-body-md font-bold text-on-surface ${
+                !answered ? 'cursor-pointer hover:bg-surface-container hover:text-primary' : 'cursor-default'
+              } ${containerClass}`}
             >
-              <span className={`w-5 h-5 rounded-full border-2 border-on-background flex items-center justify-center shrink-0 ${answered && isOptionCorrect ? 'bg-secondary text-white' : answered && isSel ? 'bg-error text-white' : 'bg-transparent'}`}>
-                {answered && isOptionCorrect && <Check className="w-3 h-3 stroke-[3px]" />}
-                {answered && isSel && !isOptionCorrect && <X className="w-3 h-3 stroke-[3px]" />}
-              </span>
-              {c}
+              <div className={`w-6 h-6 rounded-full border-2 border-on-background mr-4 flex items-center justify-center shrink-0 transition-all ${circleClass}`}>
+                {answered && isOptionCorrect && <Check className="w-4 h-4 stroke-[3px]" />}
+                {answered && isSel && !isOptionCorrect && <X className="w-4 h-4 stroke-[3px]" />}
+              </div>
+              <span className="flex-grow">{c}</span>
+              {borderEffect}
             </button>
           );
         })}
       </div>
-      {answered && displayFeedback && (
-        <p className={`mt-3 text-sm font-bold ${isCorrect ? 'text-secondary' : 'text-error'}`}>
-          {displayFeedback}
-        </p>
+      
+      {answered && (
+        <div className={`mt-6 p-4 rounded-xl border-2 border-on-background animate-fade-in ${
+          isCorrect ? 'bg-secondary-container text-on-secondary-fixed border-on-secondary-container' : 'bg-error-container text-on-error-container border-on-error-container'
+        }`}>
+          <div className="flex items-start gap-3">
+            <span className="material-symbols-outlined text-2xl font-bold fill mt-0.5">
+              {isCorrect ? 'check_circle' : 'cancel'}
+            </span>
+            <div>
+              <h4 className="font-extrabold text-[15px]">
+                {isCorrect ? 'Сүрхий зөв хариуллаа!' : 'Өө, буруу хувилбар! Дахин оролдоод үзээрэй.'}
+              </h4>
+              <p className="text-xs mt-1 leading-normal font-mono whitespace-pre-line">
+                {displayFeedback}
+              </p>
+            </div>
+          </div>
+        </div>
       )}
     </>
   );
 }
 
 export default function App() {
+  if (window.location.pathname.startsWith('/admin')) {
+    return <AdminDashboard />;
+  }
+
+  return <LearnerApp />;
+}
+
+function LearnerApp() {
   // Whether the user is logged in is now driven by Firebase Authentication.
   // The signed-in user's profile + progress lives in Firestore (users/{uid}),
   // so it follows them across devices and survives every redeploy.
@@ -220,7 +355,27 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<TabType>('read');
   const [streak, setStreak] = useState<number>(isTest ? DEFAULT_PROFILES[0].streak : 0);
   const [lessonProgress, setLessonProgress] = useState<number>(isTest ? DEFAULT_PROFILES[0].progress : 0);
+  const [completedActivityIds, setCompletedActivityIds] = useState<string[]>([]);
+  const [studyDays, setStudyDays] = useState<string[]>([]);
+  const [studySecondsByDate, setStudySecondsByDate] = useState<Record<string, number>>({});
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const currentUserRef = useRef<UserProfile | null>(currentUser);
+  const activeTabRef = useRef<TabType>(activeTab);
+  const studySecondsRef = useRef<Record<string, number>>(studySecondsByDate);
+  const lastInteractionRef = useRef(Date.now());
+  const pendingStudySaveSecondsRef = useRef(0);
+
+  useEffect(() => {
+    currentUserRef.current = currentUser;
+  }, [currentUser]);
+
+  useEffect(() => {
+    activeTabRef.current = activeTab;
+  }, [activeTab]);
+
+  useEffect(() => {
+    studySecondsRef.current = studySecondsByDate;
+  }, [studySecondsByDate]);
 
   // Listen for login / logout / restored sessions. Skipped in tests (no Firebase)
   // and before the config is filled in (so the app still boots and shows the
@@ -230,12 +385,19 @@ export default function App() {
     if (!isFirebaseConfigured) { setAuthLoading(false); return; }
     const unsubscribe = subscribeToAuthedProfile((profile) => {
       if (profile) {
-        setCurrentUser(profile);
-        setStreak(profile.streak);
-        setLessonProgress(profile.progress);
+        const normalizedProfile = normalizeProfileMetrics(profile);
+        setCurrentUser(normalizedProfile);
+        setStreak(normalizedProfile.streak);
+        setLessonProgress(normalizedProfile.progress);
+        setCompletedActivityIds(normalizedProfile.completedActivityIds ?? []);
+        setStudyDays(normalizedProfile.studyDays ?? []);
+        setStudySecondsByDate(normalizedProfile.studySecondsByDate ?? {});
         setActiveTab('profile');
       } else {
         setCurrentUser(null);
+        setCompletedActivityIds([]);
+        setStudyDays([]);
+        setStudySecondsByDate({});
       }
       setAuthLoading(false);
     });
@@ -364,23 +526,124 @@ export default function App() {
     setDictVisible(24);
   }, [dictSearch, dictClass, dictLevel]);
 
-  // Sync stats back to the user's profile and persist them to Firestore so the
-  // progress is saved in the cloud (not just this browser).
+  const applyMetricProfile = (profile: UserProfile, save = true) => {
+    const normalizedProfile = normalizeProfileMetrics(profile);
+    currentUserRef.current = normalizedProfile;
+    studySecondsRef.current = normalizedProfile.studySecondsByDate ?? {};
+    setCurrentUser(normalizedProfile);
+    setStreak(normalizedProfile.streak);
+    setLessonProgress(normalizedProfile.progress);
+    setCompletedActivityIds(normalizedProfile.completedActivityIds ?? []);
+    setStudyDays(normalizedProfile.studyDays ?? []);
+    setStudySecondsByDate(normalizedProfile.studySecondsByDate ?? {});
+    if (save && !isTest) {
+      saveProfileProgress(normalizedProfile).catch((err) => {
+        console.warn('Could not save progress to Firestore:', err);
+      });
+    }
+  };
+
+  const recordStudyActivity = (activityId: string) => {
+    const profile = currentUserRef.current;
+    if (!profile) return;
+
+    const today = localDateKey();
+    const nextCompleted = Array.from(new Set([...(profile.completedActivityIds ?? []), activityId]));
+    const nextStudyDays = Array.from(new Set([...(profile.studyDays ?? []), today])).sort();
+    const alreadyCompleted = (profile.completedActivityIds ?? []).includes(activityId);
+    const alreadyStudiedToday = (profile.studyDays ?? []).includes(today);
+
+    if (alreadyCompleted && alreadyStudiedToday) return;
+
+    applyMetricProfile({
+      ...profile,
+      completedActivityIds: nextCompleted,
+      studyDays: nextStudyDays,
+      studySecondsByDate: studySecondsRef.current,
+      lastActiveAt: new Date().toISOString(),
+    });
+  };
+
+  const recordStudySeconds = (seconds: number) => {
+    const profile = currentUserRef.current;
+    if (!profile || seconds <= 0) return;
+
+    const today = localDateKey();
+    const nextSeconds = {
+      ...studySecondsRef.current,
+      [today]: Math.round((studySecondsRef.current[today] ?? 0) + seconds),
+    };
+    const nextProfile = normalizeProfileMetrics({
+      ...profile,
+      studySecondsByDate: nextSeconds,
+      lastActiveAt: new Date().toISOString(),
+    });
+
+    currentUserRef.current = nextProfile;
+    studySecondsRef.current = nextSeconds;
+    setCurrentUser(nextProfile);
+    setStudySecondsByDate(nextSeconds);
+
+    pendingStudySaveSecondsRef.current += seconds;
+    if (pendingStudySaveSecondsRef.current >= STUDY_SAVE_THRESHOLD_SECONDS && !isTest) {
+      pendingStudySaveSecondsRef.current = 0;
+      saveProfileProgress(nextProfile).catch((err) => {
+        console.warn('Could not save study time to Firestore:', err);
+      });
+    }
+  };
+
+  // Track real active study time. Time counts only while the page is visible, a
+  // study tab is open, and the learner interacted recently; idle open tabs stop
+  // adding hours.
   useEffect(() => {
     if (isTest) return;
-    if (!currentUser) return;
-    if (currentUser.streak === streak && currentUser.progress === lessonProgress) return;
-    const updated = {
-      ...currentUser,
-      streak,
-      progress: lessonProgress,
-      completedLessons: Math.floor(lessonProgress / 2.5)
+
+    const markInteraction = () => {
+      lastInteractionRef.current = Date.now();
     };
-    setCurrentUser(updated);
-    saveProfileProgress(updated).catch((err) => {
-      console.warn('Could not save progress to Firestore:', err);
-    });
-  }, [streak, lessonProgress, currentUser]);
+    const savePendingStudyTime = () => {
+      const profile = currentUserRef.current;
+      if (!profile || pendingStudySaveSecondsRef.current <= 0) return;
+      pendingStudySaveSecondsRef.current = 0;
+      saveProfileProgress(profile).catch((err) => {
+        console.warn('Could not save study time to Firestore:', err);
+      });
+    };
+
+    const interactionEvents = ['click', 'keydown', 'pointerdown', 'touchstart', 'scroll'];
+    interactionEvents.forEach((eventName) => window.addEventListener(eventName, markInteraction, { passive: true }));
+
+    let lastTick = Date.now();
+    const interval = window.setInterval(() => {
+      const now = Date.now();
+      const elapsedSeconds = Math.min(30, Math.max(0, (now - lastTick) / 1000));
+      lastTick = now;
+
+      const isVisible = document.visibilityState === 'visible';
+      const isRecentlyActive = now - lastInteractionRef.current <= ACTIVE_IDLE_LIMIT_MS;
+      const isStudyTab = STUDY_TABS.includes(activeTabRef.current);
+      if (!isVisible || !isRecentlyActive || !isStudyTab || !currentUserRef.current) return;
+
+      recordStudySeconds(elapsedSeconds);
+    }, 30000);
+
+    const handleVisibilityChange = () => {
+      markInteraction();
+      if (document.visibilityState === 'hidden') savePendingStudyTime();
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('beforeunload', savePendingStudyTime);
+
+    return () => {
+      window.clearInterval(interval);
+      interactionEvents.forEach((eventName) => window.removeEventListener(eventName, markInteraction));
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('beforeunload', savePendingStudyTime);
+      savePendingStudyTime();
+    };
+  }, [isTest]);
 
   // Dedicated Professional Translator states
   const [translationInput, setTranslationInput] = useState('');
@@ -562,6 +825,7 @@ export default function App() {
       });
       const data = await response.json();
       setSpeakingEvaluation(data);
+      if (data.isCorrect) recordStudyActivity(activityKey('speak', target));
     } catch (e) {
       console.error(e);
       // Heuristic fallback
@@ -570,6 +834,9 @@ export default function App() {
         analysis: 'Таны дуудлагыг хэмжлээ. Хэлсэн үг: "' + text + '". "Wie geht es Ihnen" дуудлагатай таарч байна.',
         feedbackMessage: 'Сайн байна! Гэхдээ...'
       });
+      if (text.toLowerCase().includes('wie geht') || text.toLowerCase().includes('ihnen')) {
+        recordStudyActivity(activityKey('speak', target));
+      }
     } finally {
       setSpeakingLoading(false);
     }
@@ -614,6 +881,7 @@ export default function App() {
       });
       const data = await response.json();
       setSpeakingEvaluation(data);
+      if (data.isCorrect) recordStudyActivity(activityKey('speak', target));
       if (data.transcript) setSpeakingTextEntered(data.transcript);
       setVoiceSupportMessage('Шинжилгээ бэлэн боллоо! Доороос үр дүнгээ хараарай.');
     } catch (e) {
@@ -716,6 +984,7 @@ export default function App() {
       });
       const data = await response.json();
       setWritingEvaluation(data);
+      if (data.isCorrect) recordStudyActivity('lesson:writing-translation');
     } catch (e) {
       console.error(e);
     } finally {
@@ -756,6 +1025,7 @@ export default function App() {
       });
       const data = await response.json();
       setWriteFeedback(data);
+      if (data.isCorrect) recordStudyActivity(activityKey(`write:${ctx.level}`, ctx.prompt));
     } catch (e) {
       console.error('Composition evaluation failed:', e);
       setWriteFeedback({
@@ -792,9 +1062,8 @@ export default function App() {
     const isCorrect = JSON.stringify(listeningDropZone) === JSON.stringify(LISTENING_LESSON.correctOrder);
     setListeningFeedback({ isCorrect, show: true });
     
-    // Add streak & progress metrics dynamically if correct!
     if (isCorrect) {
-      setLessonProgress(prev => Math.min(prev + 10, 100));
+      recordStudyActivity('lesson:listening-order');
     }
   };
 
@@ -810,7 +1079,7 @@ export default function App() {
     setReadingQuizAnswer(choiceIndex);
     if (choiceIndex === READING_LESSON.correctChoiceIndex) {
       setReadingQuizFeedback('correct');
-      setLessonProgress(prev => Math.min(prev + 15, 100));
+      recordStudyActivity('lesson:reading-quiz');
     } else {
       setReadingQuizFeedback('incorrect');
     }
@@ -821,6 +1090,8 @@ export default function App() {
     setVocabFlipped(false);
     if (knows) {
       setVocabMemorizedCount(prev => Math.min(prev + 1, vocabTotalCount));
+      const word = vocabList[currentVocabIndex];
+      recordStudyActivity(activityKey('vocab', word.rank ?? `${word.german}-${word.mongolian}`));
     }
     // Advance carousel index
     setTimeout(() => {
@@ -834,7 +1105,7 @@ export default function App() {
     // Correct option is "Өдрийн мэнд" which is index 1
     if (optionIndex === 1) {
       setCoreLessonFeedback('correct');
-      setStreak(prev => prev + 1);
+      recordStudyActivity('lesson:core-guten-tag');
     } else {
       setCoreLessonFeedback('incorrect');
     }
@@ -1206,6 +1477,8 @@ export default function App() {
   const renderProfileTab = () => {
     if (!currentUser) return null;
 
+    const completedCount = completedActivityIds.length;
+    const lastStudyDay = studyDays[studyDays.length - 1];
     // We draw an SVG line chart representing study hours (learningCurve)
     const maxHours = Math.max(...currentUser.learningCurve.map(c => c.hours), 4);
     const points = currentUser.learningCurve.map((c, i) => {
@@ -1280,6 +1553,7 @@ export default function App() {
             <div className="flex-grow">
               <p className="text-xs text-slate-400 font-bold uppercase font-space">Прогресс</p>
               <h3 className="text-xl font-black">{lessonProgress}% дууссан</h3>
+              <p className="text-[11px] text-purple-300 font-bold">{completedCount}/{TRACKABLE_ACTIVITY_TOTAL} дасгал</p>
               {/* Progress bar inside card */}
               <div className="w-full h-1.5 bg-white/5 rounded-full mt-1.5 overflow-hidden">
                 <div className="h-full bg-purple-500 rounded-full" style={{ width: `${lessonProgress}%` }} />
@@ -1294,8 +1568,10 @@ export default function App() {
             </div>
             <div>
               <p className="text-xs text-slate-400 font-bold uppercase font-space">Судлагдсан сэдэв</p>
-              <h3 className="text-xl font-black">{currentUser.completedLessons} хичээл</h3>
-              <p className="text-[11px] text-blue-300 font-bold">Нийт амжилттай хаалт хийсэн</p>
+              <h3 className="text-xl font-black">{completedCount} дасгал</h3>
+              <p className="text-[11px] text-blue-300 font-bold">
+                {lastStudyDay ? `Сүүлд: ${lastStudyDay}` : 'Эхний дасгалаа дуусгаарай'}
+              </p>
             </div>
           </div>
         </div>
@@ -1623,7 +1899,7 @@ export default function App() {
                 <div>
                   <p className="text-[12px] font-space text-outline font-bold uppercase">Прогресс</p>
                   <p className="text-2xl font-black text-primary flex items-center justify-center gap-1">
-                    <CheckCircle className="w-6 h-6 text-secondary fill-secondary-container" /> +10%
+                    <CheckCircle className="w-6 h-6 text-secondary fill-secondary-container" /> {lessonProgress}%
                   </p>
                 </div>
               </div>
@@ -1662,7 +1938,6 @@ export default function App() {
                     setCoreLessonStep(1);
                     setCoreLessonAnswer(null);
                     setCoreLessonFeedback(null);
-                    setLessonProgress(prev => Math.min(prev + 10, 100));
                   }
                 }}
                 className={`px-8 py-3 font-sans font-bold text-[16px] rounded-xl border-2 border-on-background transition-all block-shadow w-full sm:w-auto cursor-pointer ${
@@ -1717,13 +1992,13 @@ export default function App() {
         )}
 
         {/* Dynamic Streak Badge Card */}
-        <div onClick={() => setStreak(prev => prev + 1)} className="cursor-pointer">
-          <div className="bg-white/5 hover:bg-white/10 hover:scale-[1.02] active:scale-95 transition-all text-white text-[14px] font-bold rounded-xl px-4 py-3 flex items-center justify-between border border-white/10">
+        <div>
+          <div className="bg-white/5 text-white text-[14px] font-bold rounded-xl px-4 py-3 flex items-center justify-between border border-white/10">
             <span className="flex items-center gap-2 text-purple-300">
               <Flame className="w-5 h-5 text-purple-400 fill-purple-400 animate-pulse" />
               Streak: {streak} өдөр
             </span>
-            <span className="text-[11px] font-space bg-gradient-to-r from-purple-500 to-blue-500 text-white px-2.5 py-0.5 rounded-full font-extrabold uppercase tracking-wide">LIVE</span>
+            <span className="text-[11px] font-space bg-gradient-to-r from-purple-500 to-blue-500 text-white px-2.5 py-0.5 rounded-full font-extrabold uppercase tracking-wide">AUTO</span>
           </div>
         </div>
 
@@ -2134,7 +2409,10 @@ export default function App() {
                           choices={item.choices}
                           correctIndex={item.correctIndex}
                           selectedAnswer={libReadAnswer}
-                          onSelect={setLibReadAnswer}
+                          onSelect={(index) => {
+                            setLibReadAnswer(index);
+                            if (index === item.correctIndex) recordStudyActivity(activityKey('library:read', item.id));
+                          }}
                         />
                       </div>
                     </section>
@@ -2398,7 +2676,10 @@ export default function App() {
                           choices={item.choices}
                           correctIndex={item.correctIndex}
                           selectedAnswer={libListenAnswer}
-                          onSelect={setLibListenAnswer}
+                          onSelect={(index) => {
+                            setLibListenAnswer(index);
+                            if (index === item.correctIndex) recordStudyActivity(activityKey('library:listen', item.id));
+                          }}
                         />
                       </div>
                     </section>
@@ -2958,7 +3239,6 @@ export default function App() {
                             onClick={() => {
                               setWritingEvaluation(null);
                               setWritingInput('');
-                              setLessonProgress(prev => Math.min(prev + 15, 100));
                             }}
                             className="px-6 py-2.5 bg-secondary text-on-secondary font-bold text-sm border-2 border-on-background rounded-xl hover:bg-on-secondary-fixed-variant transition-colors block-shadow cursor-pointer flex items-center gap-1"
                           >
@@ -3784,7 +4064,10 @@ export default function App() {
                                 choices={r.choices}
                                 correctIndex={r.correctIndex}
                                 selectedAnswer={examItemAns}
-                                onSelect={setExamItemAns}
+                                onSelect={(index) => {
+                                  setExamItemAns(index);
+                                  if (index === r.correctIndex) recordStudyActivity(activityKey(`exam:${exam.level}:reading`, r.id));
+                                }}
                               />
                             </div>
                           </>
@@ -3816,7 +4099,10 @@ export default function App() {
                                 choices={l.choices}
                                 correctIndex={l.correctIndex}
                                 selectedAnswer={examItemAns}
-                                onSelect={setExamItemAns}
+                                onSelect={(index) => {
+                                  setExamItemAns(index);
+                                  if (index === l.correctIndex) recordStudyActivity(activityKey(`exam:${exam.level}:listening`, l.id));
+                                }}
                               />
                             </div>
                           </>
@@ -3987,24 +4273,10 @@ export default function App() {
 
                   <div className="flex justify-between items-center p-3 border-2 border-on-background rounded-xl bg-white select-none block-shadow">
                     <div>
-                      <h5 className="text-sm font-bold">Интерактив Streak-ийг өсгөх</h5>
-                      <p className="text-[11px] text-outline">Өдөр тутмын streak-ийн тоог идэвхжүүлэх.</p>
+                      <h5 className="text-sm font-bold">Streak автоматаар тооцох</h5>
+                      <p className="text-[11px] text-outline">Зөв дуусгасан дасгалтай өдөр streak-д автоматаар орно.</p>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <button 
-                        onClick={() => setStreak(prev => Math.max(0, prev - 1))}
-                        className="w-8 h-8 rounded border-2 border-on-background font-black flex items-center justify-center text-on-surface hover:bg-slate-100 block-shadow text-xs cursor-pointer"
-                      >
-                        -
-                      </button>
-                      <span className="font-bold text-sm bg-surface-container px-3 py-1 border border-on-background rounded-lg">{streak}</span>
-                      <button 
-                        onClick={() => setStreak(prev => prev + 1)}
-                        className="w-8 h-8 rounded border-2 border-on-background font-black flex items-center justify-center text-on-surface hover:bg-slate-100 block-shadow text-xs cursor-pointer"
-                      >
-                        +
-                      </button>
-                    </div>
+                    <span className="font-bold text-sm bg-surface-container px-3 py-1 border border-on-background rounded-lg">{streak} өдөр</span>
                   </div>
                 </div>
 

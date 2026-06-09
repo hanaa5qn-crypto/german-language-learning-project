@@ -24,7 +24,7 @@ export function registerEvaluateWritingRoute(app: Express) {
       consumeBudget();
       try {
         const response = await ai.models.generateContent({
-          model: 'gemini-3.5-flash',
+          model: 'gemini-2.5-flash',
           contents: `Evaluate this translation for a German language learning course where the target audience is Mongolian.
 Query task: Translate Mongolian sentence "${promptText}" into German.
 Course expected German target sentence: "${targetSentence}"

@@ -1,21 +1,10 @@
 {
   "version": 2,
-  "outputDirectory": "dist",
-  "rewrites": [
-    {
-      "source": "/api/(.*)",
-      "destination": "/api/index.ts"
-    },
-    {
-      "source": "/(.*)",
-      "destination": "/$1"
-    }
-  ],
   "experimentalServices": {
     "vivid-lingua": {
       "type": "web",
       "routePrefix": "/",
-      "framework": "vite",
+      "entrypoint": "dist/server.cjs",
       "buildCommand": "npm install --include=dev && npm run build"
     }
   }

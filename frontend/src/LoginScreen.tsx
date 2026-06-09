@@ -12,6 +12,14 @@ type Mode = 'login' | 'signup';
 function friendlyAuthError(err: unknown): string {
   const code = (err as { code?: string })?.code ?? '';
   switch (code) {
+    case 'auth/configuration-not-found':
+    case 'auth/operation-not-allowed':
+      return 'Firebase Authentication дээр Email/Password нэвтрэлтийг Enable хийгээгүй байна.';
+    case 'auth/unauthorized-domain':
+      return 'Энэ Vercel домэйн Firebase дээр зөвшөөрөгдөөгүй байна. Firebase Authentication → Settings → Authorized domains хэсэгт Vercel домэйноо нэмнэ үү.';
+    case 'auth/invalid-api-key':
+    case 'auth/api-key-not-valid.-please-pass-a-valid-api-key':
+      return 'Firebase web config буруу байна. frontend/src/firebaseConfig.ts доторх apiKey болон projectId-оо шалгана уу.';
     case 'auth/invalid-email':
       return 'Зөв имэйл хаяг оруулна уу (жишээ: нэр@gmail.com).';
     case 'auth/email-already-in-use':
@@ -28,8 +36,14 @@ function friendlyAuthError(err: unknown): string {
       return 'Хэт олон оролдлого хийсэн байна. Түр хүлээгээд дахин оролдоно уу.';
     case 'auth/network-request-failed':
       return 'Сүлжээний алдаа гарлаа. Интернэт холболтоо шалгана уу.';
+    case 'permission-denied':
+      return 'Firestore зөвшөөрөл хаалттай байна. Firestore database үүсгэсэн эсэх болон firestore.rules publish хийсэн эсэхээ шалгана уу.';
+    case 'failed-precondition':
+      return 'Firestore database эсвэл индексийн тохиргоо дутуу байна. Firebase Console дээр Firestore Database үүсгэсэн эсэхээ шалгана уу.';
+    case 'unavailable':
+      return 'Firebase түр холбогдохгүй байна. Түр хүлээгээд дахин оролдоно уу.';
     default:
-      return 'Алдаа гарлаа. Дахин оролдоно уу.';
+      return code ? `Алдаа гарлаа (${code}). Firebase тохиргоогоо шалгаад дахин оролдоно уу.` : 'Алдаа гарлаа. Дахин оролдоно уу.';
   }
 }
 
@@ -116,6 +130,7 @@ export default function LoginScreen() {
       // Success → App's auth listener unmounts this screen. Keep the button in
       // its loading state until that happens.
     } catch (err) {
+      console.error('Authentication request failed:', err);
       setError(friendlyAuthError(err));
       setSubmitting(false);
     }
@@ -303,9 +318,9 @@ export default function LoginScreen() {
               )}
 
               {error && (
-                <div className="text-red-400 text-xs font-bold bg-red-950/40 p-3 rounded-lg border border-red-500/30 flex items-center gap-2">
+                <div className="text-red-400 text-xs font-bold bg-red-950/40 p-3 rounded-lg border border-red-500/30 flex items-start gap-2">
                   <AlertCircle className="w-4 h-4 flex-shrink-0" />
-                  {error}
+                  <span className="min-w-0 break-words">{error}</span>
                 </div>
               )}
 
