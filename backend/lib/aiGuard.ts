@@ -19,23 +19,55 @@ export const AI_LIMITS = {
 };
 
 export function clientIp(req: Request): string {
-  // Needs `app.set('trust proxy', …)` to read the real client IP behind a proxy.
+  // Check X-Real-IP first (safely set by Vercel/Render edge proxies)
+  const realIp = req.headers['x-real-ip'];
+  if (realIp && typeof realIp === 'string') {
+    return realIp;
+  }
+
+  // Fall back to X-Forwarded-For if it exists (extract client IP)
+  const forwardedFor = req.headers['x-forwarded-for'];
+  if (forwardedFor && typeof forwardedFor === 'string') {
+    const ips = forwardedFor.split(',');
+    if (ips[0]) return ips[0].trim();
+  }
+
+  // Local/direct connection fallback
   return (req.ip || req.socket?.remoteAddress || 'unknown').toString();
 }
 
-// --- per-IP sliding-window rate limit (shared across all AI endpoints) -------
+// --- per-IP fixed-window rate limit (shared across all AI endpoints) -------
 const WINDOW_MS = 60_000;
-const hits = new Map<string, number[]>();
+interface RateLimitRecord {
+  count: number;
+  resetTime: number;
+}
+const hits = new Map<string, RateLimitRecord>();
+
 export function rateLimited(ip: string): boolean {
   const now = Date.now();
-  const recent = (hits.get(ip) || []).filter((t) => now - t < WINDOW_MS);
-  recent.push(now);
-  hits.set(ip, recent);
-  // Opportunistic cleanup so the map can't grow unbounded.
-  if (hits.size > 5000) {
-    for (const [k, v] of hits) if (v.every((t) => now - t >= WINDOW_MS)) hits.delete(k);
+  const record = hits.get(ip);
+
+  if (!record || now > record.resetTime) {
+    // Window expired or new IP connection
+    hits.set(ip, {
+      count: 1,
+      resetTime: now + WINDOW_MS,
+    });
+
+    // Proactive cleanup of expired records if memory usage grows
+    if (hits.size > 2000) {
+      for (const [k, v] of hits.entries()) {
+        if (now > v.resetTime) {
+          hits.delete(k);
+        }
+      }
+    }
+    return false;
   }
-  return recent.length > AI_LIMITS.ratePerMin;
+
+  record.count++;
+  return record.count > AI_LIMITS.ratePerMin;
 }
 
 // --- global daily AI-call budget (resets at UTC midnight) --------------------
