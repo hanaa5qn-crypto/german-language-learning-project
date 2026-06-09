@@ -350,7 +350,7 @@ function MCQBlock({
           const isSel = selectedAnswer === i;
           const isOptionCorrect = i === correctIndex;
           
-          let containerClass = "bg-white";
+          let containerClass = "";
           let circleClass = "bg-white";
           let borderEffect = null;
           
@@ -364,7 +364,7 @@ function MCQBlock({
               circleClass = "bg-error text-white";
               borderEffect = <div className="absolute inset-0 border-2 border-error rounded-xl pointer-events-none"></div>;
             } else {
-              containerClass = "bg-white opacity-60 border-on-background/40";
+              containerClass = "opacity-60 border-on-background/40";
             }
           }
           
@@ -1527,7 +1527,7 @@ function LearnerApp() {
             value={speakingTextEntered}
             onChange={(e) => setSpeakingTextEntered(e.target.value)}
             maxLength={500}
-            className="flex-grow bg-white border-2 border-on-background font-bold text-sm px-3 py-2 rounded-xl outline-none focus:border-primary transition-all text-slate-900"
+            className="flex-grow bg-surface-container-low border-2 border-on-background font-bold text-sm px-3 py-2 rounded-xl outline-none focus:border-primary transition-all text-on-surface"
           />
           <button
             onClick={() => evaluateSpeechText(speakingTextEntered, target)}
@@ -1547,7 +1547,7 @@ function LearnerApp() {
       <div className="w-full flex flex-col gap-4 animate-scale-up">
 
         {/* Headline + summary */}
-        <div className="w-full bg-white border-2 border-on-background rounded-xl p-6 flex items-start gap-4 shadow-sm block-shadow">
+        <div className="w-full border-2 border-on-background rounded-xl p-6 flex items-start gap-4 shadow-sm block-shadow">
           <div className={`w-11 h-11 rounded-full flex items-center justify-center border-2 border-on-background shrink-0 block-shadow ${
             speakingEvaluation.isCorrect ? 'bg-secondary-container' : 'bg-error-container'
           }`}>
@@ -1571,7 +1571,7 @@ function LearnerApp() {
               const tone = v >= 75 ? 'text-secondary' : v >= 50 ? 'text-yellow-600' : 'text-error';
               const barTone = v >= 75 ? 'bg-secondary' : v >= 50 ? 'bg-yellow-500' : 'bg-error';
               return (
-                <div key={i} className="bg-white border-2 border-on-background rounded-xl p-4 block-shadow flex flex-col items-center text-center">
+                <div key={i} className="border-2 border-on-background rounded-xl p-4 block-shadow flex flex-col items-center text-center">
                   <s.icon className={`w-5 h-5 mb-1 ${tone}`} />
                   <span className={`text-3xl font-black font-space ${tone}`}>{v}</span>
                   <span className="text-[10px] font-bold uppercase text-outline tracking-wide mt-0.5">{s.label}</span>
@@ -1602,7 +1602,7 @@ function LearnerApp() {
             { label: 'Дүрэм', text: speakingEvaluation.grammarFeedback, icon: SpellCheck, tint: 'bg-error-container' },
             { label: 'Үгсийн сан', text: speakingEvaluation.vocabularyFeedback, icon: BookOpen, tint: 'bg-primary-container' },
           ].filter((c) => c.text).map((c, i) => (
-            <div key={i} className="bg-white border-2 border-on-background rounded-xl p-4 block-shadow">
+            <div key={i} className="border-2 border-on-background rounded-xl p-4 block-shadow">
               <p className="text-xs font-black uppercase text-on-surface mb-1.5 flex items-center gap-1.5">
                 <span className={`w-6 h-6 rounded-full ${c.tint} border-2 border-on-background flex items-center justify-center`}>
                   <c.icon className="w-3.5 h-3.5" />
@@ -1692,7 +1692,7 @@ function LearnerApp() {
       <div className="w-full flex flex-col gap-4 mt-5 animate-scale-up">
 
         {/* Headline + summary */}
-        <div className="w-full bg-white border-2 border-on-background rounded-xl p-6 flex items-start gap-4 shadow-sm block-shadow">
+        <div className="w-full border-2 border-on-background rounded-xl p-6 flex items-start gap-4 shadow-sm block-shadow">
           <div className={`w-11 h-11 rounded-full flex items-center justify-center border-2 border-on-background shrink-0 block-shadow ${
             writeFeedback.isCorrect ? 'bg-secondary-container' : 'bg-error-container'
           }`}>
@@ -1716,7 +1716,7 @@ function LearnerApp() {
               const tone = v >= 75 ? 'text-secondary' : v >= 50 ? 'text-yellow-600' : 'text-error';
               const barTone = v >= 75 ? 'bg-secondary' : v >= 50 ? 'bg-yellow-500' : 'bg-error';
               return (
-                <div key={i} className="bg-white border-2 border-on-background rounded-xl p-4 block-shadow flex flex-col items-center text-center">
+                <div key={i} className="border-2 border-on-background rounded-xl p-4 block-shadow flex flex-col items-center text-center">
                   <s.icon className={`w-5 h-5 mb-1 ${tone}`} />
                   <span className={`text-3xl font-black font-space ${tone}`}>{v}</span>
                   <span className="text-[10px] font-bold uppercase text-outline tracking-wide mt-0.5">{s.label}</span>
@@ -1751,7 +1751,7 @@ function LearnerApp() {
 
         {/* Specific corrections — wrong grammar / wrong word → better wording */}
         {(writeFeedback.corrections?.length || 0) > 0 && (
-          <div className="bg-white border-2 border-on-background rounded-xl p-4 block-shadow">
+          <div className="border-2 border-on-background rounded-xl p-4 block-shadow">
             <p className="text-xs font-black uppercase text-on-surface mb-3 flex items-center gap-1.5">
               <SpellCheck className="w-4 h-4 text-primary" /> Засварууд ({writeFeedback.corrections!.length})
             </p>
@@ -1778,7 +1778,7 @@ function LearnerApp() {
               { label: 'Дүрэм', text: writeFeedback.grammarFeedback, icon: SpellCheck, tint: 'bg-error-container' },
               { label: 'Үгсийн сан', text: writeFeedback.vocabularyFeedback, icon: BookOpen, tint: 'bg-primary-container' },
             ].filter((c) => c.text).map((c, i) => (
-              <div key={i} className="bg-white border-2 border-on-background rounded-xl p-4 block-shadow">
+              <div key={i} className="border-2 border-on-background rounded-xl p-4 block-shadow">
                 <p className="text-xs font-black uppercase text-on-surface mb-1.5 flex items-center gap-1.5">
                   <span className={`w-6 h-6 rounded-full ${c.tint} border-2 border-on-background flex items-center justify-center`}>
                     <c.icon className="w-3.5 h-3.5" />
@@ -2204,7 +2204,7 @@ function LearnerApp() {
                       <Mic className="w-5 h-5" />
                     </span>
                     <div>
-                      <p className="text-[10px] text-slate-550 font-bold uppercase font-space">ЯРИХ</p>
+                      <p className="text-[10px] text-slate-500 font-bold uppercase font-space">ЯРИХ</p>
                       <p className="text-xs text-slate-400 font-medium">Бүгд дууссан</p>
                     </div>
                   </div>
@@ -2781,7 +2781,7 @@ function LearnerApp() {
               <p className="text-body-lg text-on-surface-variant max-w-md mb-8">
                 Баяр хүргэе! Та өнөөдрийн quick-lesson даалгаврыг амжилттай дуусгаж, Германы суурь мэндийг цээжиллээ.
               </p>
-              <div className="bg-white border-2 border-on-background rounded-xl p-6 max-w-sm block-shadow w-full flex justify-around items-center">
+              <div className="border-2 border-on-background rounded-xl p-6 max-w-sm block-shadow w-full flex justify-around items-center">
                 <div>
                   <p className="text-[12px] font-space text-outline font-bold uppercase">Streak</p>
                   <p className="text-2xl font-black text-secondary flex items-center justify-center gap-1">
@@ -3036,7 +3036,7 @@ function LearnerApp() {
       </nav>
 
       {/* Shared TopAppBar - Mobile Only */}
-      <header className="md:hidden flex justify-between items-center w-full px-4 h-16 bg-white border-b-2 border-on-background fixed top-0 left-0 z-40 shrink-0">
+      <header className="md:hidden flex justify-between items-center w-full px-4 h-16 bg-surface border-b-2 border-on-background fixed top-0 left-0 z-40 shrink-0">
         <button 
           onClick={() => setMobileMenuOpen(prev => !prev)}
           className="text-primary p-2 border-2 border-on-background rounded-lg bg-surface-container-low hover:bg-surface shadow-[2px_2px_0_0_#1E293B] cursor-pointer"
@@ -3246,7 +3246,7 @@ function LearnerApp() {
                 return (
                   <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
                     {/* List of readings */}
-                    <aside className="lg:col-span-4 bg-white border-2 border-on-background rounded-xl p-4 block-shadow">
+                    <aside className="lg:col-span-4 border-2 border-on-background rounded-xl p-4 block-shadow">
                       <div className="flex gap-1 mb-3">
                         {LIB_LEVELS.map(lv => (
                           <button key={lv} onClick={() => setLibReadLevel(lv)}
@@ -3276,14 +3276,14 @@ function LearnerApp() {
                     </aside>
 
                     {/* Reader */}
-                    <section className="lg:col-span-8 bg-white border-2 border-on-background rounded-xl p-6 md:p-8 block-shadow text-slate-800">
+                    <section className="lg:col-span-8 border-2 border-on-background rounded-xl p-6 md:p-8 block-shadow text-on-surface">
                       {lockedActivityIds.read.has(item.id) && item.level === currentUser?.targetLevel ? (
                         <div className="flex flex-col items-center justify-center py-16 text-center space-y-4">
-                          <div className="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center text-slate-400">
+                          <div className="w-16 h-16 rounded-full bg-surface-container-high flex items-center justify-center text-on-surface-variant">
                             <Shield className="w-8 h-8" />
                           </div>
-                          <h2 className="text-xl font-bold text-slate-800">🔒 Энэ дасгал түгжигдсэн байна</h2>
-                          <p className="text-sm text-slate-500 max-w-sm font-sans font-medium">
+                          <h2 className="text-xl font-bold text-on-surface">🔒 Энэ дасгал түгжигдсэн байна</h2>
+                          <p className="text-sm text-on-surface-variant max-w-sm font-sans font-medium">
                             Шалгалт өгөх эсвэл өмнөх хэсгийг дуусгаж нээнэ үү.
                           </p>
                           <button 
@@ -3387,7 +3387,7 @@ function LearnerApp() {
                 const answered = libListenAnswer !== null;
                 return (
                   <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-                    <aside className="lg:col-span-4 bg-white border-2 border-on-background rounded-xl p-4 block-shadow">
+                    <aside className="lg:col-span-4 border-2 border-on-background rounded-xl p-4 block-shadow">
                       <div className="flex gap-1 mb-3">
                         {LIB_LEVELS.map(lv => (
                           <button key={lv} onClick={() => setLibListenLevel(lv)}
@@ -3416,14 +3416,14 @@ function LearnerApp() {
                       </div>
                     </aside>
 
-                    <section className="lg:col-span-8 bg-white border-2 border-on-background rounded-xl p-6 md:p-8 block-shadow text-slate-800">
+                    <section className="lg:col-span-8 border-2 border-on-background rounded-xl p-6 md:p-8 block-shadow text-on-surface">
                       {lockedActivityIds.listen.has(item.id) && item.level === currentUser?.targetLevel ? (
                         <div className="flex flex-col items-center justify-center py-16 text-center space-y-4">
-                          <div className="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center text-slate-400">
+                          <div className="w-16 h-16 rounded-full bg-surface-container-high flex items-center justify-center text-on-surface-variant">
                             <Shield className="w-8 h-8" />
                           </div>
-                          <h2 className="text-xl font-bold text-slate-800">🔒 Энэ дасгал түгжигдсэн байна</h2>
-                          <p className="text-sm text-slate-500 max-w-sm font-sans font-medium">
+                          <h2 className="text-xl font-bold text-on-surface">🔒 Энэ дасгал түгжигдсэн байна</h2>
+                          <p className="text-sm text-on-surface-variant max-w-sm font-sans font-medium">
                             Шалгалт өгөх эсвэл өмнөх хэсгийг дуусгаж нээнэ үү.
                           </p>
                           <button 
@@ -3541,7 +3541,7 @@ function LearnerApp() {
                 const item = SPEAKING_LIBRARY.find(r => r.id === libSpeakId) || SPEAKING_LIBRARY[0];
                 return (
                   <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-                    <aside className="lg:col-span-4 bg-white border-2 border-on-background rounded-xl p-4 block-shadow">
+                    <aside className="lg:col-span-4 border-2 border-on-background rounded-xl p-4 block-shadow">
                       <div className="flex gap-1 mb-3">
                         {LIB_LEVELS.map(lv => (
                           <button key={lv} onClick={() => setLibSpeakLevel(lv)}
@@ -3570,14 +3570,14 @@ function LearnerApp() {
                       </div>
                     </aside>
 
-                    <section className="lg:col-span-8 bg-white border-2 border-on-background rounded-xl p-6 md:p-8 block-shadow text-slate-800">
+                    <section className="lg:col-span-8 border-2 border-on-background rounded-xl p-6 md:p-8 block-shadow text-on-surface">
                       {lockedActivityIds.speak.has(item.id) && item.level === currentUser?.targetLevel ? (
                         <div className="flex flex-col items-center justify-center py-16 text-center space-y-4">
-                          <div className="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center text-slate-400">
+                          <div className="w-16 h-16 rounded-full bg-surface-container-high flex items-center justify-center text-on-surface-variant">
                             <Shield className="w-8 h-8" />
                           </div>
-                          <h2 className="text-xl font-bold text-slate-800">🔒 Энэ дасгал түгжигдсэн байна</h2>
-                          <p className="text-sm text-slate-500 max-w-sm font-sans font-medium">
+                          <h2 className="text-xl font-bold text-on-surface">🔒 Энэ дасгал түгжигдсэн байна</h2>
+                          <p className="text-sm text-on-surface-variant max-w-sm font-sans font-medium">
                             Шалгалт өгөх эсвэл өмнөх хэсгийг дуусгаж нээнэ үү.
                           </p>
                           <button 
@@ -3657,7 +3657,7 @@ function LearnerApp() {
                 const words = libWriteText.trim() ? libWriteText.trim().split(/\s+/).length : 0;
                 return (
                   <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-                    <aside className="lg:col-span-4 bg-white border-2 border-on-background rounded-xl p-4 block-shadow">
+                    <aside className="lg:col-span-4 border-2 border-on-background rounded-xl p-4 block-shadow">
                       <div className="flex gap-1 mb-3">
                         {LIB_LEVELS.map(lv => (
                           <button key={lv} onClick={() => setLibWriteLevel(lv)}
@@ -3686,14 +3686,14 @@ function LearnerApp() {
                       </div>
                     </aside>
 
-                    <section className="lg:col-span-8 bg-white border-2 border-on-background rounded-xl p-6 md:p-8 block-shadow text-slate-800">
+                    <section className="lg:col-span-8 border-2 border-on-background rounded-xl p-6 md:p-8 block-shadow text-on-surface">
                       {lockedActivityIds.write.has(item.id) && item.level === currentUser?.targetLevel ? (
                         <div className="flex flex-col items-center justify-center py-16 text-center space-y-4">
-                          <div className="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center text-slate-400">
+                          <div className="w-16 h-16 rounded-full bg-surface-container-high flex items-center justify-center text-on-surface-variant">
                             <Shield className="w-8 h-8" />
                           </div>
-                          <h2 className="text-xl font-bold text-slate-800">🔒 Энэ дасгал түгжигдсэн байна</h2>
-                          <p className="text-sm text-slate-500 max-w-sm font-sans font-medium">
+                          <h2 className="text-xl font-bold text-on-surface">🔒 Энэ дасгал түгжигдсэн байна</h2>
+                          <p className="text-sm text-on-surface-variant max-w-sm font-sans font-medium">
                             Шалгалт өгөх эсвэл өмнөх хэсгийг дуусгаж нээнэ үү.
                           </p>
                           <button 
@@ -3719,7 +3719,7 @@ function LearnerApp() {
 
                       <textarea value={libWriteText} onChange={(e) => setLibWriteText(e.target.value)}
                         placeholder="Энд герман хэлээр бичнэ үү..." rows={6} maxLength={2000}
-                        className="w-full px-3 py-2 text-sm border-2 border-on-background rounded-lg bg-white text-slate-900 placeholder:text-slate-400 outline-none focus:border-secondary resize-y" />
+                        className="w-full px-3 py-2 text-sm border-2 border-on-background rounded-lg bg-surface-container-low text-on-surface placeholder:text-outline outline-none focus:border-secondary resize-y" />
 
                       <div className="flex items-center justify-between mt-3">
                         <span className="text-[11px] text-on-surface-variant">{words} үг</span>
@@ -3787,10 +3787,10 @@ function LearnerApp() {
                   onClick={() => setVocabFlipped(prev => !prev)}
                   className="w-full max-w-2xl aspect-[4/3] sm:aspect-video perspective-1000 cursor-pointer"
                 >
-                  <div className="relative w-full h-full transform-style-3d border-2 border-on-background rounded-2xl block-shadow bg-white">
+                  <div className="relative w-full h-full transform-style-3d border-2 border-on-background rounded-2xl block-shadow">
                     
                     {/* FRONT of the card (displays German word) - Backface hidden layout */}
-                    <div className={`absolute inset-0 w-full h-full backface-hidden bg-white text-slate-900 rounded-2xl flex flex-col items-center justify-between p-8 transition-transform duration-500 transform-style-3d ${
+                    <div className={`absolute inset-0 w-full h-full backface-hidden bg-surface-container-high text-on-surface rounded-2xl flex flex-col items-center justify-between p-8 transition-transform duration-500 transform-style-3d ${
                       vocabFlipped ? '[transform:rotateY(-180deg)]' : '[transform:rotateY(0deg)]'
                     }`}>
                       <span className="text-xs font-space font-bold text-on-surface-variant uppercase tracking-wider px-3 py-1 bg-surface-container border border-on-background rounded-full">
@@ -3817,7 +3817,7 @@ function LearnerApp() {
                             const w = vocabList[currentVocabIndex];
                             speakGerman(w.article ? `${w.article} ${w.german}` : w.german);
                           }}
-                          className="p-4 rounded-full bg-surface-container hover:bg-neutral-200 border-2 border-on-background hover:scale-110 text-secondary transition-all block-shadow cursor-pointer flex items-center justify-center"
+                          className="p-4 rounded-full bg-surface-container hover:bg-surface-container-high border-2 border-on-background hover:scale-110 text-secondary transition-all block-shadow cursor-pointer flex items-center justify-center"
                         >
                           <Volume2 className="w-8 h-8 font-black stroke-[2.5px]" />
                         </button>
@@ -3835,7 +3835,7 @@ function LearnerApp() {
                     </div>
 
                     {/* BACK of the card (displays Mongolian definitions & explanations) */}
-                    <div className={`absolute inset-0 w-full h-full backface-hidden bg-white text-slate-900 rounded-2xl flex flex-col items-center justify-between p-8 border-2 border-secondary shadow-[0_4px_16px_rgba(0,108,73,0.1)] transition-transform duration-500 transform-style-3d ${
+                    <div className={`absolute inset-0 w-full h-full backface-hidden bg-surface-container-high text-on-surface rounded-2xl flex flex-col items-center justify-between p-8 border-2 border-secondary shadow-[0_4px_16px_rgba(0,108,73,0.1)] transition-transform duration-500 transform-style-3d ${
                       vocabFlipped ? '[transform:rotateY(0deg)]' : '[transform:rotateY(180deg)]'
                     }`}>
                       <span className="text-xs font-space font-bold text-secondary bg-secondary-container px-3 py-1 border border-on-background rounded-full uppercase tracking-wider">
@@ -3848,7 +3848,7 @@ function LearnerApp() {
                         </h2>
                         
                         <div className="w-full bg-surface-container-low p-4 rounded-xl border-2 border-on-background block-shadow text-center">
-                          <p className="text-sm leading-normal text-slate-600 italic mb-2 font-sans font-bold">
+                          <p className="text-sm leading-normal text-on-surface-variant italic mb-2 font-sans font-bold">
                             "{vocabList[currentVocabIndex].exampleGerman}"
                           </p>
                           <p className="text-sm font-bold text-secondary leading-normal font-sans">
@@ -3877,7 +3877,7 @@ function LearnerApp() {
                 }`}>
                   <button
                     onClick={() => handleVocabAction(false)}
-                    className="flex-1 basis-0 flex items-center justify-center gap-2 bg-white border-2 border-orange-500 text-orange-600 hover:bg-orange-500 hover:text-white py-4 px-6 rounded-xl font-bold font-sans text-lg block-shadow-orange cursor-pointer transition-all active:scale-95"
+                    className="flex-1 basis-0 flex items-center justify-center gap-2 border-2 border-orange-500 text-orange-400 hover:bg-orange-500 hover:text-white py-4 px-6 rounded-xl font-bold font-sans text-lg block-shadow-orange cursor-pointer transition-all active:scale-95"
                   >
                     <RotateCcw className="w-5 h-5 font-black" />
                     Дахин давтах
@@ -3896,7 +3896,7 @@ function LearnerApp() {
               {/* Right Sidebar: Progression Circular SVG & upcoming word panels */}
               <aside className="lg:col-span-4 flex flex-col gap-6">
                 {/* SVGs Progress tracking ring list items */}
-                <div className="bg-white rounded-xl border-2 border-on-background p-6 block-shadow flex flex-col items-center">
+                <div className="rounded-xl border-2 border-on-background p-6 block-shadow flex flex-col items-center">
                   <h3 className="text-lg font-bold text-primary mb-6 w-full font-space pb-2 border-b border-outline-variant uppercase tracking-wider">
                     Өнөөдрийн явц
                   </h3>
@@ -3945,7 +3945,7 @@ function LearnerApp() {
                 </div>
 
                 {/* Carousel Upcoming Cards lists previews */}
-                <div className="bg-white rounded-xl border-2 border-on-background p-6 block-shadow">
+                <div className="rounded-xl border-2 border-on-background p-6 block-shadow">
                   <h3 className="text-lg font-bold text-primary mb-4 font-space pb-2 border-b border-slate-100 uppercase tracking-wider">
                     Дараагийн үгс
                   </h3>
@@ -3964,7 +3964,7 @@ function LearnerApp() {
                           className={`px-3 py-1.5 border-2 border-on-background rounded-lg text-xs font-bold tracking-tight transition-all cursor-pointer block-shadow ${
                             idx === currentVocabIndex
                               ? 'bg-primary-container text-white border-on-background'
-                              : 'bg-surface-container hover:bg-neutral-200 text-on-surface-variant'
+                              : 'bg-surface-container hover:bg-surface-container-high text-on-surface-variant'
                           }`}
                         >
                           {item.german}
@@ -3978,7 +3978,7 @@ function LearnerApp() {
                 </div>
 
                 {/* Resource card — opens the in-app dictionary (Browse) */}
-                <div className="bg-white rounded-xl border-2 border-on-background p-6 block-shadow">
+                <div className="rounded-xl border-2 border-on-background p-6 block-shadow">
                   <h3 className="text-lg font-bold text-primary mb-2 font-space pb-2 border-b border-slate-100 uppercase tracking-wider">
                     Нэмэлт эх сурвалж
                   </h3>
@@ -4003,7 +4003,7 @@ function LearnerApp() {
             <div className="flex flex-col gap-6 pb-24">
 
               {/* Header + search + filters */}
-              <div className="bg-white rounded-2xl border-2 border-on-background p-6 block-shadow flex flex-col gap-5">
+              <div className="rounded-2xl border-2 border-on-background p-6 block-shadow flex flex-col gap-5">
                 <div className="flex items-start justify-between gap-3 flex-wrap">
                   <div>
                     <h2 className="text-2xl font-black text-on-background font-space flex items-center gap-2">
@@ -4044,7 +4044,7 @@ function LearnerApp() {
                       key={c.value}
                       onClick={() => setDictClass(c.value)}
                       className={`px-3.5 py-1.5 border-2 border-on-background rounded-lg text-xs font-bold tracking-tight transition-all cursor-pointer block-shadow ${
-                        dictClass === c.value ? 'bg-primary-container text-white' : 'bg-surface-container hover:bg-neutral-200 text-on-surface-variant'
+                        dictClass === c.value ? 'bg-primary-container text-white' : 'bg-surface-container hover:bg-surface-container-high text-on-surface-variant'
                       }`}
                     >
                       {c.label}
@@ -4060,7 +4060,7 @@ function LearnerApp() {
                       key={lvl}
                       onClick={() => setDictLevel(lvl)}
                       className={`px-3.5 py-1.5 border-2 border-on-background rounded-lg text-xs font-bold tracking-tight transition-all cursor-pointer block-shadow ${
-                        dictLevel === lvl ? 'bg-secondary text-white' : 'bg-surface-container hover:bg-neutral-200 text-on-surface-variant'
+                        dictLevel === lvl ? 'bg-secondary text-white' : 'bg-surface-container hover:bg-surface-container-high text-on-surface-variant'
                       }`}
                     >
                       {lvl === 'all' ? 'Бүгд' : lvl}
@@ -4078,7 +4078,7 @@ function LearnerApp() {
 
               {/* Word cards grid */}
               {filteredDictionary.length === 0 ? (
-                <div className="bg-white rounded-2xl border-2 border-on-background p-12 block-shadow text-center">
+                <div className="rounded-2xl border-2 border-on-background p-12 block-shadow text-center">
                   <HelpCircle className="w-12 h-12 text-outline mx-auto mb-3" />
                   <p className="text-on-surface-variant font-bold font-sans">Тохирох үг олдсонгүй.</p>
                   <p className="text-xs text-outline mt-1">Хайлт эсвэл шүүлтүүрээ өөрчилж үзнэ үү.</p>
@@ -4089,7 +4089,7 @@ function LearnerApp() {
                     {filteredDictionary.slice(0, dictVisible).map((w, idx) => (
                       <div
                         key={`${w.german}-${idx}`}
-                        className="bg-white rounded-xl border-2 border-on-background p-5 block-shadow flex flex-col gap-3 hover:-translate-y-0.5 transition-transform"
+                        className="rounded-xl border-2 border-on-background p-5 block-shadow flex flex-col gap-3 hover:-translate-y-0.5 transition-transform"
                       >
                         <div className="flex items-start justify-between gap-2">
                           {w.article ? (
@@ -4121,7 +4121,7 @@ function LearnerApp() {
                           </div>
                           <button
                             onClick={() => speakGerman(w.article ? `${w.article} ${w.german}` : w.german)}
-                            className="shrink-0 p-2.5 rounded-full bg-surface-container hover:bg-neutral-200 border-2 border-on-background hover:scale-110 text-secondary transition-all cursor-pointer"
+                            className="shrink-0 p-2.5 rounded-full bg-surface-container hover:bg-surface-container-high border-2 border-on-background hover:scale-110 text-secondary transition-all cursor-pointer"
                             title="Дуудлага сонсох"
                           >
                             <Volume2 className="w-5 h-5 stroke-[2.5px]" />
@@ -4162,7 +4162,7 @@ function LearnerApp() {
                     <div className="flex justify-center mt-2">
                       <button
                         onClick={() => setDictVisible((n) => n + 24)}
-                        className="flex items-center gap-2 bg-white border-2 border-on-background text-on-background hover:bg-surface-container py-3 px-8 rounded-xl font-bold font-sans text-sm block-shadow cursor-pointer hover:scale-[1.02] active:scale-95 transition-all"
+                        className="flex items-center gap-2 border-2 border-on-background text-on-background hover:bg-surface-container py-3 px-8 rounded-xl font-bold font-sans text-sm block-shadow cursor-pointer hover:scale-[1.02] active:scale-95 transition-all"
                       >
                         <ChevronRight className="w-4 h-4 rotate-90" />
                         Цааш үзэх ({filteredDictionary.length - dictVisible})
@@ -4197,7 +4197,7 @@ function LearnerApp() {
               
               {/* Left Side: Translation Workspace */}
               <div className="lg:col-span-12 xl:col-span-7 flex flex-col gap-6">
-                <div className="bg-white rounded-xl p-6 md:p-8 border-2 border-on-background block-shadow relative">
+                <div className="rounded-xl p-6 md:p-8 border-2 border-on-background block-shadow relative">
                   
                   {/* Neon top accent */}
                   <div className="absolute top-0 left-0 w-full h-[5px] bg-gradient-to-r from-purple-500 to-blue-500 rounded-t-xl"></div>
@@ -4214,7 +4214,7 @@ function LearnerApp() {
                     </span>
                   </div>
 
-                  <p className="text-xs text-outline mb-4 leading-relaxed font-sans text-stone-500">
+                  <p className="text-xs text-on-surface-variant mb-4 leading-relaxed font-sans">
                     Энгийн орчуулгын системүүд шиг шууд холбож орчуулахгүй, энэхүү ухаалаг систем нь өгүүлбэрийн зүй, үгс тус бүрийн хувирал, дуудлагыг дүрмийн тайлбартай хамт гаргаж заах сургалтын зориулалттай.
                   </p>
 
@@ -4223,12 +4223,12 @@ function LearnerApp() {
                       value={translationInput}
                       onChange={(e) => setTranslationInput(e.target.value)}
                       placeholder="Орчуулах герман эсвэл монгол өгүүлбэрээ энд бичнэ үү..."
-                      className="w-full min-h-[120px] bg-white border-2 border-on-background font-bold rounded-xl p-4 text-md text-slate-900 focus:border-purple-500 outline-none transition-all placeholder:text-outline resize-none shadow-inner"
+                      className="w-full min-h-[120px] bg-surface-container-low border-2 border-on-background font-bold rounded-xl p-4 text-md text-on-surface focus:border-purple-500 outline-none transition-all placeholder:text-outline resize-none shadow-inner"
                     />
                     {translationInput && (
                       <button 
                         onClick={() => setTranslationInput('')}
-                        className="absolute right-3 top-3 text-[12px] text-stone-400 font-bold border border-stone-200 bg-white hover:bg-stone-50 px-2.5 py-1 rounded-md transition-all cursor-pointer"
+                        className="absolute right-3 top-3 text-[12px] text-outline font-bold border border-outline-variant bg-surface-container hover:bg-surface-container-high px-2.5 py-1 rounded-md transition-all cursor-pointer"
                         title="Арилгах"
                       >
                         Цэвэрлэх
@@ -4238,14 +4238,14 @@ function LearnerApp() {
 
                   {/* Sample Phrases cards */}
                   <div className="mt-4">
-                    <p className="text-xs font-bold text-stone-400 font-space mb-2 uppercase">Туршиж үзэх жишээ өгүүлбэрүүд:</p>
+                    <p className="text-xs font-bold text-outline font-space mb-2 uppercase">Туршиж үзэх жишээ өгүүлбэрүүд:</p>
                     <div className="flex flex-col gap-2">
                       <button 
                         onClick={() => {
                           setTranslationInput('Ich trinke jeden Morgen eine große Tasse Kaffee in der Küche.');
                           translateText('Ich trinke jeden Morgen eine große Tasse Kaffee in der Küche.');
                         }}
-                        className="text-left py-2 px-3 bg-slate-50 border border-slate-200 rounded-lg hover:border-purple-400 text-xs font-semibold hover:bg-purple-50/20 text-stone-700 transition-all flex justify-between items-center group cursor-pointer"
+                        className="text-left py-2 px-3 bg-surface-container border border-outline-variant rounded-lg hover:border-purple-400 text-xs font-semibold hover:bg-surface-container-high text-on-surface-variant transition-all flex justify-between items-center group cursor-pointer"
                       >
                         <span>🇩🇪 "Ich trinke jeden Morgen eine große Tasse Kaffee in der Küche."</span>
                         <ArrowRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-all text-purple-500" />
@@ -4255,7 +4255,7 @@ function LearnerApp() {
                           setTranslationInput('Өнөөдөр цаг агаар сайхан байгаа тул бид цэцэрлэгт хүрээлэнд зугаална.');
                           translateText('Өнөөдөр цаг агаар сайхан байгаа тул бид цэцэрлэгт хүрээлэнд зугаална.');
                         }}
-                        className="text-left py-2 px-3 bg-slate-50 border border-slate-200 rounded-lg hover:border-purple-400 text-xs font-semibold hover:bg-purple-50/20 text-stone-700 transition-all flex justify-between items-center group cursor-pointer"
+                        className="text-left py-2 px-3 bg-surface-container border border-outline-variant rounded-lg hover:border-purple-400 text-xs font-semibold hover:bg-surface-container-high text-on-surface-variant transition-all flex justify-between items-center group cursor-pointer"
                       >
                         <span>🇲🇳 "Өнөөдөр цаг агаар сайхан байгаа тул бид цэцэрлэгт хүрээлэнд зугаална."</span>
                         <ArrowRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-all text-purple-500" />
@@ -4297,13 +4297,13 @@ function LearnerApp() {
               <div className="lg:col-span-12 xl:col-span-5 flex flex-col gap-6">
                 
                 {translationLoading ? (
-                  <div className="bg-white rounded-xl border-2 border-on-background p-8 block-shadow h-[400px] flex flex-col items-center justify-center text-center">
+                  <div className="rounded-xl border-2 border-on-background p-8 block-shadow h-[400px] flex flex-col items-center justify-center text-center">
                     <div className="relative mb-6">
                       <div className="w-16 h-16 border-4 border-purple-100 border-t-purple-500 rounded-full animate-spin"></div>
                       <Sparkles className="w-6 h-6 text-purple-400 absolute inset-0 m-auto animate-pulse" />
                     </div>
                     <h3 className="text-lg font-bold text-primary font-space mb-2">Герман Хэлний Үйлчилгээ</h3>
-                    <p className="text-xs text-stone-500 max-w-xs leading-normal">
+                    <p className="text-xs text-on-surface-variant max-w-xs leading-normal">
                       Өгүүлбэрийг орчуулж, үгс бүрийн үндсэн хэлбэрийг олох болон хэл зүйн бүтцийг судалж байна.
                     </p>
                   </div>
@@ -4311,8 +4311,8 @@ function LearnerApp() {
                   <div className="flex flex-col gap-6 animate-scale-up">
                     
                     {/* Translation Core Card */}
-                    <div className="bg-white rounded-xl border-2 border-on-background p-6 block-shadow">
-                      <div className="flex justify-between items-center pb-3 border-b border-stone-100 mb-4">
+                    <div className="rounded-xl border-2 border-on-background p-6 block-shadow">
+                      <div className="flex justify-between items-center pb-3 border-b border-outline-variant mb-4">
                         <span className="text-xs font-extrabold uppercase tracking-widest text-[#006c49] bg-emerald-50 px-2.5 py-1 rounded-md border border-emerald-100">
                           Илэрсэн хэл: {translationResult.detectedLanguage === 'German' ? '🇩🇪 Герман' : '🇲🇳 Монгол'}
                         </span>
@@ -4338,16 +4338,16 @@ function LearnerApp() {
                       </div>
 
                       <div className="mb-4">
-                        <p className="text-[10px] uppercase font-bold text-stone-400 font-space tracking-wide mb-1">Гүйцэтгэсэн Орчуулга:</p>
-                        <p className="text-lg font-black text-stone-800 leading-snug">
+                        <p className="text-[10px] uppercase font-bold text-outline font-space tracking-wide mb-1">Гүйцэтгэсэн Орчуулга:</p>
+                        <p className="text-lg font-black text-on-surface leading-snug">
                           {translationResult.translation}
                         </p>
                       </div>
 
                       {translationResult.pronunciation && (
-                        <div className="mb-1 p-3 bg-stone-50 border border-stone-100 rounded-lg">
-                          <p className="text-[10px] uppercase font-bold text-stone-400 font-space tracking-wide mb-0.5">Унших удирдамж:</p>
-                          <code className="text-xs font-mono font-bold text-purple-600">
+                        <div className="mb-1 p-3 bg-surface-container-low border border-outline-variant rounded-lg">
+                          <p className="text-[10px] uppercase font-bold text-outline font-space tracking-wide mb-0.5">Унших удирдамж:</p>
+                          <code className="text-xs font-mono font-bold text-purple-300">
                             {translationResult.pronunciation}
                           </code>
                         </div>
@@ -4355,35 +4355,35 @@ function LearnerApp() {
                     </div>
 
                     {/* Linguistic Grammar Explanation Card */}
-                    <div className="bg-white rounded-xl border-2 border-on-background p-6 block-shadow">
-                      <h3 className="text-sm font-black text-purple-600 font-space mb-3 flex items-center gap-2">
+                    <div className="rounded-xl border-2 border-on-background p-6 block-shadow">
+                      <h3 className="text-sm font-black text-purple-300 font-space mb-3 flex items-center gap-2">
                         <Lightbulb className="w-4 h-4 text-amber-500 fill-amber-300 animate-pulse" />
                         БҮТЭЦ & ДҮРМИЙН ТАЙЛБАР:
                       </h3>
-                      <p className="text-xs leading-relaxed text-stone-600 font-sans">
+                      <p className="text-xs leading-relaxed text-on-surface-variant font-sans">
                         {translationResult.grammarExplanation}
                       </p>
                     </div>
 
                     {/* Vocabulary Parsing List */}
-                    <div className="bg-white rounded-xl border-2 border-on-background p-6 block-shadow">
-                      <h3 className="text-sm font-black text-blue-600 font-space mb-4 pb-2 border-b border-stone-100 uppercase tracking-wider">
+                    <div className="rounded-xl border-2 border-on-background p-6 block-shadow">
+                      <h3 className="text-sm font-black text-secondary font-space mb-4 pb-2 border-b border-outline-variant uppercase tracking-wider">
                         Үгсийн бүтэц (Дэлгэрэнгүй):
                       </h3>
                       <div className="flex flex-col gap-3">
                         {translationResult.words && translationResult.words.map((w, index) => (
-                          <div key={index} className="flex flex-col gap-1 p-2.5 bg-slate-50 border border-slate-150 rounded-lg text-xs hover:border-purple-200 transition-all">
+                          <div key={index} className="flex flex-col gap-1 p-2.5 bg-surface-container-low border border-outline-variant rounded-lg text-xs hover:border-purple-400 transition-all">
                             <div className="flex justify-between items-center">
-                              <span className="font-extrabold text-stone-800">{w.word}</span>
+                              <span className="font-extrabold text-on-surface">{w.word}</span>
                               <span className="text-[10px] font-bold font-mono px-2 py-0.5 rounded bg-blue-100 text-blue-800">
                                 {w.partOfSpeech}
                               </span>
                             </div>
-                            <div className="text-[11px] text-stone-500 flex justify-between mt-1">
-                              <span>Толь бичгийн хэлбэр: <strong className="text-purple-600">{w.baseForm}</strong></span>
-                              <span>= <strong className="text-stone-700">{w.translation}</strong></span>
+                            <div className="text-[11px] text-on-surface-variant flex justify-between mt-1">
+                              <span>Толь бичгийн хэлбэр: <strong className="text-purple-300">{w.baseForm}</strong></span>
+                              <span>= <strong className="text-on-surface">{w.translation}</strong></span>
                             </div>
-                            <p className="text-[10.5px] text-stone-400 leading-normal mt-1 border-t border-dashed border-slate-200 pt-1">
+                            <p className="text-[10.5px] text-outline leading-normal mt-1 border-t border-dashed border-outline-variant pt-1">
                               {w.explanation}
                             </p>
                           </div>
@@ -4393,15 +4393,15 @@ function LearnerApp() {
 
                     {/* Context Examples */}
                     {translationResult.examples && translationResult.examples.length > 0 && (
-                      <div className="bg-white rounded-xl border-2 border-on-background p-6 block-shadow">
-                        <h3 className="text-sm font-black text-stone-800 font-space mb-3 uppercase tracking-wider">
+                      <div className="rounded-xl border-2 border-on-background p-6 block-shadow">
+                        <h3 className="text-sm font-black text-on-surface font-space mb-3 uppercase tracking-wider">
                           Холбогдох Жишээнүүд:
                         </h3>
                         <div className="space-y-3">
                           {translationResult.examples.map((ex, idx) => (
-                            <div key={idx} className="p-3 bg-stone-50 rounded-xl border border-stone-100">
-                              <p className="text-xs font-bold text-purple-600">🇩🇪 {ex.german}</p>
-                              <p className="text-xs text-stone-600 mt-1">🇲🇳 {ex.mongolian}</p>
+                            <div key={idx} className="p-3 bg-surface-container-low rounded-xl border border-outline-variant">
+                              <p className="text-xs font-bold text-purple-300">🇩🇪 {ex.german}</p>
+                              <p className="text-xs text-on-surface-variant mt-1">🇲🇳 {ex.mongolian}</p>
                             </div>
                           ))}
                         </div>
@@ -4410,12 +4410,12 @@ function LearnerApp() {
 
                   </div>
                 ) : (
-                  <div className="bg-white rounded-xl border-2 border-on-background p-8 block-shadow h-[320px] flex flex-col items-center justify-center text-center relative overflow-hidden group">
-                    <div className="w-16 h-16 rounded-full bg-purple-50 border border-purple-100 flex items-center justify-center text-purple-500 mb-4 transition-all group-hover:scale-110">
+                  <div className="rounded-xl border-2 border-on-background p-8 block-shadow h-[320px] flex flex-col items-center justify-center text-center relative overflow-hidden group">
+                    <div className="w-16 h-16 rounded-full bg-primary-container border border-purple-500/30 flex items-center justify-center text-purple-300 mb-4 transition-all group-hover:scale-110">
                       <Languages className="w-8 h-8 text-purple-400" />
                     </div>
                     <h3 className="text-lg font-bold text-primary font-space mb-2">Үгийн Шинжилгээ Ба Орчуулга</h3>
-                    <p className="text-xs text-stone-500 max-w-xs leading-normal font-sans">
+                    <p className="text-xs text-on-surface-variant max-w-xs leading-normal font-sans">
                       Зүүн талбар дахь өгүүлбэрийг орчуулсны дараа энд дэлгэрэнгүй толь бичиг, дуудлагын зөвлөмжүүд болон дүрэм харагдах болно.
                     </p>
                   </div>
@@ -4483,7 +4483,7 @@ function LearnerApp() {
                       const total = ex.reading.length + ex.listening.length + ex.writing.length + ex.speaking.length;
                       return (
                         <button key={lv} onClick={() => { setExamLevelSel(lv); selectExamSection('reading'); }}
-                          className="text-left bg-white border-2 border-on-background rounded-xl p-5 block-shadow hover:scale-[1.02] active:scale-95 transition-transform cursor-pointer">
+                          className="text-left border-2 border-on-background rounded-xl p-5 block-shadow hover:scale-[1.02] active:scale-95 transition-transform cursor-pointer">
                           <div className="flex items-center justify-between mb-2">
                             <span className="text-3xl font-black font-space text-on-surface">{lv}</span>
                             <span className="text-[10px] font-bold px-2 py-1 rounded-full bg-secondary text-white">{total} тест</span>
@@ -4554,7 +4554,7 @@ function LearnerApp() {
                     </div>
 
                     {/* Detail card */}
-                    <div className="bg-white border-2 border-on-background rounded-xl p-6 md:p-8 block-shadow">
+                    <div className="border-2 border-on-background rounded-xl p-6 md:p-8 block-shadow">
                       {itemLocked ? renderPlanLockCard(
                         `Тест ${examItemIdx + 1} түгжээтэй`,
                         `Үнэгүй эрхээр шалгалтын сангийн эхний ${FREE_QUESTION_LIMIT} асуулт нээлттэй. Энэ тестийг нээхийн тулд Pro эсвэл Max багц аваарай.`,
@@ -4652,7 +4652,7 @@ function LearnerApp() {
                               <ul className="text-xs text-on-surface-variant space-y-1 list-disc list-inside">{w.points.map((p, i) => <li key={i}>{p}</li>)}</ul>
                             </div>
                             <textarea value={examItemWrite} onChange={(e) => setExamItemWrite(e.target.value)} placeholder="Энд герман хэлээр бичнэ үү..." rows={6} maxLength={2000}
-                              className="w-full px-3 py-2 text-sm border-2 border-on-background rounded-lg bg-white text-slate-900 placeholder:text-slate-400 outline-none focus:border-secondary resize-y" />
+                              className="w-full px-3 py-2 text-sm border-2 border-on-background rounded-lg bg-surface-container-low text-on-surface placeholder:text-outline outline-none focus:border-secondary resize-y" />
                             <div className="flex items-center justify-between mt-3">
                               <span className="text-[11px] text-on-surface-variant">{words} үг</span>
                               <button onClick={() => setExamItemReveal(v => !v)}
@@ -4743,7 +4743,7 @@ function LearnerApp() {
 
           {/* Special view Module: Settings (Тохиргоо) view panel */}
           {activeTab === 'settings' && (
-            <div className="max-w-xl mx-auto w-full bg-white border-2 border-on-background rounded-xl p-8 block-shadow animate-fade-in pb-24">
+            <div className="max-w-xl mx-auto w-full border-2 border-on-background rounded-xl p-8 block-shadow animate-fade-in pb-24">
               <div className="flex items-center gap-3 pb-4 border-b border-outline-variant mb-6 text-primary">
                 <Settings className="w-6 h-6 outline" />
                 <h2 className="text-2xl font-extrabold font-space">Тохиргоо ба Хувийн Төлөв</h2>
@@ -4769,7 +4769,7 @@ function LearnerApp() {
                 <div className="space-y-4">
                   <h4 className="text-xs font-space font-bold uppercase text-outline">Хичээлийн тохируулга:</h4>
                   
-                  <div className="flex justify-between items-center p-3 border-2 border-on-background rounded-xl bg-white select-none block-shadow">
+                  <div className="flex justify-between items-center p-3 border-2 border-on-background rounded-xl select-none block-shadow">
                     <div>
                       <h5 className="text-sm font-bold">Орчуулга автоматаар харуулах</h5>
                       <p className="text-[11px] text-outline">Унших, сонсох зохиолд орчуулгыг шууд харуулна. Унтраалттай үед эхлээд өөрөө уншиж, гацсан үедээ "Орчуулга" товчоор нээнэ.</p>
@@ -4786,7 +4786,7 @@ function LearnerApp() {
                     </button>
                   </div>
 
-                  <div className="flex justify-between items-center p-3 border-2 border-on-background rounded-xl bg-white select-none block-shadow">
+                  <div className="flex justify-between items-center p-3 border-2 border-on-background rounded-xl select-none block-shadow">
                     <div>
                       <h5 className="text-sm font-bold">Удаан хэмнэлтийн сонсох зам</h5>
                       <p className="text-[11px] text-outline">Сонсох СД зам дээр Германы хурдыг 0.8х дээр удирдах тохиргоо.</p>
@@ -4803,7 +4803,7 @@ function LearnerApp() {
                     </button>
                   </div>
 
-                  <div className="flex justify-between items-center p-3 border-2 border-on-background rounded-xl bg-white select-none block-shadow">
+                  <div className="flex justify-between items-center p-3 border-2 border-on-background rounded-xl select-none block-shadow">
                     <div>
                       <h5 className="text-sm font-bold">Streak автоматаар тооцох</h5>
                       <p className="text-[11px] text-outline">Зөв дуусгасан дасгалтай өдөр streak-д автоматаар орно.</p>

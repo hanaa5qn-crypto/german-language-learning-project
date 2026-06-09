@@ -295,12 +295,12 @@ export default function TestDafExam({ onExit }: { onExit: () => void }) {
           </div>
           <div className="flex items-center gap-2 shrink-0">
             {timed && (
-              <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border-2 border-on-background font-mono font-black text-sm ${secLeft <= 60 ? 'bg-error text-white animate-pulse' : 'bg-white text-slate-900'}`}>
+              <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border-2 border-on-background font-mono font-black text-sm ${secLeft <= 60 ? 'bg-error text-white animate-pulse' : 'bg-surface-container-high text-on-surface'}`}>
                 <Clock className="w-4 h-4" /> {fmt(secLeft)}
               </div>
             )}
             <button onClick={onExit} title="Гарах"
-              className="p-2 rounded-full border-2 border-on-background bg-white text-slate-900 hover:bg-slate-200 cursor-pointer">
+              className="p-2 rounded-full border-2 border-on-background bg-surface-container-high text-on-surface hover:bg-surface-container cursor-pointer">
               <X className="w-4 h-4" />
             </button>
           </div>
@@ -312,7 +312,7 @@ export default function TestDafExam({ onExit }: { onExit: () => void }) {
         {/* ============ INTRO ============ */}
         {phase === 'intro' && (
           <div className="animate-fade-in">
-            <div className="bg-white border-2 border-on-background rounded-2xl p-6 md:p-8 block-shadow">
+            <div className="border-2 border-on-background rounded-2xl p-6 md:p-8 block-shadow">
               <h1 className="text-3xl font-black font-space text-on-surface mb-2">TestDaF — бүрэн загвар шалгалт</h1>
               <p className="text-sm text-on-surface-variant mb-6 leading-relaxed">
                 Энэ бол санамсаргүй 1–2 асуулт биш, <b className="text-on-surface">жинхэнэ TestDaF-ийн бүтэцтэй иж бүрэн симуляци</b>.
@@ -369,7 +369,7 @@ export default function TestDafExam({ onExit }: { onExit: () => void }) {
             {exam.listening.map((task) => {
               const used = plays[`${task.no}`] || 0;
               return (
-                <div key={task.no} className="bg-white border-2 border-on-background rounded-xl p-5 md:p-6 block-shadow">
+                <div key={task.no} className="border-2 border-on-background rounded-xl p-5 md:p-6 block-shadow">
                   <TaskHeader no={task.no} total={3} de={task.titleDe} instr={task.instructionDe} />
                   <div className="flex flex-col items-center gap-2 py-5 bg-surface-container-low border-2 border-on-background rounded-xl mb-5">
                     <button
@@ -399,7 +399,7 @@ export default function TestDafExam({ onExit }: { onExit: () => void }) {
         {phase === 'writing' && (
           <div className="animate-fade-in space-y-5">
             <SectionIntro icon={Edit3} de="Schriftlicher Ausdruck" sub={exam.writing.introDe} />
-            <div className="bg-white border-2 border-on-background rounded-xl p-5 md:p-6 block-shadow">
+            <div className="border-2 border-on-background rounded-xl p-5 md:p-6 block-shadow">
               <p className="text-sm font-bold text-on-surface mb-3">{exam.writing.graph.captionDe}</p>
               <GraphSVG graph={exam.writing.graph} />
             </div>
@@ -412,10 +412,10 @@ export default function TestDafExam({ onExit }: { onExit: () => void }) {
                 ))}
               </ul>
             </div>
-            <div className="bg-white border-2 border-on-background rounded-xl p-5 block-shadow">
+            <div className="border-2 border-on-background rounded-xl p-5 block-shadow">
               <textarea value={writeText} onChange={(e) => setWriteText(e.target.value)} rows={12} maxLength={4000}
                 placeholder="Schreiben Sie hier Ihren Text (mind. 250 Wörter)…"
-                className="w-full px-3 py-2 text-sm border-2 border-on-background rounded-lg bg-white text-slate-900 placeholder:text-slate-400 outline-none focus:border-secondary resize-y leading-relaxed" />
+                className="w-full px-3 py-2 text-sm border-2 border-on-background rounded-lg bg-surface-container-low text-on-surface placeholder:text-outline outline-none focus:border-secondary resize-y leading-relaxed" />
               <div className="flex flex-wrap items-center justify-between gap-2 mt-3">
                 <span className={`text-xs font-bold ${(writeText.trim() ? writeText.trim().split(/\s+/).length : 0) >= exam.writing.minWords ? 'text-emerald-600' : 'text-on-surface-variant'}`}>
                   {writeText.trim() ? writeText.trim().split(/\s+/).length : 0} / {exam.writing.minWords} үг
@@ -448,7 +448,7 @@ export default function TestDafExam({ onExit }: { onExit: () => void }) {
               })}
             </div>
 
-            <div className="bg-white border-2 border-on-background rounded-xl p-5 md:p-6 block-shadow">
+            <div className="border-2 border-on-background rounded-xl p-5 md:p-6 block-shadow">
               <div className="flex items-center justify-between mb-3">
                 <span className="text-xs font-space font-bold text-secondary bg-secondary-container border border-on-background px-3 py-1 rounded-full">Aufgabe {curTask.no} / 7 · {curTask.tdn}</span>
                 <span className="text-[11px] text-on-surface-variant font-mono">Vorb. {fmt(curTask.prepSeconds)} · Sprech. {fmt(curTask.speakSeconds)}</span>
@@ -528,7 +528,7 @@ export default function TestDafExam({ onExit }: { onExit: () => void }) {
           const wScore = writeFb?.overallScore ?? null;
           return (
             <div className="animate-fade-in space-y-5">
-              <div className="bg-white border-2 border-on-background rounded-2xl p-6 md:p-8 block-shadow text-center">
+              <div className="border-2 border-on-background rounded-2xl p-6 md:p-8 block-shadow text-center">
                 <Trophy className="w-12 h-12 text-yellow-400 mx-auto mb-2" />
                 <h2 className="text-2xl font-black font-space text-on-surface mb-1">Шалгалт дууслаа!</h2>
                 <p className="text-sm text-on-surface-variant">TestDaF загвар шалгалтын тойм үр дүн</p>
@@ -573,13 +573,13 @@ export default function TestDafExam({ onExit }: { onExit: () => void }) {
 
               {showModels && (
                 <div className="space-y-4">
-                  <div className="bg-white border-2 border-on-background rounded-xl p-4 block-shadow">
+                  <div className="border-2 border-on-background rounded-xl p-4 block-shadow">
                     <p className="font-black font-space text-on-surface mb-2">Schriftlicher Ausdruck · Бичих загвар хариулт</p>
                     <div className="bg-surface-container-low rounded p-3 text-sm whitespace-pre-line leading-relaxed text-on-surface font-medium">
                       {exam.writing.modelAnswer}
                     </div>
                   </div>
-                  <div className="bg-white border-2 border-on-background rounded-xl p-4 block-shadow">
+                  <div className="border-2 border-on-background rounded-xl p-4 block-shadow">
                     <p className="font-black font-space text-on-surface mb-2">Mündlicher Ausdruck · Ярих загвар хариултууд</p>
                     <div className="space-y-3">
                       {exam.speaking.map((task) => (
@@ -603,7 +603,7 @@ export default function TestDafExam({ onExit }: { onExit: () => void }) {
 // --- Дэд компонентууд --------------------------------------------------------
 function SectionIntro({ icon: Icon, de, sub }: { icon: any; de: string; sub: string }) {
   return (
-    <div className="flex items-start gap-3 bg-white border-2 border-on-background rounded-xl p-4 block-shadow">
+    <div className="flex items-start gap-3 border-2 border-on-background rounded-xl p-4 block-shadow">
       <Icon className="w-7 h-7 text-secondary shrink-0" />
       <div>
         <p className="font-black font-space text-on-surface">{de}</p>
@@ -636,7 +636,7 @@ function NextBar({ label, onNext }: { label: string; onNext: () => void }) {
 interface ReadingTaskViewProps { task: TdReadingTask; ans: Record<string, number>; setAns: (f: (a: Record<string, number>) => Record<string, number>) => void }
 const ReadingTaskView: FC<ReadingTaskViewProps> = ({ task, ans, setAns }) => {
   return (
-    <div className="bg-white border-2 border-on-background rounded-xl p-5 md:p-6 block-shadow">
+    <div className="border-2 border-on-background rounded-xl p-5 md:p-6 block-shadow">
       <TaskHeader no={task.no} total={3} de={task.titleDe} instr={task.instructionDe} />
       {task.kind === 'match' ? (
         <div className="grid md:grid-cols-2 gap-2 mb-5">
@@ -684,7 +684,7 @@ const QuestionRow: FC<QuestionRowProps> = ({ index, q, selected, onSelect, compa
 
 function ScoreCard({ icon: Icon, de, mn, detail, tdn, label, c }: { icon: any; de: string; mn: string; detail: string; tdn: string; label: string; c: string }) {
   return (
-    <div className="bg-white border-2 border-on-background rounded-xl p-4 block-shadow">
+    <div className="border-2 border-on-background rounded-xl p-4 block-shadow">
       <div className="flex items-center gap-2 mb-2">
         <Icon className={`w-5 h-5 ${c}`} />
         <div className="min-w-0">
@@ -701,7 +701,7 @@ function ScoreCard({ icon: Icon, de, mn, detail, tdn, label, c }: { icon: any; d
 
 function AnswerKey({ title, tasks, ans }: { title: string; tasks: { no: number; titleDe: string; questions: { id: string; prompt: string; choices: string[]; correctIndex: number }[] }[]; ans: Record<string, number> }) {
   return (
-    <div className="bg-white border-2 border-on-background rounded-xl p-4 block-shadow">
+    <div className="border-2 border-on-background rounded-xl p-4 block-shadow">
       <p className="font-black font-space text-on-surface mb-2">{title}</p>
       {tasks.map((t) => (
         <div key={t.no} className="mb-3">
