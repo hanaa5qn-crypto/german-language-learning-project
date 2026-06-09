@@ -14,12 +14,12 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 export const firebaseConfig = {
-  apiKey: 'PASTE_API_KEY',
-  authDomain: 'PASTE_PROJECT_ID.firebaseapp.com',
-  projectId: 'PASTE_PROJECT_ID',
-  storageBucket: 'PASTE_PROJECT_ID.appspot.com',
-  messagingSenderId: 'PASTE_SENDER_ID',
-  appId: 'PASTE_APP_ID',
+  apiKey: "AIzaSyDsDyqbk7X2RZrj3XZ1pUZirhrNncrCJDo",
+  authDomain: "gipfel-german-language-learn.firebaseapp.com",
+  projectId: "gipfel-german-language-learn",
+  storageBucket: "gipfel-german-language-learn.firebasestorage.app",
+  messagingSenderId: "531983273119",
+  appId: "1:531983273119:web:bdcec947d392229f35e6aa",
 };
 
 // Automatically becomes `true` once you replace the placeholders above.
