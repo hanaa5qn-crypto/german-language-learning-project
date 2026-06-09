@@ -32,6 +32,7 @@ import {
   buildTodaySession, TodaySession,
   localDateKey as learningLocalDateKey,
 } from './learning';
+import { buildInflectedLookup } from './inflect';
 import OnboardingWizard from './OnboardingWizard';
 import GrammarTipCard from './GrammarTipCard';
 
@@ -857,14 +858,7 @@ function LearnerApp() {
   // Fast lookup built once: lowercased German headword -> dictionary entry.
   // Powers the library vocabulary tooltips so every passage gets the same kind
   // of detailed word help the old "Дэлгэрэнгүй хичээл" lesson had — automatically.
-  const dictLookup = useMemo(() => {
-    const m = new Map<string, VocabularyWord>();
-    for (const w of DICTIONARY) {
-      const key = w.german.trim().toLowerCase();
-      if (key && !m.has(key)) m.set(key, w);
-    }
-    return m;
-  }, []);
+  const dictLookup = useMemo(() => buildInflectedLookup(DICTIONARY), []);
 
   // Render a German passage with dictionary-backed vocabulary tooltips, matching
   // the detailed-lesson look: content words get a dashed underline, hover reveals
