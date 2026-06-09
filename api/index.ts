@@ -1,2 +1,3 @@
-import { app } from '../backend/server';
+// @ts-ignore
+import app from '../dist/server.cjs';
 export default app;
