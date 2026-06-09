@@ -6,7 +6,7 @@ import {
   ChevronRight, Sparkles, HelpCircle, GraduationCap, ExternalLink, Search, Library,
   Square, AudioLines, Gauge, SpellCheck, MessageSquareText, ThumbsUp, Target,
   Mail, Lock, Loader2, QrCode, CreditCard, Shield, Calendar, Clock, Zap,
-  ListChecks, BarChart3
+  ListChecks, BarChart3, Crown
 } from 'lucide-react';
 import { TabType, VocabularyWord, WordClass, CEFRLevel } from './types';
 import { DICTIONARY } from './data';
@@ -33,6 +33,10 @@ import {
   localDateKey as learningLocalDateKey,
 } from './learning';
 import { buildInflectedLookup } from './inflect';
+import {
+  PLANS, PLAN_ORDER, PlanId, effectivePlan, isFounder as isFounderProfile,
+  canUseAi, canAccessAllContent, isExamQuestionLocked, FREE_QUESTION_LIMIT,
+} from './plans';
 import OnboardingWizard from './OnboardingWizard';
 import GrammarTipCard from './GrammarTipCard';
 
@@ -175,16 +179,23 @@ interface WritingFeedback {
 }
 
 interface PaymentMethodsResponse {
-  plan: {
-    plan: string;
-    amountMnt: number | null;
+  primary: 'qpay' | 'dummy';
+  plans: Record<'pro' | 'max', {
+    id: 'pro' | 'max';
+    name: string;
+    amountMnt: number;
     currency: string;
     interval: string;
-  };
+    aiAccess: boolean;
+  }>;
   qpay: {
     status: 'ready' | 'needs_config';
     missing: string[];
     supports: string[];
+  };
+  dummy: {
+    status: 'ready' | 'needs_config';
+    missing: string[];
   };
   alternatives: Array<{
     id: string;
@@ -193,6 +204,14 @@ interface PaymentMethodsResponse {
     supports: string[];
     note: string;
   }>;
+}
+
+interface DummyCheckoutResponse {
+  provider: 'dummy';
+  senderInvoiceNo: string;
+  plan: 'pro' | 'max';
+  amountMnt: number;
+  currency: 'MNT';
 }
 
 interface QPayCheckoutResponse {
@@ -419,6 +438,15 @@ function LearnerApp() {
   const [paymentStatusLoading, setPaymentStatusLoading] = useState(false);
   const [paymentMessage, setPaymentMessage] = useState<{ type: 'info' | 'success' | 'error'; text: string } | null>(null);
   const [qpayCheckout, setQpayCheckout] = useState<QPayCheckoutResponse | null>(null);
+  const [dummyInvoice, setDummyInvoice] = useState<DummyCheckoutResponse | null>(null);
+
+  // Subscription entitlements — what the signed-in account may open right now.
+  // Free: first FREE_QUESTION_LIMIT exam-bank questions, no AI. Pro: all content,
+  // no AI. Max/founder: everything.
+  const userPlan = effectivePlan(currentUser);
+  const founderAccess = isFounderProfile(currentUser);
+  const aiAllowed = canUseAi(currentUser);
+  const fullContent = canAccessAllContent(currentUser);
 
   // Session & UI States
   const [activeTab, setActiveTab] = useState<TabType>('read');
@@ -766,6 +794,19 @@ function LearnerApp() {
   const [translationError, setTranslationError] = useState<string | null>(null);
 
 
+  // Bearer token for the AI endpoints — the server only serves AI features to
+  // Max/founder accounts, so every AI call has to prove who is asking.
+  const aiAuthHeaders = async (): Promise<Record<string, string>> => {
+    try {
+      if (!isFirebaseConfigured) return {};
+      const user = getAuthInstance().currentUser;
+      if (!user) return {};
+      return { Authorization: `Bearer ${await user.getIdToken()}` };
+    } catch {
+      return {};
+    }
+  };
+
   const translateText = async (textToTranslate?: string) => {
     const targetText = textToTranslate !== undefined ? textToTranslate : translationInput;
     if (!targetText.trim()) return;
@@ -775,7 +816,7 @@ function LearnerApp() {
     try {
       const response = await fetch('/api/translate', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...(await aiAuthHeaders()) },
         body: JSON.stringify({ text: targetText })
       });
 
@@ -930,7 +971,7 @@ function LearnerApp() {
     try {
       const response = await fetch('/api/evaluate-speaking', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...(await aiAuthHeaders()) },
         body: JSON.stringify({
           sentence: target,
           spokenText: text
@@ -989,7 +1030,7 @@ function LearnerApp() {
 
       const response = await fetch('/api/evaluate-speaking', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...(await aiAuthHeaders()) },
         body: JSON.stringify(bodyData)
       });
       const data = await response.json();
@@ -1104,7 +1145,7 @@ function LearnerApp() {
     try {
       const response = await fetch('/api/evaluate-composition', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...(await aiAuthHeaders()) },
         body: JSON.stringify({
           prompt: ctx.prompt,
           points: ctx.points,
@@ -1272,9 +1313,24 @@ function LearnerApp() {
     return user.getIdToken();
   };
 
-  const startQPayCheckout = async () => {
+  // Merge a billing object returned by the payments API into the local profile.
+  const applyBillingUpdate = (billing: NonNullable<UserProfile['billing']>) => {
+    if (!currentUserRef.current) return;
+    const nextProfile = normalizeProfileMetrics({
+      ...currentUserRef.current,
+      billing: {
+        ...currentUserRef.current.billing,
+        ...billing,
+      },
+    });
+    currentUserRef.current = nextProfile;
+    setCurrentUser(nextProfile);
+  };
+
+  const startQPayCheckout = async (planId: 'pro' | 'max') => {
     setPaymentActionLoading(true);
     setPaymentMessage(null);
+    setDummyInvoice(null);
     try {
       const token = await getCurrentIdToken();
       const response = await fetch('/api/payments/qpay/checkout', {
@@ -1283,7 +1339,7 @@ function LearnerApp() {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ plan: paymentMethods?.plan.plan ?? 'Monthly' }),
+        body: JSON.stringify({ plan: planId }),
       });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(data.error || 'QPay төлбөр эхлүүлэхэд алдаа гарлаа.');
@@ -1295,6 +1351,64 @@ function LearnerApp() {
     } finally {
       setPaymentActionLoading(false);
     }
+  };
+
+  // Dummy provider: creates a pending invoice, then "Төлбөр төлөх (туршилт)"
+  // simulates the bank confirmation and activates the plan — same Firestore
+  // billing flow live QPay will use, minus the real money.
+  const startDummyCheckout = async (planId: 'pro' | 'max') => {
+    setPaymentActionLoading(true);
+    setPaymentMessage(null);
+    setQpayCheckout(null);
+    try {
+      const token = await getCurrentIdToken();
+      const response = await fetch('/api/payments/dummy/checkout', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ plan: planId }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || 'Туршилтын нэхэмжлэл үүсгэхэд алдаа гарлаа.');
+
+      setDummyInvoice(data);
+      setPaymentMessage({ type: 'info', text: 'Туршилтын нэхэмжлэл үүслээ. "Төлбөр төлөх (туршилт)" товчоор баталгаажуулна уу.' });
+    } catch (err: any) {
+      setPaymentMessage({ type: 'error', text: err?.message || 'Туршилтын нэхэмжлэл үүсгэхэд алдаа гарлаа.' });
+    } finally {
+      setPaymentActionLoading(false);
+    }
+  };
+
+  const payDummyInvoice = async () => {
+    if (!dummyInvoice) return;
+    setPaymentStatusLoading(true);
+    setPaymentMessage(null);
+    try {
+      const token = await getCurrentIdToken();
+      const response = await fetch(`/api/payments/dummy/invoices/${encodeURIComponent(dummyInvoice.senderInvoiceNo)}/pay`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || 'Туршилтын төлбөр амжилтгүй боллоо.');
+
+      if (data.billing) applyBillingUpdate(data.billing);
+      setDummyInvoice(null);
+      setPaymentMessage({ type: 'success', text: `Туршилтын төлбөр амжилттай. ${PLANS[dummyInvoice.plan].name} багц идэвхтэй боллоо!` });
+    } catch (err: any) {
+      setPaymentMessage({ type: 'error', text: err?.message || 'Туршилтын төлбөр амжилтгүй боллоо.' });
+    } finally {
+      setPaymentStatusLoading(false);
+    }
+  };
+
+  // QPay if merchant credentials are live, otherwise the dummy simulator.
+  const startCheckout = (planId: 'pro' | 'max') => {
+    if (paymentMethods?.qpay.status === 'ready') return startQPayCheckout(planId);
+    return startDummyCheckout(planId);
   };
 
   const checkQPayPaymentStatus = async () => {
@@ -1333,11 +1447,36 @@ function LearnerApp() {
   };
 
   // ---------------------------------------------------------------------------
+  // Locked-feature card. Shown wherever the current plan doesn't cover a
+  // feature; the button jumps to the Profile tab where plans are sold.
+  // ---------------------------------------------------------------------------
+  const renderPlanLockCard = (title: string, description: string, requiredPlan: 'pro' | 'max') => (
+    <div className="w-full flex flex-col items-center justify-center text-center gap-3 py-8 px-6 bg-surface-container-low border-2 border-on-background border-dashed rounded-xl block-shadow my-4">
+      <span className="w-14 h-14 rounded-full bg-primary-container border-2 border-on-background flex items-center justify-center block-shadow">
+        <Lock className="w-6 h-6 text-on-surface" />
+      </span>
+      <h4 className="text-lg font-black font-space text-on-surface">{title}</h4>
+      <p className="text-sm text-on-surface-variant max-w-md leading-relaxed">{description}</p>
+      <button
+        onClick={() => setActiveTab('profile')}
+        className="flex items-center gap-2 px-5 py-2.5 bg-secondary text-white border-2 border-on-background rounded-lg font-bold text-sm cursor-pointer block-shadow hover:scale-[1.02] active:scale-95 transition-transform"
+      >
+        <Zap className="w-4 h-4" /> {PLANS[requiredPlan].name} багц авах
+      </button>
+    </div>
+  );
+
+  // ---------------------------------------------------------------------------
   // Shared AI speaking-judge UI. `target` is the German model sentence the recording
   // (or typed text) is graded against. Reused by every library item AND the detailed
   // lesson, so importing new speaking resources gets the AI judge automatically.
+  // AI review is a Max-plan feature; Free/Pro accounts see the upgrade card.
   // ---------------------------------------------------------------------------
-  const renderSpeakingJudge = (target: string) => (
+  const renderSpeakingJudge = (target: string) => !aiAllowed ? renderPlanLockCard(
+    'Дуут AI багш',
+    'Ярианы дасгалын AI үнэлгээ (дуудлага, оноо, зөвлөмж) зөвхөн Max багцад нээлттэй.',
+    'max',
+  ) : (
     // Microphone Interface Area — real voice recording for the AI coach
     <div className="w-full flex flex-col items-center justify-center relative py-6 bg-surface-container-low border-2 border-on-background border-dashed rounded-xl block-shadow my-4">
 
@@ -1529,7 +1668,11 @@ function LearnerApp() {
   const renderWritingChecker = (
     text: string,
     ctx: { prompt: string; points: string[]; modelAnswer: string; level: string },
-  ) => (
+  ) => !aiAllowed ? renderPlanLockCard(
+    'AI бичгийн засвар',
+    'Бичсэн зохиолын AI үнэлгээ, засвар, оноо зөвхөн Max багцад нээлттэй.',
+    'max',
+  ) : (
     <>
       <div className="mt-4">
         <button
@@ -1680,153 +1823,213 @@ function LearnerApp() {
   const renderBillingCard = () => {
     if (!currentUser) return null;
 
-    const billing = currentUser.billing ?? {};
-    const activeBilling = ['active', 'paid', 'trialing'].includes((billing.status ?? '').toLowerCase());
-    const plan = paymentMethods?.plan;
     const qpayReady = paymentMethods?.qpay.status === 'ready';
     const qrSrc = qpayQrImageSrc(qpayCheckout?.qrImage);
-    const priceLabel = formatMnt(plan?.amountMnt ?? (billing.monthlyAmountCents ? billing.monthlyAmountCents / 100 : null));
+    // Server-configured price wins; the local catalog is only the fallback.
+    const planPriceMnt = (id: 'pro' | 'max') => paymentMethods?.plans?.[id]?.amountMnt ?? PLANS[id].defaultAmountMnt;
+    const currentPlanLabel = founderAccess ? 'FOUNDER' : PLANS[userPlan as PlanId]?.name?.toUpperCase() ?? userPlan.toUpperCase();
 
     return (
       <div className="bg-white/5 border border-white/10 rounded-2xl p-6 md:p-8 block-shadow space-y-6">
-        <div className="flex flex-col lg:flex-row lg:items-start gap-6">
-          <div className="flex-grow space-y-4">
-            <div className="flex flex-wrap items-center gap-3">
-              <span className="w-11 h-11 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-300">
-                <CreditCard className="w-5 h-5" />
-              </span>
-              <div>
-                <p className="text-xs text-slate-400 font-black uppercase font-space">Төлбөр / Subscription</p>
-                <h2 className="text-xl font-extrabold text-white">
-                  {activeBilling ? `${billing.plan ?? 'Monthly'} эрх идэвхтэй` : 'QPay төлбөрөөр эрх нээх'}
-                </h2>
-              </div>
-              <span className={`lg:ml-auto px-3 py-1 rounded-full text-[11px] font-black border ${
-                activeBilling
-                  ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300'
-                  : 'bg-white/5 border-white/10 text-slate-300'
-              }`}>
-                {activeBilling ? 'ACTIVE' : (billing.status ?? 'FREE').toUpperCase()}
-              </span>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <div className="bg-slate-950/50 border border-white/10 rounded-xl p-4">
-                <p className="text-[10px] text-slate-500 font-black uppercase font-space">Plan</p>
-                <p className="text-sm font-extrabold text-white">{plan?.plan ?? billing.plan ?? 'Monthly'}</p>
-              </div>
-              <div className="bg-slate-950/50 border border-white/10 rounded-xl p-4">
-                <p className="text-[10px] text-slate-500 font-black uppercase font-space">Price</p>
-                <p className="text-sm font-extrabold text-white">{priceLabel}</p>
-              </div>
-              <div className="bg-slate-950/50 border border-white/10 rounded-xl p-4">
-                <p className="text-[10px] text-slate-500 font-black uppercase font-space">Provider</p>
-                <p className="text-sm font-extrabold text-white">QPay first</p>
-              </div>
-            </div>
-
-            <div className="flex flex-wrap gap-2">
-              <span className="px-3 py-1 bg-emerald-500/10 border border-emerald-500/30 rounded-full text-[11px] font-bold text-emerald-200">QPay QR</span>
-              <span className="px-3 py-1 bg-blue-500/10 border border-blue-500/30 rounded-full text-[11px] font-bold text-blue-200">Bank app deeplink</span>
-              <span className="px-3 py-1 bg-purple-500/10 border border-purple-500/30 rounded-full text-[11px] font-bold text-purple-200">Bonum: Apple Pay / Google Pay next</span>
-            </div>
-
-            {paymentMethods?.alternatives?.length ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {paymentMethods.alternatives.map((method) => (
-                  <div key={method.id} className="bg-white/5 border border-white/10 rounded-xl p-4">
-                    <p className="text-sm font-extrabold text-slate-100">{method.name}</p>
-                    <p className="text-[11px] text-slate-400 font-semibold mt-1">{method.note}</p>
-                    <p className="text-[10px] text-slate-500 font-bold mt-2 uppercase">{method.supports.join(' / ')}</p>
-                  </div>
-                ))}
-              </div>
-            ) : null}
+        {/* Header: current plan */}
+        <div className="flex flex-wrap items-center gap-3">
+          <span className="w-11 h-11 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-300">
+            <CreditCard className="w-5 h-5" />
+          </span>
+          <div>
+            <p className="text-xs text-slate-400 font-black uppercase font-space">Багц / Subscription</p>
+            <h2 className="text-xl font-extrabold text-white">
+              {founderAccess ? 'Founder — бүх эрх нээлттэй' : userPlan === 'free' ? 'Багцаа сонгоод эрхээ нээгээрэй' : `${PLANS[userPlan as PlanId].name} багц идэвхтэй`}
+            </h2>
           </div>
+          <span className={`lg:ml-auto flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-black border ${
+            founderAccess
+              ? 'bg-amber-500/10 border-amber-500/30 text-amber-300'
+              : userPlan !== 'free'
+                ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300'
+                : 'bg-white/5 border-white/10 text-slate-300'
+          }`}>
+            {founderAccess && <Crown className="w-3.5 h-3.5" />}
+            {currentPlanLabel}
+          </span>
+        </div>
 
-          <div className="w-full lg:w-[320px] bg-slate-950/60 border border-white/10 rounded-2xl p-5 space-y-4">
-            <button
-              onClick={startQPayCheckout}
-              disabled={!qpayReady || paymentActionLoading || activeBilling}
-              className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-emerald-500 hover:bg-emerald-400 disabled:bg-white/10 disabled:text-slate-500 text-slate-950 border border-emerald-300/40 rounded-xl font-black text-sm cursor-pointer disabled:cursor-not-allowed transition-colors"
-            >
-              {paymentActionLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <QrCode className="w-4 h-4" />}
-              {activeBilling ? 'Эрх идэвхтэй' : 'QPay төлбөр үүсгэх'}
-            </button>
+        {founderAccess && (
+          <p className="text-[12px] text-amber-200/90 bg-amber-500/10 border border-amber-500/20 rounded-xl p-3 font-semibold leading-relaxed">
+            Та үүсгэн байгуулагчийн эрхтэй тул бүх контент болон AI боломжууд төлбөргүйгээр үргэлж нээлттэй.
+          </p>
+        )}
 
-            {!qpayReady && !paymentMethodsLoading && (
-              <p className="text-[11px] text-slate-400 leading-relaxed font-semibold">
-                QPay live болгохын тулд сервер дээр merchant credentials, Firebase Admin credentials, мөн MNT үнийг тохируулна.
-              </p>
-            )}
-
-            {paymentMethodsLoading && (
-              <p className="text-[11px] text-slate-400 font-semibold flex items-center gap-2">
-                <Loader2 className="w-3.5 h-3.5 animate-spin" /> Төлбөрийн тохиргоо уншиж байна...
-              </p>
-            )}
-
-            {paymentMessage && (
-              <div className={`border rounded-xl p-3 text-[12px] font-bold leading-relaxed ${
-                paymentMessage.type === 'success'
-                  ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-200'
-                  : paymentMessage.type === 'error'
-                    ? 'bg-red-500/10 border-red-500/30 text-red-200'
-                    : 'bg-blue-500/10 border-blue-500/30 text-blue-200'
-              }`}>
-                {paymentMessage.text}
-              </div>
-            )}
-
-            {qpayCheckout && (
-              <div className="space-y-4">
-                {qrSrc ? (
-                  <img src={qrSrc} alt="QPay QR" className="w-full aspect-square object-contain bg-white rounded-xl p-3" />
-                ) : (
-                  <div className="w-full aspect-square bg-white/5 border border-white/10 rounded-xl flex items-center justify-center text-center p-4 text-xs text-slate-400 font-bold">
-                    QPay QR image хараахан ирээгүй байна.
-                  </div>
+        {/* Plan tiers */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {PLAN_ORDER.map((id) => {
+            const info = PLANS[id];
+            const isCurrent = !founderAccess && userPlan === id;
+            const price = id === 'free' ? 0 : planPriceMnt(id);
+            const highlight = id === 'max';
+            return (
+              <div key={id} className={`relative flex flex-col rounded-2xl p-5 border ${
+                highlight ? 'bg-purple-500/10 border-purple-400/40' : 'bg-slate-950/50 border-white/10'
+              } ${isCurrent ? 'ring-2 ring-emerald-400/60' : ''}`}>
+                {highlight && (
+                  <span className="absolute -top-2.5 right-4 px-2.5 py-0.5 rounded-full text-[10px] font-black bg-purple-400 text-slate-950 uppercase">AI бүрэн</span>
                 )}
-
-                {qpayCheckout.shortUrl && (
-                  <a
-                    href={qpayCheckout.shortUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-white/10 hover:bg-white/15 border border-white/10 rounded-xl text-xs font-bold text-white transition-colors"
-                  >
-                    QPay checkout нээх <ExternalLink className="w-3.5 h-3.5" />
-                  </a>
-                )}
-
-                {(qpayCheckout.urls?.length ?? 0) > 0 && (
-                  <div className="grid grid-cols-1 gap-2 max-h-44 overflow-y-auto pr-1">
-                    {qpayCheckout.urls!.slice(0, 8).map((url, index) => (
-                      <a
-                        key={`${url.name ?? 'bank'}-${index}`}
-                        href={url.link}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="flex items-center justify-between gap-2 px-3 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-[11px] font-bold text-slate-200"
-                      >
-                        <span>{url.name || url.description || 'Bank app'}</span>
-                        <ExternalLink className="w-3 h-3 text-slate-500" />
-                      </a>
+                <div className="flex items-center justify-between mb-1">
+                  <p className="text-base font-black text-white font-space">{info.name}</p>
+                  {isCurrent && <span className="text-[10px] font-black text-emerald-300 bg-emerald-500/10 border border-emerald-500/30 px-2 py-0.5 rounded-full">ИДЭВХТЭЙ</span>}
+                </div>
+                <p className="text-[11px] text-slate-400 font-bold mb-3">{info.taglineMn}</p>
+                <p className="text-xl font-black text-white mb-4">
+                  {price === 0 ? '0₮' : formatMnt(price)}
+                  {price !== 0 && <span className="text-[11px] text-slate-400 font-bold"> / сар</span>}
+                </p>
+                <ul className="space-y-1.5 mb-2">
+                  {info.featuresMn.map((f, i) => (
+                    <li key={i} className="flex items-start gap-2 text-[12px] text-slate-200 font-semibold">
+                      <Check className="w-3.5 h-3.5 text-emerald-400 shrink-0 mt-0.5" />{f}
+                    </li>
+                  ))}
+                </ul>
+                {info.missingMn.length > 0 && (
+                  <ul className="space-y-1.5 mb-2 opacity-70">
+                    {info.missingMn.map((f, i) => (
+                      <li key={i} className="flex items-start gap-2 text-[12px] text-slate-400 font-semibold">
+                        <X className="w-3.5 h-3.5 text-red-400/70 shrink-0 mt-0.5" />{f}
+                      </li>
                     ))}
-                  </div>
+                  </ul>
                 )}
-
-                <button
-                  onClick={checkQPayPaymentStatus}
-                  disabled={paymentStatusLoading}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-500/15 hover:bg-blue-500/25 border border-blue-400/30 rounded-xl text-xs font-black text-blue-200 disabled:opacity-60"
-                >
-                  {paymentStatusLoading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-                  Төлбөр шалгах
-                </button>
+                <div className="mt-auto pt-3">
+                  {id === 'free' ? (
+                    <div className="w-full text-center px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-xs font-black text-slate-400">
+                      {isCurrent ? 'Одоогийн багц' : 'Үндсэн эрх'}
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => startCheckout(id)}
+                      disabled={paymentActionLoading || isCurrent || founderAccess}
+                      className={`w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-black text-sm cursor-pointer disabled:cursor-not-allowed transition-colors border ${
+                        highlight
+                          ? 'bg-purple-400 hover:bg-purple-300 text-slate-950 border-purple-300/40 disabled:bg-white/10 disabled:text-slate-500'
+                          : 'bg-emerald-500 hover:bg-emerald-400 text-slate-950 border-emerald-300/40 disabled:bg-white/10 disabled:text-slate-500'
+                      }`}
+                    >
+                      {paymentActionLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <QrCode className="w-4 h-4" />}
+                      {founderAccess ? 'Founder эрхтэй' : isCurrent ? 'Идэвхтэй' : `${info.name} авах`}
+                    </button>
+                  )}
+                </div>
               </div>
-            )}
-          </div>
+            );
+          })}
+        </div>
+
+        {/* Checkout / status panel */}
+        <div className="bg-slate-950/60 border border-white/10 rounded-2xl p-5 space-y-4">
+          {!qpayReady && !paymentMethodsLoading && (
+            <p className="text-[11px] text-slate-400 leading-relaxed font-semibold">
+              QPay merchant credentials хараахан тохируулаагүй тул одоогоор <b className="text-slate-200">туршилтын төлбөрийн систем (симуляци)</b> ажиллана.
+              Live болгохын тулд сервер дээр QPay credentials болон Firebase Admin credentials-ийг тохируулна.
+            </p>
+          )}
+
+          {paymentMethodsLoading && (
+            <p className="text-[11px] text-slate-400 font-semibold flex items-center gap-2">
+              <Loader2 className="w-3.5 h-3.5 animate-spin" /> Төлбөрийн тохиргоо уншиж байна...
+            </p>
+          )}
+
+          {paymentMessage && (
+            <div className={`border rounded-xl p-3 text-[12px] font-bold leading-relaxed ${
+              paymentMessage.type === 'success'
+                ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-200'
+                : paymentMessage.type === 'error'
+                  ? 'bg-red-500/10 border-red-500/30 text-red-200'
+                  : 'bg-blue-500/10 border-blue-500/30 text-blue-200'
+            }`}>
+              {paymentMessage.text}
+            </div>
+          )}
+
+          {/* Dummy invoice: one click simulates the bank confirming payment. */}
+          {dummyInvoice && (
+            <div className="space-y-3">
+              <div className="bg-white/5 border border-white/10 rounded-xl p-4">
+                <p className="text-[10px] text-slate-500 font-black uppercase font-space mb-1">Туршилтын нэхэмжлэл</p>
+                <p className="text-sm font-extrabold text-white">{PLANS[dummyInvoice.plan].name} багц — {formatMnt(dummyInvoice.amountMnt)}</p>
+                <p className="text-[10px] text-slate-500 font-mono mt-1">{dummyInvoice.senderInvoiceNo}</p>
+              </div>
+              <button
+                onClick={payDummyInvoice}
+                disabled={paymentStatusLoading}
+                className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-emerald-500 hover:bg-emerald-400 disabled:bg-white/10 disabled:text-slate-500 text-slate-950 border border-emerald-300/40 rounded-xl font-black text-sm cursor-pointer disabled:cursor-not-allowed transition-colors"
+              >
+                {paymentStatusLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <CreditCard className="w-4 h-4" />}
+                Төлбөр төлөх (туршилт)
+              </button>
+            </div>
+          )}
+
+          {qpayCheckout && (
+            <div className="space-y-4">
+              {qrSrc ? (
+                <img src={qrSrc} alt="QPay QR" className="w-full max-w-[320px] mx-auto aspect-square object-contain bg-white rounded-xl p-3" />
+              ) : (
+                <div className="w-full max-w-[320px] mx-auto aspect-square bg-white/5 border border-white/10 rounded-xl flex items-center justify-center text-center p-4 text-xs text-slate-400 font-bold">
+                  QPay QR image хараахан ирээгүй байна.
+                </div>
+              )}
+
+              {qpayCheckout.shortUrl && (
+                <a
+                  href={qpayCheckout.shortUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-white/10 hover:bg-white/15 border border-white/10 rounded-xl text-xs font-bold text-white transition-colors"
+                >
+                  QPay checkout нээх <ExternalLink className="w-3.5 h-3.5" />
+                </a>
+              )}
+
+              {(qpayCheckout.urls?.length ?? 0) > 0 && (
+                <div className="grid grid-cols-1 gap-2 max-h-44 overflow-y-auto pr-1">
+                  {qpayCheckout.urls!.slice(0, 8).map((url, index) => (
+                    <a
+                      key={`${url.name ?? 'bank'}-${index}`}
+                      href={url.link}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="flex items-center justify-between gap-2 px-3 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-[11px] font-bold text-slate-200"
+                    >
+                      <span>{url.name || url.description || 'Bank app'}</span>
+                      <ExternalLink className="w-3 h-3 text-slate-500" />
+                    </a>
+                  ))}
+                </div>
+              )}
+
+              <button
+                onClick={checkQPayPaymentStatus}
+                disabled={paymentStatusLoading}
+                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-500/15 hover:bg-blue-500/25 border border-blue-400/30 rounded-xl text-xs font-black text-blue-200 disabled:opacity-60"
+              >
+                {paymentStatusLoading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                Төлбөр шалгах
+              </button>
+            </div>
+          )}
+
+          {paymentMethods?.alternatives?.length ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {paymentMethods.alternatives.map((method) => (
+                <div key={method.id} className="bg-white/5 border border-white/10 rounded-xl p-4">
+                  <p className="text-sm font-extrabold text-slate-100">{method.name}</p>
+                  <p className="text-[11px] text-slate-400 font-semibold mt-1">{method.note}</p>
+                  <p className="text-[10px] text-slate-500 font-bold mt-2 uppercase">{method.supports.join(' / ')}</p>
+                </div>
+              ))}
+            </div>
+          ) : null}
         </div>
       </div>
     );
@@ -3979,7 +4182,17 @@ function LearnerApp() {
           )}
 
           {/* Tab: Орчуулагч (Professional Translation & Lingua Helper) */}
-          {activeTab === 'translate' && (
+          {/* AI translator is Max-only: Free/Pro accounts get the upgrade card. */}
+          {activeTab === 'translate' && !aiAllowed && (
+            <div className="max-w-2xl mx-auto w-full pb-24 animate-fade-in">
+              {renderPlanLockCard(
+                'AI Орчуулагч',
+                'Дүрмийн задаргаатай ухаалаг орчуулагч зөвхөн Max багцад нээлттэй. Pro багц бүх хичээл, шалгалтын санг нээдэг ч AI боломжуудыг агуулдаггүй.',
+                'max',
+              )}
+            </div>
+          )}
+          {activeTab === 'translate' && aiAllowed && (
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start pb-24 animate-fade-in font-sans">
               
               {/* Left Side: Translation Workspace */}
@@ -4229,8 +4442,8 @@ function LearnerApp() {
               {/* LEVEL SELECTOR */}
               {examLevelSel === null && (
                 <>
-                  {/* TestDaF бүрэн загвар шалгалтын симуляци */}
-                  <button onClick={() => setTestdafOpen(true)}
+                  {/* TestDaF бүрэн загвар шалгалтын симуляци — Pro ба түүнээс дээш багцад. */}
+                  <button onClick={() => fullContent ? setTestdafOpen(true) : setActiveTab('profile')}
                     className="w-full text-left mb-6 bg-gradient-to-br from-violet-600 to-fuchsia-600 border-2 border-on-background rounded-2xl p-5 md:p-6 block-shadow hover:scale-[1.01] active:scale-95 transition-transform cursor-pointer">
                     <div className="flex items-start gap-4">
                       <div className="w-12 h-12 rounded-xl bg-white/15 border-2 border-on-background flex items-center justify-center shrink-0">
@@ -4242,12 +4455,28 @@ function LearnerApp() {
                           <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-yellow-300 text-violet-900">Prüfungssimulation</span>
                         </div>
                         <p className="text-xs text-white/85 leading-relaxed mt-1">Жинхэнэ шалгалтын бүтэц: <b className="text-white">Унших</b> 60′/30, <b className="text-white">Сонсох</b> 40′/25, <b className="text-white">Бичих</b> 60′/график-эссэ, <b className="text-white">Ярих</b> 35′/7 ситуаци. Цаг хэмжсэн, дараалсан, AI үнэлгээтэй.</p>
-                        <span className="inline-flex items-center gap-1 mt-2 text-xs font-bold text-white bg-white/15 border border-on-background px-3 py-1 rounded-full">Симуляци эхлүүлэх <ArrowRight className="w-3.5 h-3.5" /></span>
+                        <span className="inline-flex items-center gap-1 mt-2 text-xs font-bold text-white bg-white/15 border border-on-background px-3 py-1 rounded-full">
+                          {fullContent ? <>Симуляци эхлүүлэх <ArrowRight className="w-3.5 h-3.5" /></> : <><Lock className="w-3.5 h-3.5" /> Pro багцаар нээгдэнэ</>}
+                        </span>
                       </div>
                     </div>
                   </button>
 
                   <p className="text-sm text-on-surface-variant mb-5 max-w-2xl">Эсвэл <b className="text-on-surface">CEFR түвшнээ</b> сонгоно уу. Түвшин бүр <b className="text-on-surface">Унших, Сонсох, Бичих, Ярих</b> гэсэн дөрвөн хэсэгтэй бөгөөд хэсэг бүрт 5+ тест байна. Доош нь A1 хамгийн хялбар, C2 хамгийн хүнд.</p>
+
+                  {/* Free tier: only the first N questions of the bank are open. */}
+                  {!fullContent && (
+                    <div className="flex items-start gap-3 mb-5 p-4 bg-primary-container/60 border-2 border-on-background rounded-xl block-shadow max-w-2xl">
+                      <Lock className="w-5 h-5 text-on-surface shrink-0 mt-0.5" />
+                      <div>
+                        <p className="text-sm font-extrabold text-on-surface">Үнэгүй эрхээр шалгалтын сангийн эхний {FREE_QUESTION_LIMIT} асуулт нээлттэй.</p>
+                        <p className="text-xs text-on-surface-variant mt-1">
+                          Бүх түвшний {EXAM_LEVEL_ORDER.reduce((n, lv) => n + EXAMS[lv].reading.length + EXAMS[lv].listening.length + EXAMS[lv].writing.length + EXAMS[lv].speaking.length, 0)} тестийг бүрэн нээхийн тулд{' '}
+                          <button onClick={() => setActiveTab('profile')} className="font-bold text-secondary underline cursor-pointer">Pro эсвэл Max багц</button> аваарай.
+                        </p>
+                      </div>
+                    </div>
+                  )}
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     {EXAM_LEVEL_ORDER.map((lv) => {
                       const ex = EXAMS[lv];
@@ -4277,6 +4506,9 @@ function LearnerApp() {
                 const items = exam[examSec];
                 const item = items[Math.min(examItemIdx, items.length - 1)];
                 const answered = examItemAns !== null;
+                // Free plan: only the first FREE_QUESTION_LIMIT questions of the
+                // whole bank (A1→C2 order) may be opened.
+                const itemLocked = isExamQuestionLocked(currentUser, examLevelSel, examSec, Math.min(examItemIdx, items.length - 1));
                 const sections = [
                   { key: 'reading' as const, icon: BookOpen, mn: 'Унших' },
                   { key: 'listening' as const, icon: Headphones, mn: 'Сонсох' },
@@ -4308,18 +4540,26 @@ function LearnerApp() {
                       })}
                     </div>
 
-                    {/* Test selector chips */}
+                    {/* Test selector chips — a lock marks questions beyond the free limit. */}
                     <div className="flex flex-wrap gap-2 mb-5">
-                      {items.map((_, i) => (
-                        <button key={i} onClick={() => selectExamItem(i)}
-                          className={`px-3 py-1.5 rounded-lg border-2 border-on-background text-xs font-bold cursor-pointer transition-colors ${examItemIdx === i ? 'bg-secondary-container text-on-surface' : 'bg-surface-container text-on-surface-variant hover:bg-surface-container-high'}`}>
-                          Тест {i + 1}
-                        </button>
-                      ))}
+                      {items.map((_, i) => {
+                        const locked = isExamQuestionLocked(currentUser, examLevelSel, examSec, i);
+                        return (
+                          <button key={i} onClick={() => selectExamItem(i)}
+                            className={`flex items-center gap-1 px-3 py-1.5 rounded-lg border-2 border-on-background text-xs font-bold cursor-pointer transition-colors ${examItemIdx === i ? 'bg-secondary-container text-on-surface' : locked ? 'bg-surface-container text-on-surface-variant opacity-60 hover:opacity-80' : 'bg-surface-container text-on-surface-variant hover:bg-surface-container-high'}`}>
+                            {locked && <Lock className="w-3 h-3" />} Тест {i + 1}
+                          </button>
+                        );
+                      })}
                     </div>
 
                     {/* Detail card */}
                     <div className="bg-white border-2 border-on-background rounded-xl p-6 md:p-8 block-shadow">
+                      {itemLocked ? renderPlanLockCard(
+                        `Тест ${examItemIdx + 1} түгжээтэй`,
+                        `Үнэгүй эрхээр шалгалтын сангийн эхний ${FREE_QUESTION_LIMIT} асуулт нээлттэй. Энэ тестийг нээхийн тулд Pro эсвэл Max багц аваарай.`,
+                        'pro',
+                      ) : (<>
                       <div className="flex items-center justify-between mb-4">
                         <span className="text-xs font-space font-bold text-secondary bg-secondary-container border border-on-background px-3 py-1.5 rounded-full">{examLevelSel} · {(item as ExamItem).topic}</span>
                         {(examSec === 'reading' || examSec === 'listening') && (
@@ -4472,6 +4712,7 @@ function LearnerApp() {
                           </>
                         );
                       })()}
+                      </>)}
                     </div>
 
                     {/* Prev / Next navigation */}

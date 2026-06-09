@@ -3,6 +3,7 @@ import type { Express } from 'express';
 import { cleanText } from '../lib/cleanText';
 import { aiClientWithinBudget, audioTooLarge, clampText, clientIp, consumeBudget, rateLimited } from '../lib/aiGuard';
 import { generateContentWithRetry } from '../lib/ai';
+import { checkAiAccess } from '../lib/plans';
 
 // Rich JSON shape returned to the frontend. Every text field is written in
 // Mongolian (the app's UI language); `transcript` stays in German.
@@ -67,6 +68,11 @@ export function registerEvaluateSpeakingRoute(app: Express) {
     if (rateLimited(clientIp(req))) {
       res.setHeader('Retry-After', '60');
       return res.status(429).json({ error: 'Хэт олон хүсэлт. Хэсэг хүлээгээд дахин оролдоно уу.' });
+    }
+
+    const access = await checkAiAccess(req);
+    if (!access.allowed) {
+      return res.status(access.status).json({ error: access.error });
     }
 
     const { audio, mimeType, audioUrl } = req.body as {

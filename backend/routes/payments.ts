@@ -9,16 +9,16 @@ import {
   checkQPayInvoice,
   createQPayInvoice,
   findPaidQPayPayment,
-  getPaymentPlan,
   getQPayConfigState,
   getQPayPayment,
   QPayConfigError,
   type QPayPaymentCheckResponse,
   type QPayPaymentRow,
 } from '../lib/payments/qpay';
+import { getPaidPlans, parsePaidPlanId } from '../lib/plans';
 
 interface PendingInvoice {
-  provider: 'qpay';
+  provider: 'qpay' | 'dummy';
   providerInvoiceId: string;
   senderInvoiceNo: string;
   userId: string;
@@ -102,12 +102,12 @@ async function activatePaidInvoice(
   const now = new Date();
   const currentPeriodEnd = addMonths(now, 1).toISOString();
   const paymentId = String(paidPayment.payment_id || invoice.providerInvoiceId);
-  const paymentRef = admin.db.collection('payments').doc(sanitizeDocId(`qpay_${paymentId}`));
+  const paymentRef = admin.db.collection('payments').doc(sanitizeDocId(`${invoice.provider}_${paymentId}`));
   const userRef = admin.db.collection('users').doc(invoice.userId);
 
   await admin.db.runTransaction(async (tx) => {
     tx.set(paymentRef, {
-      provider: 'qpay',
+      provider: invoice.provider,
       providerPaymentId: paymentId,
       providerInvoiceId: invoice.providerInvoiceId,
       senderInvoiceNo: invoice.senderInvoiceNo,
@@ -129,7 +129,7 @@ async function activatePaidInvoice(
         monthlyAmountCents: invoice.amountCents,
         lifetimeValueCents: FieldValue.increment(invoice.amountCents),
         currency: invoice.currency,
-        provider: 'qpay',
+        provider: invoice.provider,
         currentPeriodEnd,
       },
     }, { merge: true });
@@ -149,7 +149,7 @@ async function activatePaidInvoice(
     status: 'active',
     monthlyAmountCents: invoice.amountCents,
     currency: invoice.currency,
-    provider: 'qpay',
+    provider: invoice.provider,
     currentPeriodEnd,
   };
 }
@@ -168,22 +168,29 @@ async function checkAndMaybeActivate(invoiceRef: FirebaseFirestore.DocumentRefer
 
 function paymentMethodsPayload() {
   const qpay = getQPayConfigState();
-  const plan = getPaymentPlan();
+  const plans = getPaidPlans();
   const adminReady = Boolean(getFirebaseAdmin());
   const qpayMissing = [...qpay.missing];
-  if (!plan.amountMnt) qpayMissing.push('QPAY_MONTHLY_AMOUNT_MNT');
   if (!adminReady) qpayMissing.push('Firebase Admin credentials');
+  const qpayReady = qpayMissing.length === 0;
 
   return {
-    primary: 'qpay',
-    plan,
+    primary: qpayReady ? 'qpay' : 'dummy',
+    plans,
     qpay: {
       id: 'qpay',
       name: 'QPay',
-      status: qpayMissing.length === 0 ? 'ready' : 'needs_config',
+      status: qpayReady ? 'ready' : 'needs_config',
       missing: qpayMissing,
       supports: ['QR', 'bank app deeplinks', 'card payment through QPay rails'],
       apiBaseUrl: qpay.apiBaseUrl,
+    },
+    dummy: {
+      id: 'dummy',
+      name: 'Туршилтын төлбөр (симуляци)',
+      status: adminReady ? 'ready' : 'needs_config',
+      missing: adminReady ? [] : ['Firebase Admin credentials'],
+      supports: ['instant simulated payment for testing'],
     },
     alternatives: [
       {
@@ -220,16 +227,14 @@ export function registerPaymentsRoute(app: Express) {
       return res.status(401).json({ error: 'Sign in again before starting payment.' });
     }
 
-    const plan = getPaymentPlan();
-    if (!plan.amountMnt) {
-      return res.status(503).json({
-        error: 'Subscription price is not configured yet. Set QPAY_MONTHLY_AMOUNT_MNT before taking live payments.',
-        methods: paymentMethodsPayload(),
-      });
+    const planId = parsePaidPlanId(req.body?.plan);
+    if (!planId) {
+      return res.status(400).json({ error: 'Багцаа сонгоно уу (pro эсвэл max).', methods: paymentMethodsPayload() });
     }
+    const plan = getPaidPlans()[planId];
 
     const senderInvoiceNo = senderInvoiceNoFor(user.uid);
-    const description = `${plan.plan} access - Vivid Lingua`;
+    const description = `${plan.name} access - Vivid Lingua`;
 
     try {
       const qpayInvoice = await createQPayInvoice({
@@ -254,7 +259,7 @@ export function registerPaymentsRoute(app: Express) {
         userId: user.uid,
         customerEmail: user.email ?? '',
         customerName: user.name ?? '',
-        plan: plan.plan,
+        plan: planId,
         amountMnt: plan.amountMnt,
         amountCents,
         currency: 'MNT',
@@ -268,7 +273,7 @@ export function registerPaymentsRoute(app: Express) {
         provider: 'qpay',
         senderInvoiceNo,
         providerInvoiceId: qpayInvoice.invoice_id,
-        plan: plan.plan,
+        plan: planId,
         amountMnt: plan.amountMnt,
         currency: 'MNT',
         qrText: qpayInvoice.qr_text,
@@ -306,6 +311,96 @@ export function registerPaymentsRoute(app: Express) {
     } catch (err) {
       console.error('QPay invoice check failed:', err);
       return res.status(502).json({ error: 'Could not check QPay payment status.' });
+    }
+  });
+
+  // ---------------------------------------------------------------------------
+  // Dummy payment provider — same invoice/billing flow as QPay but the "payment"
+  // is simulated with a second request. Lets the Mongolian-market checkout be
+  // exercised end-to-end before live QPay merchant credentials exist.
+  // ---------------------------------------------------------------------------
+  app.post('/api/payments/dummy/checkout', async (req, res) => {
+    const admin = getFirebaseAdmin();
+    if (!admin) {
+      return res.status(503).json({ error: firebaseAdminMissingMessage(), methods: paymentMethodsPayload() });
+    }
+
+    const user = await verifyFirebaseBearer(req);
+    if (!user) {
+      return res.status(401).json({ error: 'Sign in again before starting payment.' });
+    }
+
+    const planId = parsePaidPlanId(req.body?.plan);
+    if (!planId) {
+      return res.status(400).json({ error: 'Багцаа сонгоно уу (pro эсвэл max).' });
+    }
+    const plan = getPaidPlans()[planId];
+
+    const senderInvoiceNo = senderInvoiceNoFor(user.uid);
+    const amountCents = amountMntToCents(plan.amountMnt);
+
+    await admin.db.collection('paymentInvoices').doc(senderInvoiceNo).set({
+      provider: 'dummy',
+      providerInvoiceId: `dummy_${senderInvoiceNo}`,
+      senderInvoiceNo,
+      userId: user.uid,
+      customerEmail: user.email ?? '',
+      customerName: user.name ?? '',
+      plan: planId,
+      amountMnt: plan.amountMnt,
+      amountCents,
+      currency: 'MNT',
+      status: 'pending',
+      createdAt: FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
+    });
+
+    return res.status(201).json({
+      provider: 'dummy',
+      senderInvoiceNo,
+      providerInvoiceId: `dummy_${senderInvoiceNo}`,
+      plan: planId,
+      amountMnt: plan.amountMnt,
+      currency: 'MNT',
+    });
+  });
+
+  app.post('/api/payments/dummy/invoices/:senderInvoiceNo/pay', async (req, res) => {
+    const admin = getFirebaseAdmin();
+    if (!admin) return res.status(503).json({ error: firebaseAdminMissingMessage() });
+
+    const user = await verifyFirebaseBearer(req);
+    if (!user) return res.status(401).json({ error: 'Sign in again before paying.' });
+
+    const invoiceRef = admin.db.collection('paymentInvoices').doc(req.params.senderInvoiceNo);
+    const snap = await invoiceRef.get();
+    if (!snap.exists) return res.status(404).json({ error: 'Payment invoice was not found.' });
+
+    const invoice = snap.data() as PendingInvoice;
+    if (invoice.userId !== user.uid) return res.status(403).json({ error: 'This payment belongs to a different user.' });
+    if (invoice.provider !== 'dummy') return res.status(400).json({ error: 'Энэ нэхэмжлэл туршилтын төлбөрийн нэхэмжлэл биш байна.' });
+    if (invoice.status === 'paid') return res.json({ ...publicInvoicePayload(invoice), billing: null });
+
+    const simulatedPayment: QPayPaymentRow = {
+      payment_id: `dummy_${Date.now()}`,
+      payment_status: 'PAID',
+      payment_date: new Date().toISOString(),
+      payment_amount: invoice.amountMnt,
+      payment_currency: 'MNT',
+      transaction_type: 'DUMMY_SIMULATION',
+      object_id: invoice.providerInvoiceId,
+      object_type: 'INVOICE',
+    };
+
+    try {
+      const billing = await activatePaidInvoice(invoiceRef, invoice, simulatedPayment);
+      return res.json({
+        ...publicInvoicePayload({ ...invoice, status: 'paid' }, undefined, simulatedPayment),
+        billing,
+      });
+    } catch (err) {
+      console.error('Dummy payment activation failed:', err);
+      return res.status(502).json({ error: 'Туршилтын төлбөрийг идэвхжүүлж чадсангүй.' });
     }
   });
 

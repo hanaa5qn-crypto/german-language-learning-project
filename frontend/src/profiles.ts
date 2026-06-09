@@ -61,7 +61,10 @@ export const DEFAULT_PROFILES: UserProfile[] = [
       { day: 'Бямба', hours: 2.5 },
       { day: 'Ням', hours: 1.8 }
     ],
-    onboardingDone: true
+    onboardingDone: true,
+    // Showcase/demo account (also the test-mode default): full Max access so
+    // every feature, including the AI tools, is visible out of the box.
+    billing: { plan: 'max', status: 'active', currency: 'MNT' }
   },
   {
     email: 'nomin@gmail.com',

@@ -2,6 +2,7 @@ import { Type } from '@google/genai';
 import type { Express } from 'express';
 import { aiClientWithinBudget, clampText, clientIp, consumeBudget, rateLimited } from '../lib/aiGuard';
 import { generateContentWithRetry } from '../lib/ai';
+import { checkAiAccess } from '../lib/plans';
 
 // Rich free-writing feedback. Unlike /api/evaluate-writing (a constrained
 // translation check), this grades an open composition: it hunts for wrong
@@ -101,6 +102,11 @@ export function registerEvaluateCompositionRoute(app: Express) {
     if (rateLimited(clientIp(req))) {
       res.setHeader('Retry-After', '60');
       return res.status(429).json({ error: 'Хэт олон хүсэлт. Хэсэг хүлээгээд дахин оролдоно уу.' });
+    }
+
+    const access = await checkAiAccess(req);
+    if (!access.allowed) {
+      return res.status(access.status).json({ error: access.error });
     }
 
     const body = (req.body || {}) as {

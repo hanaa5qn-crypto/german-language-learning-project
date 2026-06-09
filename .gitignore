@@ -10,6 +10,9 @@ coverage/
 # Firebase CLI cache (deploy logs / hosting cache)
 .firebase/
 
+# Local npm cache (sandboxed installs)
+.npm-cache/
+
 # Local tooling / agent artifacts (not part of the app)
 .antigravity/
 .playwright-mcp/
