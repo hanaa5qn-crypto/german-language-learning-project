@@ -139,7 +139,7 @@ export default function LoginScreen() {
   const isSignup = mode === 'signup';
 
   return (
-    <div className="bg-[#020205] text-white font-sans min-h-screen flex flex-col justify-center items-center p-4 relative overflow-hidden w-full select-none">
+    <div className="bg-background text-white font-sans min-h-screen flex flex-col justify-center items-center p-4 relative overflow-hidden w-full select-none">
       {/* Glow ambient background effects */}
       <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-purple-900/10 rounded-full blur-[140px] pointer-events-none"></div>
       <div className="absolute bottom-1/4 right-1/4 w-[500px] h-[500px] bg-blue-900/10 rounded-full blur-[140px] pointer-events-none"></div>
@@ -237,7 +237,7 @@ export default function LoginScreen() {
                     placeholder="нэр@gmail.com"
                     value={email}
                     onChange={(e) => { setEmail(e.target.value); setError(''); setInfo(''); }}
-                    className="w-full bg-slate-900 border border-white/15 rounded-xl pl-10 pr-4 py-3 text-white placeholder-slate-600 focus:outline-none focus:border-purple-500 transition-colors text-sm font-semibold"
+                    className="w-full bg-slate-900 border border-white/15 rounded-xl pl-10 pr-4 py-3 text-white placeholder-slate-400 focus:outline-none focus:border-purple-500 transition-colors text-sm font-semibold"
                   />
                 </div>
               </div>
@@ -252,7 +252,7 @@ export default function LoginScreen() {
                     placeholder="Дор хаяж 6 тэмдэгт"
                     value={password}
                     onChange={(e) => { setPassword(e.target.value); setError(''); setInfo(''); }}
-                    className="w-full bg-slate-900 border border-white/15 rounded-xl pl-10 pr-4 py-3 text-white placeholder-slate-600 focus:outline-none focus:border-purple-500 transition-colors text-sm font-semibold"
+                    className="w-full bg-slate-900 border border-white/15 rounded-xl pl-10 pr-4 py-3 text-white placeholder-slate-400 focus:outline-none focus:border-purple-500 transition-colors text-sm font-semibold"
                   />
                 </div>
                 {!isSignup && (
@@ -281,7 +281,7 @@ export default function LoginScreen() {
                         placeholder="Бат, Номин..."
                         value={name}
                         onChange={(e) => { setName(e.target.value); setError(''); }}
-                        className="w-full bg-slate-900 border border-white/15 rounded-xl pl-10 pr-4 py-3 text-white placeholder-slate-600 focus:outline-none focus:border-purple-500 transition-colors text-sm font-semibold"
+                        className="w-full bg-slate-900 border border-white/15 rounded-xl pl-10 pr-4 py-3 text-white placeholder-slate-400 focus:outline-none focus:border-purple-500 transition-colors text-sm font-semibold"
                       />
                     </div>
                   </div>

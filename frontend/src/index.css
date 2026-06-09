@@ -1,36 +1,175 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@700&family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Golos+Text:wght@400..900&family=Unbounded:wght@400..900&family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap');
 @import "tailwindcss";
 
+/*
+  Vivid Lingua — "Aurora Atelier" design system
+  Deep violet-ink night sky, luminous aurora accents.
+  Golos Text (UI) + Unbounded (display) — both carry full Cyrillic
+  for the Mongolian glosses alongside German Latin-Extended.
+  Every on-* token is contrast-checked against its surface.
+*/
+
 @theme {
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
-  --font-space: "Space Grotesk", sans-serif;
-  
-  --color-secondary: #3b82f6;
-  --color-surface-tint: #c084fc;
-  --color-surface-variant: #1e1e35;
-  --color-on-secondary-container: #93c5fd;
-  --color-error-container: #7f1d1d;
-  --color-background: #020205;
-  --color-primary-container: #3b0764;
-  --color-secondary-fixed: #60a5fa;
-  --color-surface: #0a0a16;
-  --color-surface-container: #111126;
-  --color-primary: #a855f7;
-  --color-secondary-container: #172554;
-  --color-on-background: #ffffff;
-  --color-tertiary: #f43f5e;
-  --color-on-error-container: #fecdd3;
-  --color-on-surface: #ffffff;
-  --color-on-surface-variant: #94a3b8;
-  --color-on-primary: #ffffff;
-  --color-surface-dim: #070710;
-  --color-on-primary-fixed: #faf5ff;
-  --color-on-secondary-fixed-variant: #1d4ed8;
-  --color-error: #ef4444;
-  --color-on-secondary-fixed: #eff6ff;
-  --color-on-secondary: #ffffff;
-  --color-surface-container-lowest: #050510;
-  --color-inverse-surface: #f8fafc;
+  --font-sans: "Golos Text", "Helvetica Neue", ui-sans-serif, system-ui, sans-serif;
+  --font-space: "Unbounded", "Golos Text", sans-serif;
+
+  /* Night-sky surfaces (violet-ink ramp, darkest → lightest) */
+  --color-background: #060512;
+  --color-surface-dim: #080714;
+  --color-surface-container-lowest: #050410;
+  --color-surface: #0b0a1a;
+  --color-surface-container-low: #110f24;
+  --color-surface-container: #15132b;
+  --color-surface-container-high: #1b1836;
+  --color-surface-variant: #221e40;
+  --color-inverse-surface: #f4f2fc;
+
+  /* Text on dark surfaces */
+  --color-on-background: #f2f0fa;
+  --color-on-surface: #f2f0fa;
+  --color-on-surface-variant: #a8a3c8;
+
+  /* Aurora violet — primary */
+  --color-primary: #b388fa;
+  --color-on-primary: #20094a;
+  --color-primary-container: #3c1d72;
+  --color-on-primary-container: #e9dcff;
+  --color-surface-tint: #c9a2ff;
+  --color-on-primary-fixed: #f6efff;
+
+  /* Ice blue — secondary */
+  --color-secondary: #66aafd;
+  --color-on-secondary: #08234e;
+  --color-secondary-container: #182f66;
+  --color-on-secondary-container: #bcd6fe;
+  --color-secondary-fixed: #82b6fd;
+  --color-on-secondary-fixed: #ebf3ff;
+  --color-on-secondary-fixed-variant: #2a5bd7;
+
+  /* Polar rose — tertiary */
+  --color-tertiary: #fb6d8e;
+
+  /* Error */
+  --color-error: #ff5f6b;
+  --color-on-error: #40060f;
+  --color-error-container: #6e1420;
+  --color-on-error-container: #ffd5d8;
+
+  /* Outlines & placeholders — visible on dark *and* white fields */
+  --color-outline: #837ea8;
+  --color-outline-variant: #383258;
+
+  /* Motion vocabulary (these utilities are referenced across the app) */
+  --animate-fade-in: fade-in 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+  --animate-scale-up: scale-up 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  --animate-slide-right: slide-right 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+
+  @keyframes fade-in {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: none; }
+  }
+  @keyframes scale-up {
+    from { opacity: 0; transform: scale(0.92); }
+    to { opacity: 1; transform: scale(1); }
+  }
+  @keyframes slide-right {
+    from { opacity: 0; transform: translateX(-14px); }
+    to { opacity: 1; transform: none; }
+  }
+}
+
+/* ---------- Base atmosphere ---------- */
+
+html {
+  background-color: #060512;
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: var(--color-background);
+  color: var(--color-on-background);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Display face breathes better slightly tightened */
+.font-space {
+  letter-spacing: -0.015em;
+}
+
+::selection {
+  background-color: var(--color-primary);
+  color: var(--color-on-primary);
+}
+
+/* Placeholder safety net: never invisible, on dark or light fields.
+   Utility placeholder:* classes still override this where set. */
+::placeholder {
+  color: var(--color-outline);
+  opacity: 1;
+}
+
+input, textarea {
+  caret-color: var(--color-primary);
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* Slim aurora-tinted scrollbars */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #383258 transparent;
+}
+*::-webkit-scrollbar { width: 8px; height: 8px; }
+*::-webkit-scrollbar-thumb {
+  background: #383258;
+  border-radius: 8px;
+}
+*::-webkit-scrollbar-thumb:hover { background: #4d4678; }
+
+/* Aurora drift — atmospheric glows washing over every main pane.
+   Same pattern the app uses for its decorative glow divs: positioned,
+   ultra-low opacity, pointer-events none. No isolation/negative z-index,
+   so fixed modals inside main keep their stacking behavior. */
+main::before {
+  content: '';
+  position: fixed;
+  inset: -20%;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(38% 30% at 18% 22%, rgba(179, 136, 250, 0.07), transparent 70%),
+    radial-gradient(34% 28% at 82% 18%, rgba(102, 170, 253, 0.06), transparent 70%),
+    radial-gradient(40% 34% at 70% 85%, rgba(108, 248, 187, 0.04), transparent 70%),
+    radial-gradient(30% 26% at 28% 80%, rgba(251, 109, 142, 0.04), transparent 70%);
+  animation: aurora-drift 26s ease-in-out infinite alternate;
+}
+
+@keyframes aurora-drift {
+  0% { transform: translate3d(-2%, -1%, 0) scale(1); }
+  50% { transform: translate3d(2%, 2%, 0) scale(1.06); }
+  100% { transform: translate3d(-1%, 3%, 0) scale(1.02); }
+}
+
+/* Staggered page reveal: top-level sections of each main rise in.
+   Skips decorative absolute/fixed layers. Re-runs on page switches
+   because React remounts the section tree. */
+main > :not(.absolute):not(.fixed) {
+  animation: rise-in 0.55s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+}
+main > :not(.absolute):not(.fixed):nth-child(2) { animation-delay: 0.06s; }
+main > :not(.absolute):not(.fixed):nth-child(3) { animation-delay: 0.12s; }
+main > :not(.absolute):not(.fixed):nth-child(4) { animation-delay: 0.18s; }
+main > :not(.absolute):not(.fixed):nth-child(5) { animation-delay: 0.24s; }
+main > :not(.absolute):not(.fixed):nth-child(n+6) { animation-delay: 0.3s; }
+
+@keyframes rise-in {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: none; }
 }
 
 /* Material Symbols Integration */
@@ -54,62 +193,89 @@
   font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
 }
 
-/* Glassmorphism and Neon glow styles for Immersive UI */
+/* Glassmorphism and Neon glow styles for Immersive UI.
+   Backgrounds live in the components layer so explicit bg-* utilities
+   (e.g. the white reader cards) win; borders/shadows stay unlayered to
+   keep the subtle glass outline over the bold border-2 utilities. */
+@layer components {
+  .block-shadow { background-color: rgba(242, 240, 250, 0.03); }
+  .block-shadow:hover { background-color: rgba(242, 240, 250, 0.06); }
+  .block-shadow-orange { background-color: rgba(249, 115, 22, 0.04); }
+  .block-shadow-orange:hover { background-color: rgba(249, 115, 22, 0.1); }
+  .block-shadow-green { background-color: rgba(102, 170, 253, 0.04); }
+  .block-shadow-green:hover { background-color: rgba(102, 170, 253, 0.1); }
+}
+
 .block-shadow {
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(242, 240, 250, 0.08);
   border-radius: 1rem;
-  box-shadow: 0 4px 24px -1px rgba(0, 0, 0, 0.4);
-  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease, background-color 0.18s ease;
+  box-shadow: 0 4px 24px -1px rgba(2, 1, 8, 0.45);
+  transition:
+    transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1),
+    box-shadow 0.25s ease,
+    border-color 0.25s ease,
+    background-color 0.25s ease;
 }
 
 .block-shadow:hover {
-  background: rgba(255, 255, 255, 0.06);
-  border-color: rgba(168, 85, 247, 0.3);
-  box-shadow: 0 0 20px rgba(168, 85, 247, 0.15), 0 4px 24px -1px rgba(0, 0, 0, 0.4);
-  transform: translateY(-2px);
+  border-color: rgba(179, 136, 250, 0.35);
+  box-shadow:
+    0 0 24px rgba(179, 136, 250, 0.16),
+    0 8px 28px -4px rgba(2, 1, 8, 0.5);
+  transform: translateY(-3px);
 }
 
 .block-shadow:active {
-  transform: translateY(1px);
+  transform: translateY(1px) scale(0.99);
+  transition-duration: 0.1s;
 }
 
 .block-shadow-orange {
   border: 1px solid rgba(249, 115, 22, 0.2);
-  background: rgba(249, 115, 22, 0.04);
   border-radius: 1rem;
-  box-shadow: 0 4px 24px -1px rgba(0, 0, 0, 0.4);
-  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease, background-color 0.18s ease;
+  box-shadow: 0 4px 24px -1px rgba(2, 1, 8, 0.45);
+  transition:
+    transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1),
+    box-shadow 0.25s ease,
+    border-color 0.25s ease,
+    background-color 0.25s ease;
 }
 
 .block-shadow-orange:hover {
-  background: rgba(249, 115, 22, 0.1);
-  border-color: rgba(249, 115, 22, 0.4);
-  box-shadow: 0 0 20px rgba(249, 115, 22, 0.2), 0 4px 24px -1px rgba(0, 0, 0, 0.4);
-  transform: translateY(-2px);
+  border-color: rgba(249, 115, 22, 0.45);
+  box-shadow:
+    0 0 24px rgba(249, 115, 22, 0.2),
+    0 8px 28px -4px rgba(2, 1, 8, 0.5);
+  transform: translateY(-3px);
 }
 
 .block-shadow-orange:active {
-  transform: translateY(1px);
+  transform: translateY(1px) scale(0.99);
+  transition-duration: 0.1s;
 }
 
 .block-shadow-green {
-  border: 1px solid rgba(59, 130, 246, 0.2);
-  background: rgba(59, 130, 246, 0.04);
+  border: 1px solid rgba(102, 170, 253, 0.2);
   border-radius: 1rem;
-  box-shadow: 0 4px 24px -1px rgba(0, 0, 0, 0.4);
-  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease, background-color 0.18s ease;
+  box-shadow: 0 4px 24px -1px rgba(2, 1, 8, 0.45);
+  transition:
+    transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1),
+    box-shadow 0.25s ease,
+    border-color 0.25s ease,
+    background-color 0.25s ease;
 }
 
 .block-shadow-green:hover {
-  background: rgba(59, 130, 246, 0.1);
-  border-color: rgba(59, 130, 246, 0.4);
-  box-shadow: 0 0 20px rgba(59, 130, 246, 0.2), 0 4px 24px -1px rgba(0, 0, 0, 0.4);
-  transform: translateY(-2px);
+  border-color: rgba(102, 170, 253, 0.45);
+  box-shadow:
+    0 0 24px rgba(102, 170, 253, 0.2),
+    0 8px 28px -4px rgba(2, 1, 8, 0.5);
+  transform: translateY(-3px);
 }
 
 .block-shadow-green:active {
-  transform: translateY(1px);
+  transform: translateY(1px) scale(0.99);
+  transition-duration: 0.1s;
 }
 
 /* Card perspective rotations for Vocabulary flipping */
@@ -133,7 +299,7 @@
 .word-highlight {
   position: relative;
   cursor: pointer;
-  border-bottom: 2px dashed #006c49;
+  border-bottom: 2px dashed #34d399;
   transition: all 0.2s;
 }
 
@@ -145,11 +311,11 @@
 .tooltip-container {
   visibility: hidden;
   opacity: 0;
-  transition: opacity 0.2s, visibility 0.2s;
+  transform: translateX(-50%) translateY(4px);
+  transition: opacity 0.22s cubic-bezier(0.22, 1, 0.36, 1), visibility 0.22s, transform 0.22s cubic-bezier(0.22, 1, 0.36, 1);
   position: absolute;
   bottom: 120%;
   left: 50%;
-  transform: translateX(-50%);
   z-index: 50;
   white-space: nowrap;
 }
@@ -157,6 +323,7 @@
 .word-highlight:hover .tooltip-container {
   visibility: visible;
   opacity: 1;
+  transform: translateX(-50%) translateY(0);
 }
 
 /* Pulsing audio waveforms for Listening exercises */
@@ -193,4 +360,21 @@
 
 .animate-ripple::after {
   animation-delay: 1s;
+}
+
+/* Respect users who prefer stillness */
+@media (prefers-reduced-motion: reduce) {
+  main::before {
+    animation: none;
+  }
+  main > :not(.absolute):not(.fixed) {
+    animation: none;
+  }
+  html {
+    scroll-behavior: auto;
+  }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
 }

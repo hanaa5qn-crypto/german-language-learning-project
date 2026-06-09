@@ -56,7 +56,7 @@ export default function OnboardingWizard({ userName, onComplete }: OnboardingWiz
   };
 
   return (
-    <div className="fixed inset-0 bg-[#020205] z-[100] flex flex-col items-center justify-between pb-12 pt-6 px-4 md:px-12 animate-fade-in text-white overflow-y-auto">
+    <div className="fixed inset-0 bg-background z-[100] flex flex-col items-center justify-between pb-12 pt-6 px-4 md:px-12 animate-fade-in text-white overflow-y-auto">
       {/* Atmospheric background glows in overlay */}
       <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-purple-900/10 rounded-full blur-[120px] pointer-events-none"></div>
       <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-blue-900/10 rounded-full blur-[120px] pointer-events-none"></div>

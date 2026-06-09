@@ -927,7 +927,7 @@ function LearnerApp() {
           >
             {core}
             <span className="tooltip-container">
-              <span className="block bg-[#0a0a16] text-white border-2 border-on-background font-space font-bold text-xs rounded-xl p-3 shadow-2xl flex flex-col gap-1">
+              <span className="block bg-surface text-white border-2 border-on-background font-space font-bold text-xs rounded-xl p-3 shadow-2xl flex flex-col gap-1">
                 <span className="flex items-center gap-2 text-secondary-fixed">
                   <Volume2 className="w-3 h-3 fill-current text-secondary" />
                   <span className="text-[13px] text-white">{entry.article ? `${entry.article} ` : ''}{core} — {entry.mongolian}</span>
@@ -2630,7 +2630,7 @@ function LearnerApp() {
   // so we don't flash the login page at an already-signed-in user.
   if (authLoading) {
     return (
-      <div className="bg-[#020205] text-white font-sans min-h-screen flex flex-col justify-center items-center gap-4">
+      <div className="bg-background text-white font-sans min-h-screen flex flex-col justify-center items-center gap-4">
         <h1 className="text-3xl font-black font-space tracking-tight">
           <span className="bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">Vivid</span> Lingua
         </h1>
@@ -2668,7 +2668,7 @@ function LearnerApp() {
 
       {/* Standalone Duolingo Core Quiz Overlay (Matches Screen 1 format explicitly) */}
       {coreLessonActive && (
-        <div id="core-lesson-modal" className="fixed inset-0 bg-[#020205] z-100 flex flex-col items-center justify-between pb-8 pt-4 px-4 md:px-12 animate-fade-in text-white">
+        <div id="core-lesson-modal" className="fixed inset-0 bg-background z-100 flex flex-col items-center justify-between pb-8 pt-4 px-4 md:px-12 animate-fade-in text-white">
           {/* Atmospheric background glows in overlay */}
           <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-purple-900/10 rounded-full blur-[120px] pointer-events-none"></div>
           <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-blue-900/10 rounded-full blur-[120px] pointer-events-none"></div>
@@ -2727,7 +2727,7 @@ function LearnerApp() {
                   }`}
                 >
                   <span className="absolute top-4 right-4 border border-white/10 bg-white/5 px-2 py-1 rounded font-space text-[12px] font-bold text-slate-400 group-hover:border-purple-500/50 group-hover:text-purple-400">1</span>
-                  <span className={`font-sans text-lg font-bold ${coreLessonAnswer === 0 && coreLessonFeedback === 'incorrect' ? 'text-red-300' : 'text-slate-250 group-hover:text-purple-300'}`}>Өглөөний мэнд</span>
+                  <span className={`font-sans text-lg font-bold ${coreLessonAnswer === 0 && coreLessonFeedback === 'incorrect' ? 'text-red-300' : 'text-slate-200 group-hover:text-purple-300'}`}>Өглөөний мэнд</span>
                 </button>
 
                 {/* Option 2 (Correct) */}
@@ -3204,7 +3204,7 @@ function LearnerApp() {
       )}
 
       {/* Main Workspace Frame */}
-      <main className="flex-grow md:ml-[280px] px-4 md:px-8 flex flex-col justify-between pt-24 md:pt-8 w-full min-h-screen relative overflow-hidden bg-[#020205]">
+      <main className="flex-grow md:ml-[280px] px-4 md:px-8 flex flex-col justify-between pt-24 md:pt-8 w-full min-h-screen relative overflow-hidden bg-background">
         {/* Ambient neon flares */}
         <div className="absolute top-10 left-10 w-96 h-96 bg-purple-900/15 rounded-full blur-[140px] pointer-events-none"></div>
         <div className="absolute bottom-10 right-10 w-96 h-96 bg-blue-900/10 rounded-full blur-[140px] pointer-events-none"></div>
@@ -4024,7 +4024,7 @@ function LearnerApp() {
                     value={dictSearch}
                     onChange={(e) => setDictSearch(e.target.value)}
                     placeholder="Герман эсвэл монгол үгээр хайх..."
-                    className="w-full bg-surface-container-low border-2 border-on-background rounded-xl pl-12 pr-10 py-3 text-md font-bold text-slate-900 focus:border-secondary outline-none transition-all placeholder:text-outline placeholder:font-normal shadow-inner"
+                    className="w-full bg-surface-container-low border-2 border-on-background rounded-xl pl-12 pr-10 py-3 text-md font-bold text-on-surface focus:border-secondary outline-none transition-all placeholder:text-outline placeholder:font-normal shadow-inner"
                   />
                   {dictSearch && (
                     <button
@@ -4209,7 +4209,7 @@ function LearnerApp() {
                         Орчуулагч
                       </h2>
                     </div>
-                    <span className="text-[11px] font-space font-extrabold bg-[#0a0a16] text-purple-300 px-3 py-1 rounded-full border border-purple-500/20 uppercase tracking-widest">
+                    <span className="text-[11px] font-space font-extrabold bg-surface text-purple-300 px-3 py-1 rounded-full border border-purple-500/20 uppercase tracking-widest">
                       PRO
                     </span>
                   </div>
@@ -4267,7 +4267,7 @@ function LearnerApp() {
                     <button 
                       onClick={() => translateText()}
                       disabled={translationLoading || !translationInput.trim()}
-                      className="px-6 py-3 border-2 border-on-background text-sm font-bold bg-[#0a0a16] text-purple-300 rounded-xl hover:bg-purple-950/20 transition-all cursor-pointer block-shadow flex items-center gap-2 border-purple-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="px-6 py-3 border-2 border-on-background text-sm font-bold bg-surface text-purple-300 rounded-xl hover:bg-purple-950/20 transition-all cursor-pointer block-shadow flex items-center gap-2 border-purple-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {translationLoading ? (
                         <>
