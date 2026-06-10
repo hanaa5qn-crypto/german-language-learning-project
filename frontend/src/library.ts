@@ -8,6 +8,15 @@
 
 export type Level = 'A1' | 'A2' | 'B1' | 'B2' | 'C1' | 'C2';
 
+// --- Quiz question (нэг дасгалд хэд хэдэн асуулт байж болно) -------------------
+export interface QuizQuestion {
+  question: string;     // Асуулт (монгол)
+  choices: string[];    // Сонголтууд
+  correctIndex: number; // Зөв хариултын индекс
+  hint?: string;        // Сэжүүр
+  explanation?: string; // Зөв хариултын тайлбар
+}
+
 // --- Reading (Унших) ---------------------------------------------------------
 export interface ReadingItem {
   id: number;
@@ -22,6 +31,7 @@ export interface ReadingItem {
   correctIndex: number;
   hint?: string;        // Нэмэлт сэжүүр (заавал биш)
   explanation?: string; // Зөв хариултын дэлгэрэнгүй тайлбар (заавал биш)
+  questions?: QuizQuestion[]; // Олон асуултын багц (байвал дээрх ганц асуултыг орлоно)
 }
 
 // --- Listening (Сонсох) ------------------------------------------------------
@@ -38,6 +48,7 @@ export interface ListeningItem {
   correctIndex: number;
   hint?: string;        // Нэмэлт сэжүүр (заавал биш)
   explanation?: string; // Зөв хариултын дэлгэрэнгүй тайлбар (заавал биш)
+  questions?: QuizQuestion[]; // Олон асуултын багц (байвал дээрх ганц асуултыг орлоно)
 }
 
 // --- Writing (Бичих) ---------------------------------------------------------
@@ -1233,3 +1244,52 @@ export const SPEAKING_LIBRARY: SpeakingItem[] = [
     modelMn: 'Тийм, аялах нь маш чухал гэж би боддог. Аялахдаа өөр соёл, хүмүүстэй танилцдаг. Хүн илүү нээлттэй болж, ертөнцийг илүү сайн ойлгодог. Түүнчлэн зүгээр л зугаатай.',
     tips: ['Ich finde … wichtig (… чухал гэж бодно)', 'Wenn man reist, … (Аялахад …)', 'Man wird … (Хүн … болдог)'] },
 ];
+
+// =============================================================================
+// Дээд түвшний (B2/C1/C2) нөөц + дэлгэрэнгүй асуултын сан — нэгтгэл
+// -----------------------------------------------------------------------------
+// libraryExtra/libraryQuestions нь эндээс зөвхөн ТӨРЛҮҮД импортолдог тул
+// ажиллах үед тойрог хамаарал үүсэхгүй.
+// =============================================================================
+import { READING_EXTRA, LISTENING_EXTRA, SPEAKING_EXTRA, WRITING_EXTRA } from './libraryExtra';
+import { READING_QUESTIONS, LISTENING_QUESTIONS } from './libraryQuestions';
+
+READING_LIBRARY.push(...READING_EXTRA);
+LISTENING_LIBRARY.push(...LISTENING_EXTRA);
+SPEAKING_LIBRARY.push(...SPEAKING_EXTRA);
+WRITING_LIBRARY.push(...WRITING_EXTRA);
+
+// Нэг дасгалын бүх асуултыг буцаана: item.questions → асуултын сан → хуучин ганц асуулт.
+export function getReadingQuestions(item: ReadingItem): QuizQuestion[] {
+  if (item.questions && item.questions.length > 0) return item.questions;
+  const extra = READING_QUESTIONS[item.id];
+  if (extra && extra.length > 0) return extra;
+  return [{ question: item.question, choices: item.choices, correctIndex: item.correctIndex, hint: item.hint, explanation: item.explanation }];
+}
+
+export function getListeningQuestions(item: ListeningItem): QuizQuestion[] {
+  if (item.questions && item.questions.length > 0) return item.questions;
+  const extra = LISTENING_QUESTIONS[item.id];
+  if (extra && extra.length > 0) return extra;
+  return [{ question: item.question, choices: item.choices, correctIndex: item.correctIndex, hint: item.hint, explanation: item.explanation }];
+}
+
+// --- Хариултын байрлалыг тогтмол (deterministic) холих ------------------------
+// Зөв хариулт өгөгдөлд ихэвчлэн "Б" байрлалд байсныг render үед сэдээр (seed)
+// холино: нэг асуулт нэг хэрэглэгчид үргэлж адил дарааллаар харагдах тул UI
+// тогтвортой, гэхдээ "үргэлж дундахыг сонгох" хууран мэхлэлт ажиллахгүй.
+export function shuffleQuiz(seedKey: string, q: QuizQuestion): QuizQuestion {
+  let seed = 0;
+  for (let i = 0; i < seedKey.length; i++) seed = (seed * 31 + seedKey.charCodeAt(i)) >>> 0;
+  const order = q.choices.map((_, i) => i);
+  for (let i = order.length - 1; i > 0; i--) {
+    seed = (seed * 1664525 + 1013904223) >>> 0; // LCG — Math.random-оос ялгаатай нь давтагдашгүй биш, тогтмол
+    const j = seed % (i + 1);
+    [order[i], order[j]] = [order[j], order[i]];
+  }
+  return {
+    ...q,
+    choices: order.map((i) => q.choices[i]),
+    correctIndex: order.indexOf(q.correctIndex),
+  };
+}
