@@ -26,11 +26,18 @@ interface PendingInvoice {
   customerName?: string;
   plan: string;
   interval?: BillingInterval; // older invoices predate annual billing → month
+  // 'subscription' (default) renews access; 'placement' is a one-off purchase
+  // that unlocks the placement-test result for the user.
+  product?: 'subscription' | 'placement';
   amountMnt: number;
   amountCents: number;
   currency: 'MNT';
   status: 'pending' | 'paid' | 'failed';
 }
+
+// One-off price for revealing the placement test result.
+const PLACEMENT_RESULT_PRICE_MNT = 5000;
+const PLACEMENT_PLAN_NAME = 'Placement result';
 
 function amountMntToCents(amountMnt: number): number {
   return Math.round(amountMnt * 100);
@@ -101,6 +108,7 @@ async function activatePaidInvoice(
   if (!admin) throw new Error(firebaseAdminMissingMessage());
 
   const now = new Date();
+  const isPlacement = invoice.product === 'placement';
   const currentPeriodEnd = addMonths(now, invoice.interval === 'year' ? 12 : 1).toISOString();
   const paymentId = String(paidPayment.payment_id || invoice.providerInvoiceId);
   const paymentRef = admin.db.collection('payments').doc(sanitizeDocId(`${invoice.provider}_${paymentId}`));
@@ -119,32 +127,55 @@ async function activatePaidInvoice(
       customerEmail: invoice.customerEmail,
       userId: invoice.userId,
       plan: invoice.plan,
+      product: invoice.product ?? 'subscription',
       createdAt: paidPayment.payment_date || now.toISOString(),
       qpay: paidPayment,
     }, { merge: true });
 
-    tx.set(userRef, {
-      billing: {
-        plan: invoice.plan,
-        status: 'active',
-        interval: invoice.interval ?? 'month',
-        monthlyAmountCents: invoice.amountCents,
-        lifetimeValueCents: FieldValue.increment(invoice.amountCents),
-        currency: invoice.currency,
-        provider: invoice.provider,
-        currentPeriodEnd,
-      },
-    }, { merge: true });
+    if (isPlacement) {
+      // One-off purchase: unlock the placement result without touching the
+      // subscription plan/status. Revenue still counts toward lifetime value.
+      tx.set(userRef, {
+        placement: { unlocked: true, unlockedBy: invoice.provider },
+        billing: {
+          lifetimeValueCents: FieldValue.increment(invoice.amountCents),
+          currency: invoice.currency,
+          provider: invoice.provider,
+        },
+      }, { merge: true });
+    } else {
+      tx.set(userRef, {
+        billing: {
+          plan: invoice.plan,
+          status: 'active',
+          interval: invoice.interval ?? 'month',
+          monthlyAmountCents: invoice.amountCents,
+          lifetimeValueCents: FieldValue.increment(invoice.amountCents),
+          currency: invoice.currency,
+          provider: invoice.provider,
+          currentPeriodEnd,
+        },
+      }, { merge: true });
+    }
 
     tx.set(invoiceRef, {
       status: 'paid',
       paidAt: FieldValue.serverTimestamp(),
       paymentId,
-      currentPeriodEnd,
+      ...(isPlacement ? {} : { currentPeriodEnd }),
       updatedAt: FieldValue.serverTimestamp(),
       qpayPayment: paidPayment,
     }, { merge: true });
   });
+
+  if (isPlacement) {
+    return {
+      plan: invoice.plan,
+      status: 'paid',
+      currency: invoice.currency,
+      provider: invoice.provider,
+    };
+  }
 
   return {
     plan: invoice.plan,
@@ -230,16 +261,30 @@ export function registerPaymentsRoute(app: Express) {
       return res.status(401).json({ error: 'Sign in again before starting payment.' });
     }
 
-    const planId = parsePaidPlanId(req.body?.plan);
-    if (!planId) {
-      return res.status(400).json({ error: 'Багцаа сонгоно уу (pro эсвэл max).', methods: paymentMethodsPayload() });
+    const product: 'subscription' | 'placement' =
+      req.body?.product === 'placement' ? 'placement' : 'subscription';
+
+    let planLabel: string;
+    let interval: BillingInterval | null = null;
+    let amountMnt: number;
+    let description: string;
+    if (product === 'placement') {
+      planLabel = PLACEMENT_PLAN_NAME;
+      amountMnt = PLACEMENT_RESULT_PRICE_MNT;
+      description = 'Placement test result - Vivid Lingua';
+    } else {
+      const planId = parsePaidPlanId(req.body?.plan);
+      if (!planId) {
+        return res.status(400).json({ error: 'Багцаа сонгоно уу (pro эсвэл max).', methods: paymentMethodsPayload() });
+      }
+      interval = parseBillingInterval(req.body?.interval);
+      const plan = getPaidPlans()[planId];
+      amountMnt = interval === 'year' ? plan.yearAmountMnt : plan.amountMnt;
+      planLabel = planId;
+      description = `${plan.name} ${interval === 'year' ? 'annual' : 'monthly'} access - Vivid Lingua`;
     }
-    const interval = parseBillingInterval(req.body?.interval);
-    const plan = getPaidPlans()[planId];
-    const amountMnt = interval === 'year' ? plan.yearAmountMnt : plan.amountMnt;
 
     const senderInvoiceNo = senderInvoiceNoFor(user.uid);
-    const description = `${plan.name} ${interval === 'year' ? 'annual' : 'monthly'} access - Vivid Lingua`;
 
     try {
       const qpayInvoice = await createQPayInvoice({
@@ -264,8 +309,9 @@ export function registerPaymentsRoute(app: Express) {
         userId: user.uid,
         customerEmail: user.email ?? '',
         customerName: user.name ?? '',
-        plan: planId,
-        interval,
+        plan: planLabel,
+        product,
+        ...(interval ? { interval } : {}),
         amountMnt,
         amountCents,
         currency: 'MNT',
@@ -279,8 +325,9 @@ export function registerPaymentsRoute(app: Express) {
         provider: 'qpay',
         senderInvoiceNo,
         providerInvoiceId: qpayInvoice.invoice_id,
-        plan: planId,
-        interval,
+        plan: planLabel,
+        product,
+        ...(interval ? { interval } : {}),
         amountMnt,
         currency: 'MNT',
         qrText: qpayInvoice.qr_text,
@@ -337,13 +384,25 @@ export function registerPaymentsRoute(app: Express) {
       return res.status(401).json({ error: 'Sign in again before starting payment.' });
     }
 
-    const planId = parsePaidPlanId(req.body?.plan);
-    if (!planId) {
-      return res.status(400).json({ error: 'Багцаа сонгоно уу (pro эсвэл max).' });
+    const product: 'subscription' | 'placement' =
+      req.body?.product === 'placement' ? 'placement' : 'subscription';
+
+    let planLabel: string;
+    let interval: BillingInterval | null = null;
+    let amountMnt: number;
+    if (product === 'placement') {
+      planLabel = PLACEMENT_PLAN_NAME;
+      amountMnt = PLACEMENT_RESULT_PRICE_MNT;
+    } else {
+      const planId = parsePaidPlanId(req.body?.plan);
+      if (!planId) {
+        return res.status(400).json({ error: 'Багцаа сонгоно уу (pro эсвэл max).' });
+      }
+      interval = parseBillingInterval(req.body?.interval);
+      const plan = getPaidPlans()[planId];
+      amountMnt = interval === 'year' ? plan.yearAmountMnt : plan.amountMnt;
+      planLabel = planId;
     }
-    const interval = parseBillingInterval(req.body?.interval);
-    const plan = getPaidPlans()[planId];
-    const amountMnt = interval === 'year' ? plan.yearAmountMnt : plan.amountMnt;
 
     const senderInvoiceNo = senderInvoiceNoFor(user.uid);
     const amountCents = amountMntToCents(amountMnt);
@@ -355,8 +414,9 @@ export function registerPaymentsRoute(app: Express) {
       userId: user.uid,
       customerEmail: user.email ?? '',
       customerName: user.name ?? '',
-      plan: planId,
-      interval,
+      plan: planLabel,
+      product,
+      ...(interval ? { interval } : {}),
       amountMnt,
       amountCents,
       currency: 'MNT',
@@ -369,8 +429,9 @@ export function registerPaymentsRoute(app: Express) {
       provider: 'dummy',
       senderInvoiceNo,
       providerInvoiceId: `dummy_${senderInvoiceNo}`,
-      plan: planId,
-      interval,
+      plan: planLabel,
+      product,
+      ...(interval ? { interval } : {}),
       amountMnt,
       currency: 'MNT',
     });

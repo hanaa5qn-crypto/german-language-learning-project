@@ -25,6 +25,20 @@ export interface UserProfile {
   dailyGoalMinutes?: number;
   // Streak freeze: how many 1-day grace days the user has available
   streakFreezeCount?: number;
+  // New signups take the placement test right after onboarding; cleared once
+  // the test is finished or skipped.
+  placementPending?: boolean;
+  // Placement test outcome. `unlocked` = the learner may see the result
+  // (paid the reveal fee, or founder account).
+  placement?: {
+    takenAt: string;
+    level: string;
+    totalCorrect: number;
+    totalQuestions: number;
+    skillScores: Record<string, { correct: number; total: number }>;
+    unlocked: boolean;
+    unlockedBy?: string;
+  };
   billing?: {
     plan?: string;
     status?: string;
@@ -210,6 +224,7 @@ export function createCustomProfile(
     srsByWord: {},
     mistakeIds: [],
     onboardingDone: false,
+    placementPending: true,
     dailyGoalMinutes: 15,
     streakFreezeCount: 1,
     createdAt: now,
