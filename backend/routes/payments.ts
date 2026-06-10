@@ -25,11 +25,18 @@ interface PendingInvoice {
   customerEmail: string;
   customerName?: string;
   plan: string;
+  // 'subscription' (default) renews monthly access; 'placement' is a one-off
+  // purchase that unlocks the placement-test result for the user.
+  product?: 'subscription' | 'placement';
   amountMnt: number;
   amountCents: number;
   currency: 'MNT';
   status: 'pending' | 'paid' | 'failed';
 }
+
+// One-off price for revealing the placement test result.
+const PLACEMENT_RESULT_PRICE_MNT = 5000;
+const PLACEMENT_PLAN_NAME = 'Placement result';
 
 function amountMntToCents(amountMnt: number): number {
   return Math.round(amountMnt * 100);
@@ -100,6 +107,7 @@ async function activatePaidInvoice(
   if (!admin) throw new Error(firebaseAdminMissingMessage());
 
   const now = new Date();
+  const isPlacement = invoice.product === 'placement';
   const currentPeriodEnd = addMonths(now, 1).toISOString();
   const paymentId = String(paidPayment.payment_id || invoice.providerInvoiceId);
   const paymentRef = admin.db.collection('payments').doc(sanitizeDocId(`qpay_${paymentId}`));
@@ -118,31 +126,54 @@ async function activatePaidInvoice(
       customerEmail: invoice.customerEmail,
       userId: invoice.userId,
       plan: invoice.plan,
+      product: invoice.product ?? 'subscription',
       createdAt: paidPayment.payment_date || now.toISOString(),
       qpay: paidPayment,
     }, { merge: true });
 
-    tx.set(userRef, {
-      billing: {
-        plan: invoice.plan,
-        status: 'active',
-        monthlyAmountCents: invoice.amountCents,
-        lifetimeValueCents: FieldValue.increment(invoice.amountCents),
-        currency: invoice.currency,
-        provider: 'qpay',
-        currentPeriodEnd,
-      },
-    }, { merge: true });
+    if (isPlacement) {
+      // One-off purchase: unlock the placement result without touching the
+      // subscription plan/status. Revenue still counts toward lifetime value.
+      tx.set(userRef, {
+        placement: { unlocked: true, unlockedBy: 'qpay' },
+        billing: {
+          lifetimeValueCents: FieldValue.increment(invoice.amountCents),
+          currency: invoice.currency,
+          provider: 'qpay',
+        },
+      }, { merge: true });
+    } else {
+      tx.set(userRef, {
+        billing: {
+          plan: invoice.plan,
+          status: 'active',
+          monthlyAmountCents: invoice.amountCents,
+          lifetimeValueCents: FieldValue.increment(invoice.amountCents),
+          currency: invoice.currency,
+          provider: 'qpay',
+          currentPeriodEnd,
+        },
+      }, { merge: true });
+    }
 
     tx.set(invoiceRef, {
       status: 'paid',
       paidAt: FieldValue.serverTimestamp(),
       paymentId,
-      currentPeriodEnd,
+      ...(isPlacement ? {} : { currentPeriodEnd }),
       updatedAt: FieldValue.serverTimestamp(),
       qpayPayment: paidPayment,
     }, { merge: true });
   });
+
+  if (isPlacement) {
+    return {
+      plan: invoice.plan,
+      status: 'paid',
+      currency: invoice.currency,
+      provider: 'qpay',
+    };
+  }
 
   return {
     plan: invoice.plan,
@@ -220,16 +251,30 @@ export function registerPaymentsRoute(app: Express) {
       return res.status(401).json({ error: 'Sign in again before starting payment.' });
     }
 
-    const plan = getPaymentPlan();
-    if (!plan.amountMnt) {
-      return res.status(503).json({
-        error: 'Subscription price is not configured yet. Set QPAY_MONTHLY_AMOUNT_MNT before taking live payments.',
-        methods: paymentMethodsPayload(),
-      });
+    const product: 'subscription' | 'placement' =
+      req.body?.product === 'placement' ? 'placement' : 'subscription';
+
+    let planName: string;
+    let amountMnt: number;
+    if (product === 'placement') {
+      planName = PLACEMENT_PLAN_NAME;
+      amountMnt = PLACEMENT_RESULT_PRICE_MNT;
+    } else {
+      const plan = getPaymentPlan();
+      if (!plan.amountMnt) {
+        return res.status(503).json({
+          error: 'Subscription price is not configured yet. Set QPAY_MONTHLY_AMOUNT_MNT before taking live payments.',
+          methods: paymentMethodsPayload(),
+        });
+      }
+      planName = plan.plan;
+      amountMnt = plan.amountMnt;
     }
 
     const senderInvoiceNo = senderInvoiceNoFor(user.uid);
-    const description = `${plan.plan} access - Vivid Lingua`;
+    const description = product === 'placement'
+      ? 'Placement test result - Vivid Lingua'
+      : `${planName} access - Vivid Lingua`;
 
     try {
       const qpayInvoice = await createQPayInvoice({
@@ -238,7 +283,7 @@ export function registerPaymentsRoute(app: Express) {
         receiverName: user.name,
         receiverEmail: user.email,
         description,
-        amountMnt: plan.amountMnt,
+        amountMnt,
         callbackUrl: callbackUrlFor(req, senderInvoiceNo),
       });
 
@@ -246,7 +291,7 @@ export function registerPaymentsRoute(app: Express) {
         return res.status(502).json({ error: 'QPay did not return an invoice_id.', qpayInvoice });
       }
 
-      const amountCents = amountMntToCents(plan.amountMnt);
+      const amountCents = amountMntToCents(amountMnt);
       await admin.db.collection('paymentInvoices').doc(senderInvoiceNo).set({
         provider: 'qpay',
         providerInvoiceId: qpayInvoice.invoice_id,
@@ -254,8 +299,9 @@ export function registerPaymentsRoute(app: Express) {
         userId: user.uid,
         customerEmail: user.email ?? '',
         customerName: user.name ?? '',
-        plan: plan.plan,
-        amountMnt: plan.amountMnt,
+        plan: planName,
+        product,
+        amountMnt,
         amountCents,
         currency: 'MNT',
         status: 'pending',
@@ -268,8 +314,9 @@ export function registerPaymentsRoute(app: Express) {
         provider: 'qpay',
         senderInvoiceNo,
         providerInvoiceId: qpayInvoice.invoice_id,
-        plan: plan.plan,
-        amountMnt: plan.amountMnt,
+        plan: planName,
+        product,
+        amountMnt,
         currency: 'MNT',
         qrText: qpayInvoice.qr_text,
         qrImage: qpayInvoice.qr_image,

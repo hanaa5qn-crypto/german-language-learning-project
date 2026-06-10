@@ -34,6 +34,8 @@ import {
 } from './learning';
 import { buildInflectedLookup } from './inflect';
 import OnboardingWizard from './OnboardingWizard';
+import PlacementTest from './PlacementTest';
+import { isFounderEmail } from './placement';
 import GrammarTipCard from './GrammarTipCard';
 
 // Union of all exam item types — they all share `topic`, `title`, `titleMn`.
@@ -748,6 +750,9 @@ function LearnerApp() {
   const [examLevelSel, setExamLevelSel] = useState<ExamLevel | null>(null);
   // Бүрэн TestDaF загвар шалгалтын симуляци (бүрэн дэлгэц overlay).
   const [testdafOpen, setTestdafOpen] = useState(false);
+  // Түвшин тогтоох тест: шинэ хэрэглэгчид onboarding-ийн дараа автоматаар,
+  // бусад нь Шалгалт табын картаар нээнэ.
+  const [placementOpen, setPlacementOpen] = useState(false);
   const [examSec, setExamSec] = useState<'reading' | 'listening' | 'writing' | 'speaking'>('reading');
   const [examItemIdx, setExamItemIdx] = useState(0);
   const [examItemAns, setExamItemAns] = useState<number | null>(null);
@@ -2452,6 +2457,32 @@ function LearnerApp() {
             targetLevel: data.level,
             dailyGoalMinutes: data.dailyGoalMinutes,
           });
+        }}
+      />
+    );
+  }
+
+  // Шинэ хэрэглэгч onboarding дуусмагц түвшин тогтоох тест өгнө; бусад үед
+  // Шалгалт табын картаар дахин нээж болно. Үр дүн нээгдсэн (төлбөртэй/founder)
+  // үед л targetLevel-ийг тестийн түвшнээр шинэчилнэ.
+  if (currentUser && (currentUser.placementPending || placementOpen)) {
+    return (
+      <PlacementTest
+        isFounder={isFounderEmail(currentUser.email)}
+        onFinish={(record) => {
+          setPlacementOpen(false);
+          applyMetricProfile({
+            ...currentUser,
+            placementPending: false,
+            placement: record,
+            ...(record.unlocked ? { targetLevel: record.level } : {}),
+          });
+        }}
+        onSkip={() => {
+          setPlacementOpen(false);
+          if (currentUser.placementPending) {
+            applyMetricProfile({ ...currentUser, placementPending: false });
+          }
         }}
       />
     );
@@ -4229,6 +4260,24 @@ function LearnerApp() {
               {/* LEVEL SELECTOR */}
               {examLevelSel === null && (
                 <>
+                  {/* Түвшин тогтоох үнэлгээний тест — 4 ур чадвар, CEFR түвшин */}
+                  <button onClick={() => setPlacementOpen(true)}
+                    className="w-full text-left mb-4 bg-gradient-to-br from-purple-600 to-blue-600 border-2 border-on-background rounded-2xl p-5 md:p-6 block-shadow hover:scale-[1.01] active:scale-95 transition-transform cursor-pointer">
+                    <div className="flex items-start gap-4">
+                      <div className="w-12 h-12 rounded-xl bg-white/15 border-2 border-on-background flex items-center justify-center shrink-0">
+                        <Sparkles className="w-7 h-7 text-yellow-300" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h3 className="text-lg md:text-xl font-black font-space text-white">Түвшин тогтоох тест</h3>
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-yellow-300 text-blue-900">Einstufungstest</span>
+                        </div>
+                        <p className="text-xs text-white/85 leading-relaxed mt-1">Дөрвөн ур чадварыг бүгдийг шалгаад <b className="text-white">CEFR түвшнээ</b> (A1–C2) тогтоолгоно. Асуултууд таны түвшинд автоматаар тохирно. 10–15 минут.</p>
+                        <span className="inline-flex items-center gap-1 mt-2 text-xs font-bold text-white bg-white/15 border border-on-background px-3 py-1 rounded-full">Тест эхлүүлэх <ArrowRight className="w-3.5 h-3.5" /></span>
+                      </div>
+                    </div>
+                  </button>
+
                   {/* TestDaF бүрэн загвар шалгалтын симуляци */}
                   <button onClick={() => setTestdafOpen(true)}
                     className="w-full text-left mb-6 bg-gradient-to-br from-violet-600 to-fuchsia-600 border-2 border-on-background rounded-2xl p-5 md:p-6 block-shadow hover:scale-[1.01] active:scale-95 transition-transform cursor-pointer">
