@@ -7,7 +7,7 @@
 // No React, no Firebase — everything here is deterministic and unit-testable.
 // =============================================================================
 
-import { VocabularyWord } from './types';
+import { VocabularyWord, CEFRLevel } from './types';
 import {
   READING_LIBRARY, LISTENING_LIBRARY, SPEAKING_LIBRARY, WRITING_LIBRARY,
   Level, ReadingItem, ListeningItem, SpeakingItem, WritingItem,
@@ -53,6 +53,28 @@ export type SrsMap = Record<string, SrsEntry>;
 
 const SRS_MIN_EASE = 1.3;
 const SRS_START_EASE = 2.5;
+
+// --- CEFR level ordering (A1 easiest → C2 hardest) ---------------------------
+// The dictionary itself only carries A1–B2 (vocabeo tags beyond-core as B2),
+// but the placement test can report up to C2, so the map covers the full scale.
+const CEFR_ORDER: Record<string, number> = { A1: 0, A2: 1, B1: 2, B2: 3, C1: 4, C2: 5 };
+
+// Easiest-first comparator: CEFR level, then frequency rank within a level.
+export function compareWordsByLevel(a: VocabularyWord, b: VocabularyWord): number {
+  const la = CEFR_ORDER[a.level ?? 'A1'] ?? 0;
+  const lb = CEFR_ORDER[b.level ?? 'A1'] ?? 0;
+  if (la !== lb) return la - lb;
+  return (a.rank ?? Number.MAX_SAFE_INTEGER) - (b.rank ?? Number.MAX_SAFE_INTEGER);
+}
+
+// Map a placement-test level (A1…C2) to the trainer level filter. C1/C2
+// learners get B2 words — the hardest band the dictionary has.
+export function suggestedWordLevel(placementLevel: string | undefined): CEFRLevel | null {
+  if (!placementLevel) return null;
+  if (placementLevel === 'C1' || placementLevel === 'C2') return 'B2';
+  if (placementLevel in CEFR_ORDER) return placementLevel as CEFRLevel;
+  return null;
+}
 
 // Same identity the existing activity log uses for vocabulary words.
 export function srsWordKey(word: VocabularyWord): string {
@@ -112,8 +134,11 @@ export function orderTrainerWords(
     else if (entry.due <= todayKey) due.push(word);
     else scheduled.push(word);
   }
-  due.sort((a, b) => srs[srsWordKey(a)].due.localeCompare(srs[srsWordKey(b)].due));
-  scheduled.sort((a, b) => srs[srsWordKey(a)].due.localeCompare(srs[srsWordKey(b)].due));
+  const byDueThenLevel = (a: VocabularyWord, b: VocabularyWord) =>
+    srs[srsWordKey(a)].due.localeCompare(srs[srsWordKey(b)].due) || compareWordsByLevel(a, b);
+  due.sort(byDueThenLevel);
+  fresh.sort(compareWordsByLevel); // new words always start at A1 and climb to C2
+  scheduled.sort(byDueThenLevel);
   return [...due, ...fresh, ...scheduled];
 }
 

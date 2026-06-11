@@ -28,6 +28,7 @@ import { isFirebaseConfigured, getStorageInstance, getAuthInstance } from './fir
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import {
   SrsMap, reviewSrs, srsWordKey, orderTrainerWords, countDueWords, isDue,
+  compareWordsByLevel, suggestedWordLevel,
   calculateStreakWithGrace, StreakResult,
   buildUnitsForLevel, unitProgress, isUnitPassed, isUnitUnlocked, lockedItemIds, Unit, UnitActivity, UNIT_PASS_RATIO,
   addMistake, clearMistake, resolveMistakes, MistakeRef,
@@ -68,7 +69,12 @@ const TRACKABLE_ACTIVITY_TOTAL =
     0,
   );
 
-const TRAINER_WORDS = DICTIONARY.filter((w) => w.mongolian.trim().length > 0);
+// Trainer deck, easiest first (A1 → C2) so beginners meet beginner words.
+const TRAINER_WORDS = DICTIONARY.filter((w) => w.mongolian.trim().length > 0).sort(compareWordsByLevel);
+
+// How many cards a "Дахин давтах" (don't know) word waits before reappearing
+// in the same session.
+const VOCAB_REQUEUE_GAP = 5;
 
 function localDateKey(date = new Date()): string {
   const year = date.getFullYear();
@@ -689,7 +695,32 @@ function LearnerApp() {
   const [vocabList, setVocabList] = useState<VocabularyWord[]>([...TRAINER_WORDS]);
   const [vocabFlipped, setVocabFlipped] = useState(false);
   const [vocabMemorizedCount, setVocabMemorizedCount] = useState(0);
-  const [vocabTotalCount] = useState(TRAINER_WORDS.length);
+  const vocabTotalCount = vocabList.length;
+  // Trainer CEFR filter. Defaults to the learner's placement-test level the
+  // first time they open the trainer (see selectTab); they can switch freely after.
+  const [trainerLevel, setTrainerLevel] = useState<CEFRLevel | 'all'>('all');
+  const trainerLevelInitRef = useRef(false);
+  // Placement-based suggestion — only once the result is unlocked, so the
+  // trainer never leaks a level the learner hasn't paid to reveal.
+  const placementSuggestedLevel = useMemo(() => {
+    const placement = currentUser?.placement;
+    if (!placement?.unlocked) return null;
+    return suggestedWordLevel(placement.level);
+  }, [currentUser?.placement?.level, currentUser?.placement?.unlocked]);
+
+  // Rebuild the trainer queue: filter by level, then SRS order (due → new → scheduled).
+  const rebuildTrainerQueue = (level: CEFRLevel | 'all') => {
+    const words = level === 'all' ? TRAINER_WORDS : TRAINER_WORDS.filter((w) => w.level === level);
+    setVocabList(orderTrainerWords(words, currentUserRef.current?.srsByWord ?? {}));
+    setCurrentVocabIndex(0);
+    setVocabFlipped(false);
+    setVocabMemorizedCount(0);
+  };
+
+  const selectTrainerLevel = (level: CEFRLevel | 'all') => {
+    setTrainerLevel(level);
+    rebuildTrainerQueue(level);
+  };
 
   // Dictionary (Browse) state — vocabeo-style searchable/filterable word list
   const [vocabView, setVocabView] = useState<'trainer' | 'browse'>('trainer');
@@ -710,7 +741,7 @@ function LearnerApp() {
         (w.english ? w.english.toLowerCase().includes(q) : false) ||
         (w.article ? `${w.article} ${w.german}`.toLowerCase().includes(q) : false)
       );
-    });
+    }).sort(compareWordsByLevel); // easiest first: A1 → C2
   }, [dictSearch, dictClass, dictLevel]);
 
   // Reset paging whenever the filters change so the list starts from the top.
@@ -1391,10 +1422,27 @@ function LearnerApp() {
     if (knows) {
       setVocabMemorizedCount(prev => Math.min(prev + 1, vocabTotalCount));
     }
-    
-    // Advance carousel index
+
+    // Advance after the flip-back animation. A known word just moves on; an
+    // unknown word is pulled out and reinserted a few cards ahead so it comes
+    // back around in this same session.
     setTimeout(() => {
-      setCurrentVocabIndex(prev => (prev + 1) % vocabList.length);
+      if (knows) {
+        setCurrentVocabIndex(prev => (prev + 1) % vocabList.length);
+        return;
+      }
+      const idx = currentVocabIndex;
+      setVocabList(prev => {
+        const next = [...prev];
+        const [again] = next.splice(idx, 1);
+        next.splice(Math.min(idx + VOCAB_REQUEUE_GAP, next.length), 0, again);
+        return next;
+      });
+      // Removing the current card shifts the next one into this index — except
+      // on the last card, where the reinsert lands back on itself; wrap then.
+      if (idx >= vocabList.length - 1) {
+        setCurrentVocabIndex(0);
+      }
     }, 200);
   };
 
@@ -1461,9 +1509,16 @@ function LearnerApp() {
     resetWritingFeedback();
     
     if (tab === 'vocab') {
-      const ordered = orderTrainerWords(TRAINER_WORDS, currentUserRef.current?.srsByWord ?? {});
-      setVocabList(ordered);
-      setCurrentVocabIndex(0);
+      // First visit: preselect the level the placement test suggested.
+      let level = trainerLevel;
+      if (!trainerLevelInitRef.current) {
+        trainerLevelInitRef.current = true;
+        if (placementSuggestedLevel) {
+          level = placementSuggestedLevel;
+          setTrainerLevel(level);
+        }
+      }
+      rebuildTrainerQueue(level);
     }
   };
 
@@ -4247,6 +4302,38 @@ function LearnerApp() {
             </div>
 
             {vocabView === 'trainer' && (
+            <>
+            {/* Trainer level filter (A1 → C2) + placement-based suggestion */}
+            <div className="flex flex-wrap items-center gap-2 mb-6">
+              <span className="text-xs font-space font-bold text-outline uppercase tracking-wider mr-1">Түвшин:</span>
+              {LEVEL_OPTIONS.map((lvl) => (
+                <button
+                  key={lvl}
+                  onClick={() => selectTrainerLevel(lvl)}
+                  className={`px-3.5 py-1.5 border-2 border-on-background rounded-lg text-xs font-bold tracking-tight transition-all cursor-pointer block-shadow ${
+                    trainerLevel === lvl ? 'bg-secondary text-white' : 'bg-surface-container hover:bg-surface-container-high text-on-surface-variant'
+                  }`}
+                >
+                  {lvl === 'all' ? 'Бүгд' : lvl}
+                  {lvl !== 'all' && lvl === placementSuggestedLevel && (
+                    <span className="ml-1.5 text-[10px] uppercase opacity-80">★</span>
+                  )}
+                </button>
+              ))}
+              {placementSuggestedLevel && (
+                <span className="text-xs font-bold text-secondary font-sans ml-1">
+                  ★ Түвшин тогтоох шалгалтын дүнгээр танд {placementSuggestedLevel} түвшний үгсийг санал болгож байна
+                </span>
+              )}
+            </div>
+
+            {vocabList.length === 0 ? (
+              <div className="rounded-2xl border-2 border-on-background p-10 block-shadow text-center">
+                <p className="font-bold text-on-surface-variant font-sans">
+                  Энэ түвшинд дасгал хийх үг алга. Өөр түвшин сонгоно уу.
+                </p>
+              </div>
+            ) : (
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
 
               {/* Central carousel card element block */}
@@ -4466,6 +4553,8 @@ function LearnerApp() {
               </aside>
 
             </div>
+            )}
+            </>
             )}
 
             {/* Dictionary (Browse) — searchable, filterable German→Mongolian word list */}
