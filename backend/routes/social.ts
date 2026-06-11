@@ -24,8 +24,6 @@ import { decideDuelWinner, normalizeCode, randomCode, weekMinutes } from '../lib
 const DUEL_QUESTION_COUNT = 10;
 const VALID_LEVELS = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
 const REFERRAL_REDEEM_WINDOW_DAYS = 7;
-// Урилгаар бүртгүүлсэн шинэ хэрэглэгчид олгох үнэгүй Pro туршилтын хоног.
-const REFERRAL_TRIAL_DAYS = 3;
 // backend/lib/plans.ts-тэй ижил: эдгээр статустай billing-ийг идэвхтэй гэж үзнэ.
 const ACTIVE_BILLING_STATUSES = ['active', 'paid', 'trialing'];
 
@@ -343,8 +341,9 @@ export function registerSocialRoute(app: Express) {
       const outcome = await admin.db.runTransaction(async (tx) => {
         const meRef = admin.db.collection('users').doc(uid);
         const inviterRef = admin.db.collection('users').doc(inviterUid);
-        const meSnap = await tx.get(meRef);
+        const [meSnap, inviterSnap] = await Promise.all([tx.get(meRef), tx.get(inviterRef)]);
         const me = meSnap.exists ? (meSnap.data() as Record<string, unknown>) : {};
+        const inviter = inviterSnap.exists ? (inviterSnap.data() as Record<string, unknown>) : {};
 
         // Идемпотент: аль хэдийн уригдсан бол юу ч хийхгүй.
         if (typeof me.referredBy === 'string' && me.referredBy) {
@@ -358,31 +357,27 @@ export function registerSocialRoute(app: Express) {
           return { redeemed: false as const, tooOld: true };
         }
 
-        // Урилгын гол шагнал: шинэ хэрэглэгчид 3 өдрийн Pro туршилт. Аль
-        // хэдийн төлбөртэй/туршилттай данстай бол давхар олгохгүй.
-        const billing = (me.billing ?? {}) as { status?: string };
-        const hasActiveBilling = ACTIVE_BILLING_STATUSES.includes((billing.status ?? '').toLowerCase());
-        const trialEnd = new Date(Date.now() + REFERRAL_TRIAL_DAYS * 24 * 3600 * 1000).toISOString();
+        // Урилгын гол шагнал: хоёр тал хоёулаа байнгын Pro эрх авна.
+        // Аль хэдийн төлбөртэй данстай бол давхар олгохгүй.
+        const meBilling = (me.billing ?? {}) as { status?: string };
+        const hasActiveBilling = ACTIVE_BILLING_STATUSES.includes((meBilling.status ?? '').toLowerCase());
+        const inviterBilling = (inviter.billing ?? {}) as { status?: string };
+        const inviterHasActiveBilling = ACTIVE_BILLING_STATUSES.includes((inviterBilling.status ?? '').toLowerCase());
+
+        const referralProGrant = { plan: 'pro', status: 'active', interval: 'month', provider: 'referral' };
 
         tx.set(meRef, {
           referredBy: inviterUid,
           streakFreezeCount: FieldValue.increment(1),
-          ...(hasActiveBilling ? {} : {
-            billing: {
-              plan: 'pro',
-              status: 'trialing',
-              interval: 'month',
-              provider: 'referral',
-              currentPeriodEnd: trialEnd,
-            },
-          }),
+          ...(hasActiveBilling ? {} : { billing: referralProGrant }),
         }, { merge: true });
         tx.set(inviterRef, {
           invitesCount: FieldValue.increment(1),
           streakFreezeCount: FieldValue.increment(1),
+          ...(inviterHasActiveBilling ? {} : { billing: referralProGrant }),
         }, { merge: true });
         crossAddFriends(tx, admin.db, uid, inviterUid);
-        return { redeemed: true as const, proTrialDays: hasActiveBilling ? 0 : REFERRAL_TRIAL_DAYS };
+        return { redeemed: true as const, proGranted: !hasActiveBilling };
       });
 
       if (!outcome.redeemed && outcome.tooOld) {
@@ -390,7 +385,7 @@ export function registerSocialRoute(app: Express) {
       }
       return res.json({
         redeemed: outcome.redeemed,
-        ...(outcome.redeemed && outcome.proTrialDays ? { proTrialDays: outcome.proTrialDays } : {}),
+        ...(outcome.redeemed && outcome.proGranted ? { proGranted: true } : {}),
       });
     } catch (err) {
       console.error('Referral redeem failed:', err);

@@ -86,9 +86,8 @@ function planFromBilling(billing: { plan?: string; status?: string; currentPerio
   const status = (billing.status ?? '').toLowerCase();
   const active = ACTIVE_BILLING_STATUSES.includes(status);
   if (!active) return 'free';
-  // Trials (e.g. the 3-day referral Pro trial) carry no renewal flow, so they
-  // expire strictly by currentPeriodEnd. Paid plans keep the legacy behavior
-  // of trusting their status until a payment flow updates it.
+  // Trialing status: expires strictly by currentPeriodEnd (no renewal flow).
+  // Paid/active plans trust their status until a payment flow updates it.
   if (status === 'trialing') {
     const end = Date.parse(billing.currentPeriodEnd ?? '');
     if (!Number.isFinite(end) || end < Date.now()) return 'free';

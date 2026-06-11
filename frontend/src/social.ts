@@ -98,11 +98,10 @@ export function ensureReferralCode(): Promise<{ code: string; invitesCount: numb
 }
 
 // Урилга бүртгэх: энгийн referral код, эсвэл тулааны код (challenger урьсанд
-// тооцогдоно). Аль нэгийг нь өгнө. Шинэ дансанд proTrialDays (3 өдрийн Pro
-// туршилт) ирнэ.
+// тооцогдоно). Аль нэгийг нь өгнө. Амжилттай бол хоёр тал байнгын Pro авна.
 export function redeemReferralCode(
   payload: { code?: string; duelCode?: string },
-): Promise<{ redeemed: boolean; proTrialDays?: number }> {
+): Promise<{ redeemed: boolean; proGranted?: boolean }> {
   return socialFetch('/api/social/referral/redeem', {
     method: 'POST',
     body: JSON.stringify(payload),
