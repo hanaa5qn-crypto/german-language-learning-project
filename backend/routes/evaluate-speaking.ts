@@ -86,7 +86,11 @@ export function registerEvaluateSpeakingRoute(app: Express) {
     let audioData = audio;
     if (audioUrl) {
       try {
-        const fetchResponse = await fetch(audioUrl);
+        const parsedUrl = new URL(audioUrl);
+        if (parsedUrl.hostname !== 'firebasestorage.googleapis.com') {
+          return res.status(400).json({ error: 'Invalid audio URL domain.' });
+        }
+        const fetchResponse = await fetch(parsedUrl.toString());
         if (!fetchResponse.ok) {
           throw new Error(`Failed to fetch audio from URL: ${fetchResponse.statusText}`);
         }
