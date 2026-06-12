@@ -1,6 +1,52 @@
 import { GoogleGenAI } from '@google/genai';
+import { ExternalAccountClient } from 'google-auth-library';
+import { getVercelOidcToken } from '@vercel/functions/oidc';
 
 let aiClient: GoogleGenAI | null = null;
+
+// Vertex AI is billed through the Cloud billing account (free-trial credits
+// apply), unlike the Developer API which needs separate AI Studio prepaid
+// credits. Preferred whenever GOOGLE_VERTEX_PROJECT is set.
+function getVertexClient(): GoogleGenAI | null {
+  const project = process.env.GOOGLE_VERTEX_PROJECT;
+  if (!project) return null;
+
+  const location = process.env.GOOGLE_VERTEX_LOCATION || 'global';
+
+  if (process.env.VERCEL) {
+    // On Vercel: exchange the deployment's OIDC token for short-lived service
+    // account credentials via workload identity federation — no key material.
+    const projectNumber = process.env.GOOGLE_VERTEX_PROJECT_NUMBER;
+    const serviceAccount = process.env.GOOGLE_VERTEX_SERVICE_ACCOUNT;
+    if (!projectNumber || !serviceAccount) {
+      console.warn('GOOGLE_VERTEX_PROJECT set but GOOGLE_VERTEX_PROJECT_NUMBER/GOOGLE_VERTEX_SERVICE_ACCOUNT missing; skipping Vertex.');
+      return null;
+    }
+    const authClient = ExternalAccountClient.fromJSON({
+      type: 'external_account',
+      audience: `//iam.googleapis.com/projects/${projectNumber}/locations/global/workloadIdentityPools/vercel/providers/vercel`,
+      subject_token_type: 'urn:ietf:params:oauth:token-type:jwt',
+      token_url: 'https://sts.googleapis.com/v1/token',
+      service_account_impersonation_url: `https://iamcredentials.googleapis.com/v1/projects/-/serviceAccounts/${serviceAccount}:generateAccessToken`,
+      subject_token_supplier: { getSubjectToken: () => getVercelOidcToken() },
+    });
+    if (!authClient) {
+      console.warn('Failed to build workload identity client; skipping Vertex.');
+      return null;
+    }
+    authClient.scopes = ['https://www.googleapis.com/auth/cloud-platform'];
+    return new GoogleGenAI({
+      vertexai: true,
+      project,
+      location,
+      googleAuthOptions: { authClient },
+    });
+  }
+
+  // Outside Vercel (local dev): application default credentials
+  // (`gcloud auth application-default login`).
+  return new GoogleGenAI({ vertexai: true, project, location });
+}
 
 /** Normalize Vercel / .env values (trim whitespace and optional surrounding quotes). */
 export function resolveGeminiApiKey(): string | null {
@@ -11,7 +57,7 @@ export function resolveGeminiApiKey(): string | null {
 }
 
 export function isGeminiConfigured(): boolean {
-  return resolveGeminiApiKey() !== null;
+  return Boolean(process.env.GOOGLE_VERTEX_PROJECT) || resolveGeminiApiKey() !== null;
 }
 
 /** User-facing hint when the Google API rejects the server key (common on Vercel). */
@@ -30,6 +76,9 @@ export function geminiErrorMessage(err: unknown): string {
 
 export function getAIClient() {
   if (!aiClient) {
+    aiClient = getVertexClient();
+    if (aiClient) return aiClient;
+
     const key = resolveGeminiApiKey();
     if (key) {
       if (process.env.GOOGLE_API_KEY) {
