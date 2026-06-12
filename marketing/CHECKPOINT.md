@@ -11,8 +11,13 @@ Plan source: `~/.claude/plans/nah-don-t-worry-about-jiggly-wave.md` (also summar
 - [x] `marketing/` scaffolded (compositions/, assets/, output/); output + mp4 gitignored
 - [x] `marketing/.env` holds GEMINI_API_KEY (labeled, gitignored via `.env*` rule)
 - [x] Key injected into youtube-vision MCP config (`~/.claude.json`)
-- [x] **BLOCKED — reference video analysis**: key returns HTTP 403 "method blocked" on `generateContent`. Key is restricted (visual API only); needs "Generative Language API" enabled in Google Cloud console. Fallback used: standard SaaS ad structure (see reference-analysis.md)
-- [x] `reference-analysis.md` written (generic SaaS structure, pending real analysis)
+- [x] ~~youtube-vision MCP~~ ABANDONED — two keys both 403 (API-restricted project). Solved differently:
+  video downloaded via yt-dlp + ffmpeg frame extraction, analyzed visually by Claude directly
+- [x] `reference-analysis.md` — REAL frame-by-frame analysis done (2026-06-12). Video is 20s
+  16:9 "zelios" template. Full scene map + style signature + refinement gap list in that file
+- [ ] OPTIONAL refinement pass: apply NeuraFlow signature elements (spotlight beam, giant blurred
+  bg wordmark, orbit rings, typing animation, horizon glow) per reference-analysis.md gap list.
+  User said HOLD — do not render until asked
 - [x] `storyboard.md` written (30s, 5 scenes, Mongolian copy)
 - [x] HyperFrames composition built in `marketing/hyperframes/compositions/` (all 5 scenes + persistent aurora bg)
 - [x] Preview verified (lint: 0 errors; validate: no console errors, 120/120 text WCAG AA pass; inspect: 0 layout findings)

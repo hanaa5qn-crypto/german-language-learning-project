@@ -1,7 +1,7 @@
 import { Type } from '@google/genai';
 import type { Express } from 'express';
-import { aiClientWithinBudget, clampText, clientIp, consumeBudget, rateLimited } from '../lib/aiGuard';
-import { generateContentWithRetry } from '../lib/ai';
+import { aiClientWithinBudget, budgetExhausted, clampText, clientIp, consumeBudget, rateLimited } from '../lib/aiGuard';
+import { geminiErrorMessage, generateContentWithRetry, isGeminiConfigured } from '../lib/ai';
 import { checkAiAccess } from '../lib/plans';
 
 export function registerTranslateRoute(app: Express) {
@@ -20,6 +20,20 @@ export function registerTranslateRoute(app: Express) {
 
     if (!text) {
       return res.status(400).json({ error: 'Text to translate is missing' });
+    }
+
+    if (!isGeminiConfigured()) {
+      return res.status(503).json({
+        error: 'Сервер дээр GEMINI_API_KEY тохируулаагүй байна. Vercel → Settings → Environment Variables хэсэгт GEMINI_API_KEY нэмээд дахин deploy хийнэ үү.',
+        code: 'GEMINI_NOT_CONFIGURED',
+      });
+    }
+
+    if (budgetExhausted()) {
+      return res.status(503).json({
+        error: 'Өнөөдрийн AI дуудлагын хязгаар дүүрсэн. Маргааш дахин оролдоно уу.',
+        code: 'AI_DAILY_BUDGET',
+      });
     }
 
     const ai = aiClientWithinBudget();
@@ -103,6 +117,10 @@ Provide a comprehensive, high-quality localization and structural breakdown for 
         }
       } catch (err: any) {
         console.error('Gemini API translation error:', err);
+        return res.status(502).json({
+          error: geminiErrorMessage(err),
+          code: 'GEMINI_ERROR',
+        });
       }
     }
 
@@ -130,7 +148,7 @@ Provide a comprehensive, high-quality localization and structural breakdown for 
       translation: `Орчуулга: ${text} (Оффлайн горимд байна. Сүлжээ эсвэл GEMINI_API_KEY-ийг тохируулна уу)`,
       detectedLanguage: 'German',
       pronunciation: '[Оффлайн унших заавар]',
-      grammarExplanation: 'Одоогоор оффлайн горимд ажиллаж байна. AI-аар үгс бүрийг нэг бүрчлэн өндөр нарийвчлалтай шинжлүүлэхийн тулд баруун талын Тохиргоо хэсэгт API түлхүүрээ шалгана уу.',
+      grammarExplanation: 'Одоогоор оффлайн горимд ажиллаж байна. AI орчуулгыг ашиглахын тулд сайтын админ Vercel дээр GEMINI_API_KEY тохируулсан эсэхийг шалгана уу.',
       words: [
         { word: text, baseForm: text, partOfSpeech: 'Unknown', translation: 'Орчуулагдаагүй үг', explanation: 'Офлайн горимын олдсон үг.' }
       ],

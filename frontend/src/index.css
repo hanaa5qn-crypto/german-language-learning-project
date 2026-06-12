@@ -131,6 +131,17 @@ input, textarea {
 }
 *::-webkit-scrollbar-thumb:hover { background: #4d4678; }
 
+/* Nested scroll panes (lesson pickers on mobile): keep touch scroll inside the
+   panel instead of chaining to the page. Fixed height on small screens helps
+   iOS treat the element as its own scroll viewport. */
+.nested-scroll {
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
+  min-height: 0;
+}
+
 /* Aurora drift — atmospheric glows washing over every main pane.
    Same pattern the app uses for its decorative glow divs: positioned,
    ultra-low opacity, pointer-events none. No isolation/negative z-index,

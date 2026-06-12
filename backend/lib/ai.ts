@@ -2,10 +2,36 @@ import { GoogleGenAI } from '@google/genai';
 
 let aiClient: GoogleGenAI | null = null;
 
+/** Normalize Vercel / .env values (trim whitespace and optional surrounding quotes). */
+export function resolveGeminiApiKey(): string | null {
+  const raw = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || '';
+  const key = raw.trim().replace(/^['"]|['"]$/g, '');
+  if (!key || key === 'MY_GEMINI_API_KEY') return null;
+  return key;
+}
+
+export function isGeminiConfigured(): boolean {
+  return resolveGeminiApiKey() !== null;
+}
+
+/** User-facing hint when the Google API rejects the server key (common on Vercel). */
+export function geminiErrorMessage(err: unknown): string {
+  const status = (err as { status?: number })?.status;
+  const message = String((err as { message?: string })?.message ?? err ?? '');
+
+  if (status === 403 || message.includes('PERMISSION_DENIED') || message.includes('API key not valid')) {
+    return 'Gemini API түлхүүр ажиллахгүй байна. Google AI Studio / Cloud Console дээр Generative Language API-г идэвхжүүлж, түлхүүрийн хязгаарлалтыг "None" (server-side) болгоно уу. Vercel дээр GEMINI_API_KEY нэрээр тохируулсан эсэхээ шалгаад дахин deploy хийнэ.';
+  }
+  if (status === 429 || message.includes('resource exhausted') || message.includes('quota')) {
+    return 'Gemini API-ийн өдрийн хязгаар дүүрсэн байна. Хэсэг хүлээгээд дахин оролдоно уу.';
+  }
+  return 'Gemini API түр ажиллахгүй байна. Хэсэг хугацааны дараа дахин оролдоно уу.';
+}
+
 export function getAIClient() {
   if (!aiClient) {
-    const key = process.env.GEMINI_API_KEY;
-    if (key && key !== 'MY_GEMINI_API_KEY') {
+    const key = resolveGeminiApiKey();
+    if (key) {
       if (process.env.GOOGLE_API_KEY) {
         delete process.env.GOOGLE_API_KEY;
       }

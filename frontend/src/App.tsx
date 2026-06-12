@@ -3354,7 +3354,7 @@ function LearnerApp() {
       )}
 
       {/* Main Workspace Frame */}
-      <main className="flex-grow md:ml-[280px] px-4 md:px-8 flex flex-col justify-between pt-24 md:pt-8 w-full min-h-screen relative overflow-hidden bg-background">
+      <main className="flex-grow md:ml-[280px] px-4 md:px-8 flex flex-col justify-between pt-24 md:pt-8 w-full min-h-screen relative overflow-x-hidden max-lg:overflow-y-auto max-lg:overscroll-y-contain lg:overflow-hidden bg-background">
         {/* Ambient neon flares */}
         <div className="absolute top-10 left-10 w-96 h-96 bg-purple-900/15 rounded-full blur-[140px] pointer-events-none"></div>
         <div className="absolute bottom-10 right-10 w-96 h-96 bg-blue-900/10 rounded-full blur-[140px] pointer-events-none"></div>
@@ -3424,7 +3424,7 @@ function LearnerApp() {
                           </button>
                         ))}
                       </div>
-                      <div className="flex flex-col gap-2 max-h-[55vh] overflow-y-auto pr-1">
+                      <div className="nested-scroll flex flex-col gap-2 max-h-[55vh] max-lg:h-[45vh] max-lg:max-h-[45vh] pr-1">
                         {filtered.map(r => {
                           const isLocked = (lockedActivityIds.read.has(r.id) && r.level === currentUser?.targetLevel) || isLessonLocked(currentUser, r.level);
                           return (
@@ -3607,7 +3607,7 @@ function LearnerApp() {
                           </button>
                         ))}
                       </div>
-                      <div className="flex flex-col gap-2 max-h-[55vh] overflow-y-auto pr-1">
+                      <div className="nested-scroll flex flex-col gap-2 max-h-[55vh] max-lg:h-[45vh] max-lg:max-h-[45vh] pr-1">
                         {filtered.map(r => {
                           const isLocked = (lockedActivityIds.listen.has(r.id) && r.level === currentUser?.targetLevel) || isLessonLocked(currentUser, r.level);
                           return (
@@ -3799,7 +3799,7 @@ function LearnerApp() {
                           </button>
                         ))}
                       </div>
-                      <div className="flex flex-col gap-2 max-h-[55vh] overflow-y-auto pr-1">
+                      <div className="nested-scroll flex flex-col gap-2 max-h-[55vh] max-lg:h-[45vh] max-lg:max-h-[45vh] pr-1">
                         {filtered.map(r => {
                           const isLocked = (lockedActivityIds.speak.has(r.id) && r.level === currentUser?.targetLevel) || isLessonLocked(currentUser, r.level);
                           return (
@@ -3935,7 +3935,7 @@ function LearnerApp() {
                           </button>
                         ))}
                       </div>
-                      <div className="flex flex-col gap-2 max-h-[55vh] overflow-y-auto pr-1">
+                      <div className="nested-scroll flex flex-col gap-2 max-h-[55vh] max-lg:h-[45vh] max-lg:max-h-[45vh] pr-1">
                         {filtered.map(r => {
                           const isLocked = (lockedActivityIds.write.has(r.id) && r.level === currentUser?.targetLevel) || isLessonLocked(currentUser, r.level);
                           return (
