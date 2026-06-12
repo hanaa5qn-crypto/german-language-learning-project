@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="mn">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1080, height=1920" />
+    <title>Vivid Lingua — 30s Ad (MN)</title>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <style>
+      /* Local fonts (Cyrillic-capable) — no external requests at render time */
+      @font-face {
+        font-family: "Unbounded";
+        font-weight: 400 900;
+        font-display: block;
+        src: url("assets/fonts/Unbounded-latin.woff2") format("woff2");
+        unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+2000-206F, U+2122;
+      }
+      @font-face {
+        font-family: "Unbounded";
+        font-weight: 400 900;
+        font-display: block;
+        src: url("assets/fonts/Unbounded-cyrillic.woff2") format("woff2");
+        unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+      }
+      @font-face {
+        font-family: "Unbounded";
+        font-weight: 400 900;
+        font-display: block;
+        src: url("assets/fonts/Unbounded-cyrillicExt.woff2") format("woff2");
+        unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F;
+      }
+      @font-face {
+        font-family: "Golos Text";
+        font-weight: 400 900;
+        font-display: block;
+        src: url("assets/fonts/GolosText-latin.woff2") format("woff2");
+        unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+2000-206F, U+2122, U+2191, U+2193;
+      }
+      @font-face {
+        font-family: "Golos Text";
+        font-weight: 400 900;
+        font-display: block;
+        src: url("assets/fonts/GolosText-cyrillic.woff2") format("woff2");
+        unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+      }
+      @font-face {
+        font-family: "Golos Text";
+        font-weight: 400 900;
+        font-display: block;
+        src: url("assets/fonts/GolosText-cyrillicExt.woff2") format("woff2");
+        unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F;
+      }
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        width: 1080px;
+        height: 1920px;
+        overflow: hidden;
+        background: #060512;
+        font-family: "Golos Text", sans-serif;
+      }
+      .scene {
+        position: absolute;
+        inset: 0;
+        width: 1080px;
+        height: 1920px;
+      }
+    </style>
+  </head>
+  <body>
+    <div
+      id="root"
+      data-composition-id="main"
+      data-start="0"
+      data-duration="30"
+      data-width="1080"
+      data-height="1920"
+    >
+      <!-- Persistent aurora background (drifts the whole 30s) -->
+      <div
+        id="bg"
+        class="scene"
+        data-composition-id="bg-aurora"
+        data-composition-src="compositions/bg-aurora.html"
+        data-start="0"
+        data-duration="30"
+        data-track-index="0"
+        data-width="1080"
+        data-height="1920"
+      ></div>
+
+      <!-- Scene 1: Hook (0.0–4.0) -->
+      <div
+        id="scene-1"
+        class="scene"
+        data-composition-id="scene1-hook"
+        data-composition-src="compositions/scene1-hook.html"
+        data-start="0"
+        data-duration="4"
+        data-track-index="1"
+        data-width="1080"
+        data-height="1920"
+      ></div>
+
+      <!-- Scene 2: Product reveal (4.0–9.0) -->
+      <div
+        id="scene-2"
+        class="scene"
+        data-composition-id="scene2-reveal"
+        data-composition-src="compositions/scene2-reveal.html"
+        data-start="4"
+        data-duration="5"
+        data-track-index="1"
+        data-width="1080"
+        data-height="1920"
+      ></div>
+
+      <!-- Scene 3: Feature montage (9.0–22.0) -->
+      <div
+        id="scene-3"
+        class="scene"
+        data-composition-id="scene3-features"
+        data-composition-src="compositions/scene3-features.html"
+        data-start="9"
+        data-duration="13"
+        data-track-index="1"
+        data-width="1080"
+        data-height="1920"
+      ></div>
+
+      <!-- Scene 4: Progression ladder (22.0–26.0) -->
+      <div
+        id="scene-4"
+        class="scene"
+        data-composition-id="scene4-ladder"
+        data-composition-src="compositions/scene4-ladder.html"
+        data-start="22"
+        data-duration="4"
+        data-track-index="1"
+        data-width="1080"
+        data-height="1920"
+      ></div>
+
+      <!-- Scene 5: CTA (26.0–30.0) -->
+      <div
+        id="scene-5"
+        class="scene"
+        data-composition-id="scene5-cta"
+        data-composition-src="compositions/scene5-cta.html"
+        data-start="26"
+        data-duration="4"
+        data-track-index="1"
+        data-width="1080"
+        data-height="1920"
+      ></div>
+    </div>
+
+    <script>
+      // Master timeline: cross-fade transitions between scenes (no jump cuts).
+      // Outgoing scenes are fully visible until the transition fires (transition = exit).
+      window.__timelines = window.__timelines || {};
+      const mainTl = gsap.timeline({ paused: true });
+
+      // Each scene clip enters opacity 1 by default. We fade the OUTGOING scene
+      // over a 0.4s crossfade window at its boundary while the next is already mounting.
+      const xfade = 0.45;
+      function crossOut(sel, at) {
+        mainTl.to(sel, { opacity: 0, duration: xfade, ease: "power2.inOut" }, at);
+      }
+      // Boundaries: 4, 9, 22, 26. Start fade slightly before boundary so next scene
+      // (which mounts at the boundary) overlaps for a true crossfade.
+      crossOut("#scene-1", 4 - xfade);
+      crossOut("#scene-2", 9 - xfade);
+      crossOut("#scene-3", 22 - xfade);
+      crossOut("#scene-4", 26 - xfade);
+
+      window.__timelines["main"] = mainTl;
+    </script>
+  </body>
+</html>

@@ -1,0 +1,324 @@
+<template id="scene3-features-template">
+  <div data-composition-id="scene3-features" data-width="1080" data-height="1920" data-duration="13">
+    <div class="s3-content">
+      <!-- Feature label chip (text swaps over time) -->
+      <div class="chip"><span class="chip-dot"></span><span class="chip-txt" id="s3-chip">Түвшин тогтоох тест</span></div>
+
+      <!-- Phone shell holds 3 stacked panels; only one visible at a time -->
+      <div class="phone">
+        <div class="phone-screen">
+          <!-- Panel 3a: Placement test -->
+          <div class="panel panel-a">
+            <div class="p-head">Түвшин тогтоох тест</div>
+            <div class="progress"><div class="progress-fill"></div></div>
+            <div class="q-card">
+              <div class="q-text">«Ich ___ Deutsch.»</div>
+              <div class="answers">
+                <div class="ans">spreche</div>
+                <div class="ans">sprichst</div>
+                <div class="ans">spricht</div>
+                <div class="ans">sprechen</div>
+              </div>
+            </div>
+            <div class="level-badge">B1</div>
+          </div>
+
+          <!-- Panel 3b: Smart flashcards -->
+          <div class="panel panel-b">
+            <div class="p-head">Ухаалаг флашкарт</div>
+            <div class="flash">
+              <div class="flash-de">die Reise</div>
+              <div class="flash-mn">аялал</div>
+            </div>
+            <div class="flash flash-next">
+              <div class="flash-de">der Zug</div>
+              <div class="flash-mn">галт тэрэг</div>
+            </div>
+            <div class="srs">
+              <span class="srs-arrow">↻</span>
+              <span class="srs-txt">Давтах мөчлөг · 1д · 3х · 7х</span>
+            </div>
+          </div>
+
+          <!-- Panel 3c: Instant tooltips -->
+          <div class="panel panel-c">
+            <div class="p-head">Шууд орчуулга</div>
+            <div class="sentence">
+              Ich brauche ein <span class="word">Wörterbuch</span> für die Schule.
+            </div>
+            <div class="ripple"></div>
+            <div class="tooltip">
+              <div class="tip-de">Wörterbuch</div>
+              <div class="tip-mn">толь бичиг</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <style>
+      [data-composition-id="scene3-features"] .s3-content {
+        width: 1080px;
+        height: 1920px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 50px;
+        padding: 200px 0 0;
+        box-sizing: border-box;
+      }
+      [data-composition-id="scene3-features"] .chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 16px;
+        background: rgba(179, 136, 250, 0.14);
+        border: 1px solid rgba(179, 136, 250, 0.4);
+        border-radius: 999px;
+        padding: 18px 38px;
+      }
+      [data-composition-id="scene3-features"] .chip-dot {
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        background: #b388fa;
+      }
+      [data-composition-id="scene3-features"] .chip-txt {
+        font-family: "Unbounded", sans-serif;
+        font-weight: 600;
+        font-size: 38px;
+        color: #f2f0fa;
+      }
+      [data-composition-id="scene3-features"] .phone {
+        width: 540px;
+        height: 1120px;
+        border-radius: 64px;
+        background: #15132b;
+        border: 10px solid #1c1936;
+        box-shadow:
+          0 0 0 2px rgba(179, 136, 250, 0.25),
+          0 40px 120px rgba(179, 136, 250, 0.25),
+          0 10px 40px rgba(0, 0, 0, 0.6);
+        padding: 18px;
+        box-sizing: border-box;
+      }
+      [data-composition-id="scene3-features"] .phone-screen {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        border-radius: 48px;
+        background: #0b0a1a;
+        overflow: hidden;
+      }
+      [data-composition-id="scene3-features"] .panel {
+        position: absolute;
+        inset: 0;
+        padding: 56px 40px;
+        display: flex;
+        flex-direction: column;
+        gap: 34px;
+      }
+      [data-composition-id="scene3-features"] .p-head {
+        font-family: "Unbounded", sans-serif;
+        font-weight: 600;
+        font-size: 36px;
+        color: #f2f0fa;
+      }
+      /* 3a placement test */
+      [data-composition-id="scene3-features"] .progress {
+        width: 100%;
+        height: 18px;
+        border-radius: 999px;
+        background: #15132b;
+        overflow: hidden;
+      }
+      [data-composition-id="scene3-features"] .progress-fill {
+        width: 30%;
+        height: 100%;
+        border-radius: 999px;
+        background: #b388fa;
+      }
+      [data-composition-id="scene3-features"] .q-card {
+        background: #15132b;
+        border: 1px solid rgba(131, 126, 168, 0.3);
+        border-radius: 30px;
+        padding: 36px 32px;
+        display: flex;
+        flex-direction: column;
+        gap: 26px;
+      }
+      [data-composition-id="scene3-features"] .q-text {
+        font-size: 40px;
+        color: #f2f0fa;
+        font-weight: 600;
+      }
+      [data-composition-id="scene3-features"] .answers {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 18px;
+      }
+      [data-composition-id="scene3-features"] .ans {
+        background: #0b0a1a;
+        border: 1px solid rgba(131, 126, 168, 0.35);
+        border-radius: 20px;
+        padding: 22px 12px;
+        text-align: center;
+        font-size: 30px;
+        color: #a8a3c8;
+      }
+      [data-composition-id="scene3-features"] .ans:first-child {
+        border-color: #66aafd;
+        color: #66aafd;
+      }
+      [data-composition-id="scene3-features"] .level-badge {
+        align-self: center;
+        font-family: "Unbounded", sans-serif;
+        font-weight: 700;
+        font-size: 64px;
+        color: #060512;
+        background: linear-gradient(135deg, #b388fa, #66aafd);
+        border-radius: 28px;
+        padding: 18px 48px;
+      }
+      /* 3b flashcards */
+      [data-composition-id="scene3-features"] .flash {
+        background: #15132b;
+        border: 1px solid rgba(131, 126, 168, 0.3);
+        border-radius: 34px;
+        padding: 70px 32px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 18px;
+      }
+      [data-composition-id="scene3-features"] .flash-de {
+        font-family: "Unbounded", sans-serif;
+        font-weight: 700;
+        font-size: 60px;
+        color: #f2f0fa;
+      }
+      [data-composition-id="scene3-features"] .flash-mn {
+        font-size: 44px;
+        color: #66aafd;
+        font-weight: 600;
+      }
+      [data-composition-id="scene3-features"] .flash-next {
+        position: absolute;
+        top: 150px;
+        left: 40px;
+        right: 40px;
+        padding: 70px 32px;
+        background: #1c1936;
+      }
+      [data-composition-id="scene3-features"] .srs {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        justify-content: center;
+        color: #b388fa;
+        font-size: 30px;
+        font-weight: 600;
+      }
+      [data-composition-id="scene3-features"] .srs-arrow {
+        font-size: 44px;
+      }
+      /* 3c tooltips */
+      [data-composition-id="scene3-features"] .sentence {
+        font-size: 46px;
+        line-height: 1.5;
+        color: #f2f0fa;
+        font-weight: 500;
+      }
+      [data-composition-id="scene3-features"] .word {
+        color: #b388fa;
+        border-bottom: 4px solid #b388fa;
+        position: relative;
+      }
+      [data-composition-id="scene3-features"] .ripple {
+        position: absolute;
+        top: 250px;
+        left: 250px;
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        background: rgba(102, 170, 253, 0.5);
+        transform: scale(0);
+        opacity: 0;
+      }
+      [data-composition-id="scene3-features"] .tooltip {
+        align-self: flex-start;
+        margin-top: 20px;
+        background: #15132b;
+        border: 1px solid rgba(179, 136, 250, 0.5);
+        border-radius: 26px;
+        padding: 28px 36px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        box-shadow: 0 18px 50px rgba(0, 0, 0, 0.6);
+      }
+      [data-composition-id="scene3-features"] .tip-de {
+        font-size: 28px;
+        color: #837ea8;
+      }
+      [data-composition-id="scene3-features"] .tip-mn {
+        font-family: "Unbounded", sans-serif;
+        font-weight: 600;
+        font-size: 44px;
+        color: #fb6d8e;
+      }
+    </style>
+
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <script>
+      (function () {
+        const tl = gsap.timeline({ paused: true });
+        const q = (s) => '[data-composition-id="scene3-features"] ' + s;
+        const chip = q(".chip");
+        const chipTxt = q("#s3-chip");
+        const pA = q(".panel-a");
+        const pB = q(".panel-b");
+        const pC = q(".panel-c");
+
+        // Initial: only panel A visible, B & C off-screen right (slide-left swaps).
+        tl.set(pB, { xPercent: 120, opacity: 0 });
+        tl.set(pC, { xPercent: 120, opacity: 0 });
+
+        // ---- 3a (0–4.3s) placement test ----
+        tl.from(chip, { y: -40, opacity: 0, duration: 0.5, ease: "power3.out" }, 0.15);
+        tl.from(pA + " .q-card", { y: 50, opacity: 0, duration: 0.55, ease: "power3.out" }, 0.4);
+        tl.from(pA + " .ans", { y: 24, opacity: 0, duration: 0.4, ease: "power2.out", stagger: 0.08 }, 0.6);
+        tl.fromTo(pA + " .progress-fill", { width: "10%" }, { width: "62%", duration: 1.0, ease: "power2.inOut" }, 0.7);
+        tl.from(pA + " .level-badge", { scale: 0, opacity: 0, duration: 0.5, ease: "back.out(1.8)" }, 1.6);
+
+        // ---- transition A->B at ~4.3 (slide-left) ----
+        tl.to(pA, { xPercent: -120, opacity: 0, duration: 0.5, ease: "power2.inOut" }, 4.3);
+        tl.to(pB, { xPercent: 0, opacity: 1, duration: 0.5, ease: "power2.inOut" }, 4.3);
+        tl.to(chip, { opacity: 0, y: -20, duration: 0.2, ease: "power2.in" }, 4.3);
+        tl.set(chipTxt, { innerText: "Ухаалаг флашкарт" }, 4.55);
+        tl.to(chip, { opacity: 1, y: 0, duration: 0.3, ease: "power2.out" }, 4.6);
+
+        // ---- 3b (4.6–8.6s) flashcards ----
+        tl.from(pB + " .flash:not(.flash-next)", { rotationY: 90, opacity: 0, duration: 0.6, ease: "power3.out" }, 5.0);
+        tl.fromTo(pB + " .flash-next", { x: 400, opacity: 0, rotation: 4 }, { x: 0, opacity: 1, rotation: 0, duration: 0.6, ease: "back.out(1.3)" }, 5.7);
+        tl.from(pB + " .srs", { opacity: 0, y: 24, duration: 0.45, ease: "power2.out" }, 6.2);
+        tl.to(pB + " .srs-arrow", { rotation: 360, duration: 1.0, ease: "power2.inOut", transformOrigin: "50% 50%" }, 6.6);
+
+        // ---- transition B->C at ~8.6 ----
+        tl.to(pB, { xPercent: -120, opacity: 0, duration: 0.5, ease: "power2.inOut" }, 8.6);
+        tl.to(pC, { xPercent: 0, opacity: 1, duration: 0.5, ease: "power2.inOut" }, 8.6);
+        tl.to(chip, { opacity: 0, y: -20, duration: 0.2, ease: "power2.in" }, 8.6);
+        tl.set(chipTxt, { innerText: "Шууд орчуулга" }, 8.85);
+        tl.to(chip, { opacity: 1, y: 0, duration: 0.3, ease: "power2.out" }, 8.9);
+
+        // ---- 3c (8.9–13s) tooltips ----
+        tl.from(pC + " .sentence", { y: 40, opacity: 0, duration: 0.55, ease: "power3.out" }, 9.3);
+        // finger-tap ripple on the word
+        tl.fromTo(pC + " .ripple", { scale: 0, opacity: 0.7 }, { scale: 2.4, opacity: 0, duration: 0.6, ease: "power2.out" }, 10.0);
+        tl.from(pC + " .tooltip", { scale: 0.7, opacity: 0, y: 20, duration: 0.5, ease: "back.out(1.7)" }, 10.4);
+
+        window.__timelines = window.__timelines || {};
+        window.__timelines["scene3-features"] = tl;
+      })();
+    </script>
+  </div>
+</template>
