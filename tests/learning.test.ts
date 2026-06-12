@@ -27,15 +27,10 @@ describe('compareWordsByLevel', () => {
 });
 
 describe('suggestedWordLevel', () => {
-  it('passes A1–B2 placement levels through', () => {
-    for (const lv of ['A1', 'A2', 'B1', 'B2'] as const) {
+  it('passes A1–C2 placement levels through', () => {
+    for (const lv of ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'] as const) {
       expect(suggestedWordLevel(lv)).toBe(lv);
     }
-  });
-
-  it('clamps C1/C2 to B2 (hardest dictionary band)', () => {
-    expect(suggestedWordLevel('C1')).toBe('B2');
-    expect(suggestedWordLevel('C2')).toBe('B2');
   });
 
   it('returns null for missing or unknown levels', () => {

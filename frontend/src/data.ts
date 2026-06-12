@@ -1,6 +1,7 @@
 import { VocabularyWord, ReadingExercise, WordClass, CEFRLevel } from './types';
 import { GENERATED_VOCABULARY } from './generatedVocabulary';
 import { VOCABEO_VOCABULARY } from './vocabeoVocabulary';
+import { C1C2_VOCABULARY } from './c1c2Vocabulary';
 import { MONGOLIAN_GLOSSES } from './mongolianGlosses';
 
 export const VOCABULARY_DATABASE: VocabularyWord[] = [
@@ -488,13 +489,26 @@ export const DICTIONARY: VocabularyWord[] = (() => {
 
   // Append the vocabeo dictionary: skip any headword already provided above
   // (nothing existing is lost), but keep vocabeo's own distinct senses/homonyms.
+  const vocabeoHeadwords = new Set<string>();
   for (const word of VOCABEO_VOCABULARY) {
     const w = withMetadata(word);
     const head = w.german.trim().toLowerCase();
+    vocabeoHeadwords.add(head);
     if (baseHeadwords.has(head)) continue;
     const key = `${head}|${w.wordClass}|${(w.english ?? '').toLowerCase()}`;
     if (seenSense.has(key)) continue;
     seenSense.add(key);
+    out.push(w);
+  }
+
+  // Append the advanced C1/C2 set (Mongolian glosses from the Bolor-toli
+  // German→Mongolian dictionary). Only genuinely new headwords are added, so
+  // a word vocabeo already lists (at its existing level) is never duplicated.
+  for (const word of C1C2_VOCABULARY) {
+    const w = withMetadata(word);
+    const head = w.german.trim().toLowerCase();
+    if (baseHeadwords.has(head) || vocabeoHeadwords.has(head)) continue;
+    baseHeadwords.add(head);
     out.push(w);
   }
   return out;
