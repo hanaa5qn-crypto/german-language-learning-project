@@ -39,7 +39,7 @@ export interface WritingFeedback {
 }
 
 export interface PaymentMethodsResponse {
-  primary: 'qpay' | 'dummy';
+  primary: 'byl' | 'dummy';
   plans: Record<'pro' | 'max', {
     id: 'pro' | 'max';
     name: string;
@@ -48,7 +48,7 @@ export interface PaymentMethodsResponse {
     currency: string;
     aiAccess: boolean;
   }>;
-  qpay: {
+  byl: {
     status: 'ready' | 'needs_config';
     missing: string[];
     supports: string[];
@@ -75,18 +75,16 @@ export interface DummyCheckoutResponse {
   currency: 'MNT';
 }
 
-export interface QPayCheckoutResponse {
-  provider: 'qpay';
+export interface BylCheckoutResponse {
+  provider: 'byl';
   senderInvoiceNo: string;
   providerInvoiceId: string;
   plan: string;
   interval?: import('./plans').BillingInterval;
   amountMnt: number;
   currency: 'MNT';
-  qrText?: string;
-  qrImage?: string;
-  shortUrl?: string;
-  urls?: Array<{ name?: string; description?: string; logo?: string; link?: string }>;
+  // Byl hosted checkout page — the learner pays there (QPay/SocialPay/Pocket).
+  url: string;
 }
 
 // Structured grammatical metadata used by the in-app dictionary (Browse) filters.

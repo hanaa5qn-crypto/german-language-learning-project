@@ -56,7 +56,8 @@ export interface PlacementRecord {
   skillScores: Record<PlacementSkill, PlacementSkillScore>;
   levelStats: Record<string, PlacementLevelStat>;
   unlocked: boolean;
-  unlockedBy?: 'founder' | 'qpay' | 'dummy';
+  // 'qpay' kept so records stored before the Byl migration still parse.
+  unlockedBy?: 'founder' | 'byl' | 'qpay' | 'dummy';
 }
 
 export const PLACEMENT_RESULT_PRICE_MNT = 5000;

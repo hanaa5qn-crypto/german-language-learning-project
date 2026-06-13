@@ -6,15 +6,16 @@ import {
   verifyFirebaseBearer,
 } from '../lib/firebaseAdmin';
 import {
-  checkQPayInvoice,
-  createQPayInvoice,
-  findPaidQPayPayment,
-  getQPayConfigState,
-  getQPayPayment,
-  QPayConfigError,
-  type QPayPaymentCheckResponse,
-  type QPayPaymentRow,
-} from '../lib/payments/qpay';
+  BylConfigError,
+  bylPaymentFromCheckout,
+  createBylCheckout,
+  getBylCheckout,
+  getBylConfigState,
+  isBylCheckoutPaid,
+  verifyBylWebhookSignature,
+  type BylWebhookEvent,
+  type PaymentRecord,
+} from '../lib/payments/byl';
 import { getPaidPlans, parsePaidPlanId, parseBillingInterval, type BillingInterval } from '../lib/plans';
 
 // Per-user checkout rate limit: max 5 invoice creations per hour.
@@ -34,7 +35,7 @@ function checkoutRateLimited(uid: string): boolean {
 }
 
 interface PendingInvoice {
-  provider: 'qpay' | 'dummy';
+  provider: 'byl' | 'dummy';
   providerInvoiceId: string;
   senderInvoiceNo: string;
   userId: string;
@@ -78,22 +79,13 @@ function appBaseUrl(req: Request): string {
   return `${proto}://${req.get('host')}`;
 }
 
-function callbackUrlFor(req: Request, senderInvoiceNo: string): string {
-  const configured = process.env.QPAY_CALLBACK_URL;
-  const url = new URL(configured || `${appBaseUrl(req)}/api/payments/qpay/webhook`);
-  url.searchParams.set('sender_invoice_no', senderInvoiceNo);
-  const secret = process.env.QPAY_WEBHOOK_SECRET;
-  if (secret) url.searchParams.set('wt', secret);
-  return url.toString();
-}
-
 function addMonths(date: Date, months: number): Date {
   const next = new Date(date);
   next.setMonth(next.getMonth() + months);
   return next;
 }
 
-function publicInvoicePayload(invoice: PendingInvoice, check?: QPayPaymentCheckResponse, payment?: QPayPaymentRow | null) {
+function publicInvoicePayload(invoice: PendingInvoice, payment?: PaymentRecord | null) {
   return {
     provider: invoice.provider,
     senderInvoiceNo: invoice.senderInvoiceNo,
@@ -110,17 +102,13 @@ function publicInvoicePayload(invoice: PendingInvoice, check?: QPayPaymentCheckR
       paymentAmount: payment.payment_amount,
       transactionType: payment.transaction_type,
     } : null,
-    check: check ? {
-      count: check.count ?? 0,
-      paidAmount: check.paid_amount ?? 0,
-    } : null,
   };
 }
 
 async function activatePaidInvoice(
   invoiceRef: FirebaseFirestore.DocumentReference,
   invoice: PendingInvoice,
-  paidPayment: QPayPaymentRow,
+  paidPayment: PaymentRecord,
 ) {
   const admin = getFirebaseAdmin();
   if (!admin) throw new Error(firebaseAdminMissingMessage());
@@ -147,7 +135,7 @@ async function activatePaidInvoice(
       plan: invoice.plan,
       product: invoice.product ?? 'subscription',
       createdAt: paidPayment.payment_date || now.toISOString(),
-      qpay: paidPayment,
+      providerPayment: paidPayment,
     }, { merge: true });
 
     if (isPlacement) {
@@ -182,7 +170,7 @@ async function activatePaidInvoice(
       paymentId,
       ...(isPlacement ? {} : { currentPeriodEnd }),
       updatedAt: FieldValue.serverTimestamp(),
-      qpayPayment: paidPayment,
+      providerPayment: paidPayment,
     }, { merge: true });
   });
 
@@ -206,36 +194,39 @@ async function activatePaidInvoice(
   };
 }
 
+// Asks Byl for the checkout's real status and activates the plan if paid.
+// Used by both the polling endpoint and the webhook, so a forged webhook body
+// can never activate anything — Byl's API is always the source of truth.
 async function checkAndMaybeActivate(invoiceRef: FirebaseFirestore.DocumentReference, invoice: PendingInvoice) {
-  const check = await checkQPayInvoice(invoice.providerInvoiceId);
-  const paidPayment = findPaidQPayPayment(check);
+  const checkout = await getBylCheckout(invoice.providerInvoiceId);
+  const paidPayment = isBylCheckoutPaid(checkout) ? bylPaymentFromCheckout(checkout) : null;
   const billing = paidPayment ? await activatePaidInvoice(invoiceRef, invoice, paidPayment) : null;
   const status: PendingInvoice['status'] = paidPayment ? 'paid' : invoice.status;
 
   return {
-    ...publicInvoicePayload({ ...invoice, status }, check, paidPayment),
+    ...publicInvoicePayload({ ...invoice, status }, paidPayment),
     billing,
   };
 }
 
 function paymentMethodsPayload() {
-  const qpay = getQPayConfigState();
+  const byl = getBylConfigState();
   const plans = getPaidPlans();
   const adminReady = Boolean(getFirebaseAdmin());
-  const qpayMissing = [...qpay.missing];
-  if (!adminReady) qpayMissing.push('Firebase Admin credentials');
-  const qpayReady = qpayMissing.length === 0;
+  const bylMissing = [...byl.missing];
+  if (!adminReady) bylMissing.push('Firebase Admin credentials');
+  const bylReady = bylMissing.length === 0;
 
   return {
-    primary: qpayReady ? 'qpay' : 'dummy',
+    primary: bylReady ? 'byl' : 'dummy',
     plans,
-    qpay: {
-      id: 'qpay',
-      name: 'QPay',
-      status: qpayReady ? 'ready' : 'needs_config',
-      missing: qpayMissing,
-      supports: ['QR', 'bank app deeplinks', 'card payment through QPay rails'],
-      apiBaseUrl: qpay.apiBaseUrl,
+    byl: {
+      id: 'byl',
+      name: 'Byl',
+      status: bylReady ? 'ready' : 'needs_config',
+      missing: bylMissing,
+      supports: ['QPay', 'SocialPay', 'Pocket', 'Golomt merchant'],
+      apiBaseUrl: byl.apiBaseUrl,
     },
     dummy: {
       id: 'dummy',
@@ -252,13 +243,6 @@ function paymentMethodsPayload() {
         supports: ['Apple Pay', 'Google Pay', 'cards', 'QPay'],
         note: 'Best next option for Apple Pay / Google Pay and card-wallet coverage in Mongolia.',
       },
-      {
-        id: 'byl',
-        name: 'Byl',
-        status: 'planned',
-        supports: ['QPay', 'SocialPay', 'Pocket', 'Golomt merchant'],
-        note: 'Hosted checkout aggregator option if speed matters more than direct integration.',
-      },
     ],
   };
 }
@@ -268,7 +252,7 @@ export function registerPaymentsRoute(app: Express) {
     res.json(paymentMethodsPayload());
   });
 
-  app.post('/api/payments/qpay/checkout', async (req, res) => {
+  app.post('/api/payments/byl/checkout', async (req, res) => {
     const admin = getFirebaseAdmin();
     if (!admin) {
       return res.status(503).json({ error: firebaseAdminMissingMessage(), methods: paymentMethodsPayload() });
@@ -310,24 +294,23 @@ export function registerPaymentsRoute(app: Express) {
     const senderInvoiceNo = senderInvoiceNoFor(user.uid);
 
     try {
-      const qpayInvoice = await createQPayInvoice({
-        senderInvoiceNo,
-        receiverCode: user.uid,
-        receiverName: user.name,
-        receiverEmail: user.email,
-        description,
+      const checkout = await createBylCheckout({
         amountMnt,
-        callbackUrl: callbackUrlFor(req, senderInvoiceNo),
+        itemName: description,
+        clientReferenceId: senderInvoiceNo,
+        customerEmail: user.email,
+        successUrl: appBaseUrl(req),
+        cancelUrl: appBaseUrl(req),
       });
 
-      if (!qpayInvoice.invoice_id) {
-        return res.status(502).json({ error: 'QPay did not return an invoice_id.', qpayInvoice });
+      if (!checkout.id || !checkout.url) {
+        return res.status(502).json({ error: 'Byl did not return a checkout id/url.', checkout });
       }
 
       const amountCents = amountMntToCents(amountMnt);
       await admin.db.collection('paymentInvoices').doc(senderInvoiceNo).set({
-        provider: 'qpay',
-        providerInvoiceId: qpayInvoice.invoice_id,
+        provider: 'byl',
+        providerInvoiceId: String(checkout.id),
         senderInvoiceNo,
         userId: user.uid,
         customerEmail: user.email ?? '',
@@ -341,34 +324,31 @@ export function registerPaymentsRoute(app: Express) {
         status: 'pending',
         createdAt: FieldValue.serverTimestamp(),
         updatedAt: FieldValue.serverTimestamp(),
-        qpayInvoice,
+        bylCheckout: { id: checkout.id, url: checkout.url, status: checkout.status ?? 'open' },
       });
 
       return res.status(201).json({
-        provider: 'qpay',
+        provider: 'byl',
         senderInvoiceNo,
-        providerInvoiceId: qpayInvoice.invoice_id,
+        providerInvoiceId: String(checkout.id),
         plan: planLabel,
         product,
         ...(interval ? { interval } : {}),
         amountMnt,
         currency: 'MNT',
-        qrText: qpayInvoice.qr_text,
-        qrImage: qpayInvoice.qr_image,
-        shortUrl: qpayInvoice.qPay_shortUrl || qpayInvoice.qpay_short_url,
-        urls: qpayInvoice.urls ?? [],
+        url: checkout.url,
       });
     } catch (err) {
-      if (err instanceof QPayConfigError) {
+      if (err instanceof BylConfigError) {
         return res.status(503).json({ error: err.message, missing: err.missing });
       }
 
-      console.error('QPay checkout failed:', err);
-      return res.status(502).json({ error: 'QPay checkout failed. Check merchant credentials and QPay status.' });
+      console.error('Byl checkout failed:', err);
+      return res.status(502).json({ error: 'Byl checkout failed. Check the Byl token and project id.' });
     }
   });
 
-  app.get('/api/payments/qpay/invoices/:senderInvoiceNo', async (req, res) => {
+  app.get('/api/payments/byl/invoices/:senderInvoiceNo', async (req, res) => {
     const admin = getFirebaseAdmin();
     if (!admin) return res.status(503).json({ error: firebaseAdminMissingMessage() });
 
@@ -386,15 +366,65 @@ export function registerPaymentsRoute(app: Express) {
     try {
       return res.json(await checkAndMaybeActivate(invoiceRef, invoice));
     } catch (err) {
-      console.error('QPay invoice check failed:', err);
-      return res.status(502).json({ error: 'Could not check QPay payment status.' });
+      console.error('Byl invoice check failed:', err);
+      return res.status(502).json({ error: 'Could not check Byl payment status.' });
+    }
+  });
+
+  // Byl POSTs invoice.paid / checkout.completed events here, signed with
+  // HMAC-SHA256 in the Byl-Signature header. The payload only tells us which
+  // invoice to look at — activation always re-checks Byl's API, so even an
+  // unsigned/forged request cannot unlock anything that was not really paid.
+  app.post('/api/payments/byl/webhook', async (req: Request, res: Response) => {
+    const rawBody = (req as Request & { rawBody?: Buffer }).rawBody ?? JSON.stringify(req.body ?? {});
+    const verified = verifyBylWebhookSignature(rawBody, req.header('Byl-Signature'));
+    if (verified === false) {
+      return res.status(401).json({ error: 'Invalid Byl webhook signature.' });
+    }
+
+    const admin = getFirebaseAdmin();
+    if (!admin) return res.status(503).json({ error: firebaseAdminMissingMessage() });
+
+    const event = (req.body ?? {}) as BylWebhookEvent;
+    const object = event.data?.object ?? {};
+    const clientReferenceId = String(object.client_reference_id ?? '');
+    const objectId = String(object.id ?? '');
+
+    try {
+      let invoiceRef = clientReferenceId
+        ? admin.db.collection('paymentInvoices').doc(sanitizeDocId(clientReferenceId))
+        : null;
+      let invoiceSnap = invoiceRef ? await invoiceRef.get() : null;
+
+      if ((!invoiceSnap || !invoiceSnap.exists) && objectId) {
+        const matches = await admin.db.collection('paymentInvoices')
+          .where('providerInvoiceId', '==', objectId)
+          .limit(1)
+          .get();
+        invoiceSnap = matches.docs[0] ?? null;
+        invoiceRef = invoiceSnap?.ref ?? null;
+      }
+
+      if (!invoiceRef || !invoiceSnap?.exists) {
+        return res.status(404).json({ error: 'Matching pending invoice was not found.' });
+      }
+
+      const invoice = invoiceSnap.data() as PendingInvoice;
+      const result = invoice.status === 'paid'
+        ? publicInvoicePayload(invoice)
+        : await checkAndMaybeActivate(invoiceRef, invoice);
+
+      return res.json(result);
+    } catch (err) {
+      console.error('Byl webhook failed:', err);
+      return res.status(502).json({ error: 'Byl webhook processing failed.' });
     }
   });
 
   // ---------------------------------------------------------------------------
-  // Dummy payment provider — same invoice/billing flow as QPay but the "payment"
+  // Dummy payment provider — same invoice/billing flow as Byl but the "payment"
   // is simulated with a second request. Lets the Mongolian-market checkout be
-  // exercised end-to-end before live QPay merchant credentials exist.
+  // exercised end-to-end without real money.
   // ---------------------------------------------------------------------------
   app.post('/api/payments/dummy/checkout', async (req, res) => {
     const admin = getFirebaseAdmin();
@@ -481,7 +511,7 @@ export function registerPaymentsRoute(app: Express) {
     if (invoice.provider !== 'dummy') return res.status(400).json({ error: 'Энэ нэхэмжлэл туршилтын төлбөрийн нэхэмжлэл биш байна.' });
     if (invoice.status === 'paid') return res.json({ ...publicInvoicePayload(invoice), billing: null });
 
-    const simulatedPayment: QPayPaymentRow = {
+    const simulatedPayment: PaymentRecord = {
       payment_id: `dummy_${Date.now()}`,
       payment_status: 'PAID',
       payment_date: new Date().toISOString(),
@@ -495,7 +525,7 @@ export function registerPaymentsRoute(app: Express) {
     try {
       const billing = await activatePaidInvoice(invoiceRef, invoice, simulatedPayment);
       return res.json({
-        ...publicInvoicePayload({ ...invoice, status: 'paid' }, undefined, simulatedPayment),
+        ...publicInvoicePayload({ ...invoice, status: 'paid' }, simulatedPayment),
         billing,
       });
     } catch (err) {
@@ -503,60 +533,4 @@ export function registerPaymentsRoute(app: Express) {
       return res.status(502).json({ error: 'Туршилтын төлбөрийг идэвхжүүлж чадсангүй.' });
     }
   });
-
-  // QPay calls the callback URL itself once the learner pays in their bank app.
-  // Their gateway uses GET with ?qpay_payment_id=…, but we accept POST too so
-  // manual retries/tests work the same way.
-  const qpayWebhookHandler = async (req: Request, res: Response) => {
-    const webhookSecret = process.env.QPAY_WEBHOOK_SECRET;
-    if (webhookSecret) {
-      const token = String(req.query.wt || req.body?.wt || '');
-      if (token !== webhookSecret) {
-        return res.status(401).json({ error: 'Invalid webhook token.' });
-      }
-    }
-
-    const admin = getFirebaseAdmin();
-    if (!admin) return res.status(503).json({ error: firebaseAdminMissingMessage() });
-
-    const senderInvoiceNo = String(req.query.sender_invoice_no || req.body?.sender_invoice_no || '');
-    const paymentId = String(
-      req.query.qpay_payment_id || req.query.payment_id ||
-      req.body?.qpay_payment_id || req.body?.payment_id || '',
-    );
-    let invoiceRef = senderInvoiceNo ? admin.db.collection('paymentInvoices').doc(sanitizeDocId(senderInvoiceNo)) : null;
-    let invoiceSnap = invoiceRef ? await invoiceRef.get() : null;
-
-    try {
-      if ((!invoiceSnap || !invoiceSnap.exists) && paymentId) {
-        const payment = await getQPayPayment(paymentId);
-        const providerInvoiceId = String(payment.object_id || req.body?.invoice_id || '');
-        if (providerInvoiceId) {
-          const matches = await admin.db.collection('paymentInvoices')
-            .where('providerInvoiceId', '==', providerInvoiceId)
-            .limit(1)
-            .get();
-          invoiceSnap = matches.docs[0] ?? null;
-          invoiceRef = invoiceSnap?.ref ?? null;
-        }
-      }
-
-      if (!invoiceRef || !invoiceSnap?.exists) {
-        return res.status(404).json({ error: 'Matching pending invoice was not found.' });
-      }
-
-      const invoice = invoiceSnap.data() as PendingInvoice;
-      const result = invoice.status === 'paid'
-        ? publicInvoicePayload(invoice)
-        : await checkAndMaybeActivate(invoiceRef, invoice);
-
-      return res.json(result);
-    } catch (err) {
-      console.error('QPay webhook failed:', err);
-      return res.status(502).json({ error: 'QPay webhook processing failed.' });
-    }
-  };
-
-  app.get('/api/payments/qpay/webhook', qpayWebhookHandler);
-  app.post('/api/payments/qpay/webhook', qpayWebhookHandler);
 }

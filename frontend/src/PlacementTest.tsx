@@ -38,15 +38,10 @@ function speakGerman(text: string) {
   }
 }
 
-interface QPayInvoice {
+interface BylInvoice {
   senderInvoiceNo: string;
-  qrImage?: string;
-  shortUrl?: string;
-}
-
-function qrImageSrc(qrImage?: string): string | null {
-  if (!qrImage) return null;
-  return qrImage.startsWith('data:') ? qrImage : `data:image/png;base64,${qrImage}`;
+  // Byl hosted payment page (QPay/SocialPay/Pocket).
+  url?: string;
 }
 
 // Хөтөч санамсаргүй refresh хийгдсэн ч тестийн явц алдагдахгүйн тулд
@@ -130,7 +125,7 @@ export default function PlacementTest({ isFounder, onFinish, onSkip }: Placement
   const elapsedLabel = `${String(Math.floor(elapsedSeconds / 60)).padStart(2, '0')}:${String(elapsedSeconds % 60).padStart(2, '0')}`;
 
   // Төлбөрийн төлөв (paywall шат)
-  const [invoice, setInvoice] = useState<QPayInvoice | null>(null);
+  const [invoice, setInvoice] = useState<BylInvoice | null>(null);
   const [payLoading, setPayLoading] = useState(false);
   const [payMessage, setPayMessage] = useState<{ type: 'info' | 'error'; text: string } | null>(null);
 
@@ -268,20 +263,21 @@ export default function PlacementTest({ isFounder, onFinish, onSkip }: Placement
     persistQuiz(nextQuestion, currentElapsed());
   };
 
-  const startQPay = async () => {
+  const startBylPayment = async () => {
     setPayLoading(true);
     setPayMessage(null);
     try {
       const token = await getAuthInstance().currentUser?.getIdToken();
-      const response = await fetch('/api/payments/qpay/checkout', {
+      const response = await fetch('/api/payments/byl/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({ product: 'placement' }),
       });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(data.error || 'Төлбөр эхлүүлэхэд алдаа гарлаа.');
-      setInvoice({ senderInvoiceNo: data.senderInvoiceNo, qrImage: data.qrImage, shortUrl: data.shortUrl });
-      setPayMessage({ type: 'info', text: 'QPay нэхэмжлэл үүслээ. QR уншуулж төлөөд "Төлбөр шалгах" дарна уу.' });
+      setInvoice({ senderInvoiceNo: data.senderInvoiceNo, url: data.url });
+      if (data.url) window.open(data.url, '_blank', 'noopener');
+      setPayMessage({ type: 'info', text: 'Төлбөрийн хуудас нээгдлээ. Төлснийхөө дараа "Төлбөр шалгах" дарна уу.' });
     } catch (err: any) {
       setPayMessage({ type: 'error', text: err?.message || 'Төлбөр эхлүүлэхэд алдаа гарлаа.' });
     } finally {
@@ -289,19 +285,19 @@ export default function PlacementTest({ isFounder, onFinish, onSkip }: Placement
     }
   };
 
-  const checkQPay = async () => {
+  const checkBylPayment = async () => {
     if (!invoice || !record) return;
     setPayLoading(true);
     setPayMessage(null);
     try {
       const token = await getAuthInstance().currentUser?.getIdToken();
-      const response = await fetch(`/api/payments/qpay/invoices/${encodeURIComponent(invoice.senderInvoiceNo)}`, {
+      const response = await fetch(`/api/payments/byl/invoices/${encodeURIComponent(invoice.senderInvoiceNo)}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(data.error || 'Төлбөр шалгахад алдаа гарлаа.');
       if (data.paid || data.status === 'paid') {
-        const unlockedRecord: PlacementRecord = { ...record, unlocked: true, unlockedBy: 'qpay' };
+        const unlockedRecord: PlacementRecord = { ...record, unlocked: true, unlockedBy: 'byl' };
         setRecord(unlockedRecord);
         setPhase('result');
         // Төлбөр баталгаажсаны дараа refresh хийгдсэн ч нээлт алдагдахгүй.
@@ -534,18 +530,21 @@ export default function PlacementTest({ isFounder, onFinish, onSkip }: Placement
 
         {invoice ? (
           <div className="bg-white/5 border border-white/10 rounded-2xl p-5 flex flex-col items-center gap-3">
-            {qrImageSrc(invoice.qrImage) ? (
-              <img src={qrImageSrc(invoice.qrImage)!} alt="QPay QR" className="w-44 h-44 rounded-xl bg-white p-2" />
-            ) : (
-              <QrCode className="w-16 h-16 text-slate-500" />
-            )}
-            {invoice.shortUrl && (
-              <a href={invoice.shortUrl} target="_blank" rel="noreferrer" className="text-sm font-bold text-purple-300 underline">
-                Банкны аппаар төлөх
+            {invoice.url && (
+              <a
+                href={invoice.url}
+                target="_blank"
+                rel="noreferrer"
+                className="w-full bg-gradient-to-r from-purple-500 to-blue-500 text-white font-bold rounded-xl py-3 px-6 hover:opacity-95 transition-all flex items-center justify-center gap-2"
+              >
+                <QrCode className="w-5 h-5" /> Төлбөрийн хуудас нээх
               </a>
             )}
+            <p className="text-xs text-slate-400 text-center">
+              Хуудсан дээр QPay QR, SocialPay эсвэл Pocket-оор төлөх боломжтой.
+            </p>
             <button
-              onClick={checkQPay}
+              onClick={checkBylPayment}
               disabled={payLoading}
               className="w-full bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-bold rounded-xl py-3 px-6 disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2"
             >
@@ -554,12 +553,12 @@ export default function PlacementTest({ isFounder, onFinish, onSkip }: Placement
           </div>
         ) : (
           <button
-            onClick={startQPay}
+            onClick={startBylPayment}
             disabled={payLoading}
             className="w-full bg-gradient-to-r from-purple-500 to-blue-500 text-white font-bold rounded-xl py-3.5 px-6 disabled:opacity-50 hover:opacity-95 shadow-[0_4px_20px_rgba(168,85,247,0.3)] transition-all cursor-pointer flex items-center justify-center gap-2"
           >
             {payLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <QrCode className="w-5 h-5" />}
-            QPay-ээр {PLACEMENT_RESULT_PRICE_MNT.toLocaleString()}₮ төлж нээх
+            {PLACEMENT_RESULT_PRICE_MNT.toLocaleString()}₮ төлж нээх
           </button>
         )}
 

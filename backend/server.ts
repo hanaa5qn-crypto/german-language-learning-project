@@ -14,7 +14,14 @@ export const app = express();
 // which the per-IP AI rate limiter relies on.
 app.set('trust proxy', 1);
 // Larger limit so base64-encoded audio recordings from the speaking section fit.
-app.use(express.json({ limit: '25mb' }));
+// `verify` keeps the raw body around so the Byl webhook can check its
+// HMAC-SHA256 Byl-Signature header against the exact bytes Byl signed.
+app.use(express.json({
+  limit: '25mb',
+  verify: (req, _res, buf) => {
+    (req as express.Request & { rawBody?: Buffer }).rawBody = buf;
+  },
+}));
 
 // Security headers — applied to every response.
 app.use((_req, res, next) => {

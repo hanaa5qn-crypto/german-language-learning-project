@@ -11,7 +11,7 @@ import {
 import {
   TabType, VocabularyWord, WordClass, CEFRLevel,
   SpeakingEvaluation, WritingFeedback, WritingCorrection,
-  PaymentMethodsResponse, DummyCheckoutResponse, QPayCheckoutResponse,
+  PaymentMethodsResponse, DummyCheckoutResponse, BylCheckoutResponse,
 } from './types';
 import { DICTIONARY } from './data';
 import {
@@ -57,7 +57,7 @@ import MCQBlock from './components/MCQBlock';
 import ExternalResourcesPanel from './components/ExternalResourcesPanel';
 import QuizNav from './components/QuizNav';
 import { audioBlobToWavBase64, audioBlobToWavBlob } from './utils/audioUtils';
-import { formatMnt, qpayQrImageSrc } from './utils/paymentUtils';
+import { formatMnt } from './utils/paymentUtils';
 
 // Union of all exam item types — they all share `topic`, `title`, `titleMn`.
 type ExamItem = ReadingItem | ListeningItem | WritingItem | SpeakingItem;
@@ -229,7 +229,7 @@ function LearnerApp() {
   const [paymentActionLoading, setPaymentActionLoading] = useState(false);
   const [paymentStatusLoading, setPaymentStatusLoading] = useState(false);
   const [paymentMessage, setPaymentMessage] = useState<{ type: 'info' | 'success' | 'error'; text: string } | null>(null);
-  const [qpayCheckout, setQpayCheckout] = useState<QPayCheckoutResponse | null>(null);
+  const [bylCheckout, setBylCheckout] = useState<BylCheckoutResponse | null>(null);
   const [dummyInvoice, setDummyInvoice] = useState<DummyCheckoutResponse | null>(null);
   // Monthly vs annual pricing toggle on the plan cards.
   const [billingInterval, setBillingInterval] = useState<BillingInterval>('month');
@@ -1303,13 +1303,13 @@ function LearnerApp() {
     setCurrentUser(nextProfile);
   };
 
-  const startQPayCheckout = async (planId: 'pro' | 'max') => {
+  const startBylCheckout = async (planId: 'pro' | 'max') => {
     setPaymentActionLoading(true);
     setPaymentMessage(null);
     setDummyInvoice(null);
     try {
       const token = await getCurrentIdToken();
-      const response = await fetch('/api/payments/qpay/checkout', {
+      const response = await fetch('/api/payments/byl/checkout', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -1318,12 +1318,15 @@ function LearnerApp() {
         body: JSON.stringify({ plan: planId, interval: billingInterval }),
       });
       const data = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(data.error || 'QPay төлбөр эхлүүлэхэд алдаа гарлаа.');
+      if (!response.ok) throw new Error(data.error || 'Төлбөр эхлүүлэхэд алдаа гарлаа.');
 
-      setQpayCheckout(data);
-      setPaymentMessage({ type: 'info', text: 'QPay нэхэмжлэл үүслээ. QR уншуулах эсвэл банкны апп сонгоно уу.' });
+      setBylCheckout(data);
+      // Pop the hosted checkout right away; the panel keeps a link in case the
+      // browser blocked the popup.
+      if (data.url) window.open(data.url, '_blank', 'noopener');
+      setPaymentMessage({ type: 'info', text: 'Төлбөрийн хуудас нээгдлээ. QPay, SocialPay эсвэл Pocket-оор төлнө үү.' });
     } catch (err: any) {
-      setPaymentMessage({ type: 'error', text: err?.message || 'QPay төлбөр эхлүүлэхэд алдаа гарлаа.' });
+      setPaymentMessage({ type: 'error', text: err?.message || 'Төлбөр эхлүүлэхэд алдаа гарлаа.' });
     } finally {
       setPaymentActionLoading(false);
     }
@@ -1331,11 +1334,11 @@ function LearnerApp() {
 
   // Dummy provider: creates a pending invoice, then "Төлбөр төлөх (туршилт)"
   // simulates the bank confirmation and activates the plan — same Firestore
-  // billing flow live QPay will use, minus the real money.
+  // billing flow live Byl uses, minus the real money.
   const startDummyCheckout = async (planId: 'pro' | 'max') => {
     setPaymentActionLoading(true);
     setPaymentMessage(null);
-    setQpayCheckout(null);
+    setBylCheckout(null);
     try {
       const token = await getCurrentIdToken();
       const response = await fetch('/api/payments/dummy/checkout', {
@@ -1381,68 +1384,68 @@ function LearnerApp() {
     }
   };
 
-  // QPay if merchant credentials are live, otherwise the dummy simulator.
+  // Byl if the merchant token is live, otherwise the dummy simulator.
   const startCheckout = (planId: 'pro' | 'max') => {
-    if (paymentMethods?.qpay.status === 'ready') return startQPayCheckout(planId);
+    if (paymentMethods?.byl.status === 'ready') return startBylCheckout(planId);
     return startDummyCheckout(planId);
   };
 
-  // Polls one QPay invoice; returns true once QPay reports it paid. Used by the
-  // manual "Төлбөр шалгах" button (silent=false) and the auto-poll loop below
+  // Polls one Byl checkout; returns true once Byl reports it paid. Used by the
+  // manual "Одоо шалгах" button (silent=false) and the auto-poll loop below
   // (silent=true — no "not yet paid" noise every few seconds).
-  const qpayCheckoutRef = useRef<QPayCheckoutResponse | null>(null);
-  qpayCheckoutRef.current = qpayCheckout;
-  const qpayPollBusyRef = useRef(false);
-  const pollQPayInvoice = async (silent: boolean): Promise<boolean> => {
-    const checkout = qpayCheckoutRef.current;
-    if (!checkout || qpayPollBusyRef.current) return false;
-    qpayPollBusyRef.current = true;
+  const bylCheckoutRef = useRef<BylCheckoutResponse | null>(null);
+  bylCheckoutRef.current = bylCheckout;
+  const bylPollBusyRef = useRef(false);
+  const pollBylInvoice = async (silent: boolean): Promise<boolean> => {
+    const checkout = bylCheckoutRef.current;
+    if (!checkout || bylPollBusyRef.current) return false;
+    bylPollBusyRef.current = true;
     if (!silent) {
       setPaymentStatusLoading(true);
       setPaymentMessage(null);
     }
     try {
       const token = await getCurrentIdToken();
-      const response = await fetch(`/api/payments/qpay/invoices/${encodeURIComponent(checkout.senderInvoiceNo)}`, {
+      const response = await fetch(`/api/payments/byl/invoices/${encodeURIComponent(checkout.senderInvoiceNo)}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(data.error || 'QPay төлөв шалгахад алдаа гарлаа.');
+      if (!response.ok) throw new Error(data.error || 'Төлбөрийн төлөв шалгахад алдаа гарлаа.');
 
       if (data.paid || data.status === 'paid') {
         if (data.billing) applyBillingUpdate(data.billing);
-        setQpayCheckout(null);
+        setBylCheckout(null);
         setPaymentMessage({ type: 'success', text: 'Төлбөр баталгаажлаа. Эрх идэвхтэй боллоо! 🎉' });
         return true;
       }
       if (!silent) {
-        setPaymentMessage({ type: 'info', text: 'QPay дээр төлбөр хараахан баталгаажаагүй байна. Банкны аппаараа төлсний дараа хэдхэн секундэд автоматаар баталгаажна.' });
+        setPaymentMessage({ type: 'info', text: 'Төлбөр хараахан баталгаажаагүй байна. Төлбөрийн хуудсан дээр төлснөөс хойш хэдхэн секундэд автоматаар баталгаажна.' });
       }
       return false;
     } catch (err: any) {
-      if (!silent) setPaymentMessage({ type: 'error', text: err?.message || 'QPay төлөв шалгахад алдаа гарлаа.' });
+      if (!silent) setPaymentMessage({ type: 'error', text: err?.message || 'Төлбөрийн төлөв шалгахад алдаа гарлаа.' });
       return false;
     } finally {
-      qpayPollBusyRef.current = false;
+      bylPollBusyRef.current = false;
       if (!silent) setPaymentStatusLoading(false);
     }
   };
-  const checkQPayPaymentStatus = () => pollQPayInvoice(false);
+  const checkBylPaymentStatus = () => pollBylInvoice(false);
 
-  // While a QPay invoice is open, auto-confirm: the learner pays in their own
-  // bank app, QPay clears it, and the plan activates here without any clicking.
+  // While a Byl checkout is open, auto-confirm: the learner pays on the hosted
+  // page, Byl clears it, and the plan activates here without any clicking.
   // Polls every 4s for up to 15 minutes (then the manual button still works).
   useEffect(() => {
-    if (!qpayCheckout) return;
+    if (!bylCheckout) return;
     const startedAt = Date.now();
     const timer = setInterval(async () => {
       if (Date.now() - startedAt > 15 * 60 * 1000) { clearInterval(timer); return; }
-      const paid = await pollQPayInvoice(true);
+      const paid = await pollBylInvoice(true);
       if (paid) clearInterval(timer);
     }, 4000);
     return () => clearInterval(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [qpayCheckout?.senderInvoiceNo]);
+  }, [bylCheckout?.senderInvoiceNo]);
 
   // ---------------------------------------------------------------------------
   // Locked-feature card. Shown wherever the current plan doesn't cover a
@@ -1843,8 +1846,7 @@ function LearnerApp() {
   const renderBillingCard = () => {
     if (!currentUser) return null;
 
-    const qpayReady = paymentMethods?.qpay.status === 'ready';
-    const qrSrc = qpayQrImageSrc(qpayCheckout?.qrImage);
+    const bylReady = paymentMethods?.byl.status === 'ready';
     // Server-configured price wins; the local catalog is only the fallback.
     const planPriceMnt = (id: 'pro' | 'max') => {
       const server = paymentMethods?.plans?.[id];
@@ -1977,10 +1979,10 @@ function LearnerApp() {
 
         {/* Checkout / status panel */}
         <div className="bg-slate-950/60 border border-white/10 rounded-2xl p-5 space-y-4">
-          {!qpayReady && !paymentMethodsLoading && (
+          {!bylReady && !paymentMethodsLoading && (
             <p className="text-[11px] text-slate-400 leading-relaxed font-semibold">
-              QPay merchant credentials хараахан тохируулаагүй тул одоогоор <b className="text-slate-200">туршилтын төлбөрийн систем (симуляци)</b> ажиллана.
-              Live болгохын тулд сервер дээр QPay credentials болон Firebase Admin credentials-ийг тохируулна.
+              Byl merchant token хараахан тохируулаагүй тул одоогоор <b className="text-slate-200">туршилтын төлбөрийн систем (симуляци)</b> ажиллана.
+              Live болгохын тулд сервер дээр BYL_TOKEN, BYL_PROJECT_ID болон Firebase Admin credentials-ийг тохируулна.
             </p>
           )}
 
@@ -2023,64 +2025,29 @@ function LearnerApp() {
             </div>
           )}
 
-          {qpayCheckout && (
+          {bylCheckout && (
             <div className="space-y-4">
               {/* Invoice summary */}
               <div className="bg-white/5 border border-white/10 rounded-xl p-4">
-                <p className="text-[10px] text-slate-500 font-black uppercase font-space mb-1">QPay нэхэмжлэл</p>
+                <p className="text-[10px] text-slate-500 font-black uppercase font-space mb-1">Төлбөрийн нэхэмжлэл</p>
                 <p className="text-sm font-extrabold text-white">
-                  {PLANS[qpayCheckout.plan as 'pro' | 'max']?.name ?? qpayCheckout.plan} багц ({qpayCheckout.interval === 'year' ? 'жилээр' : 'сараар'}) — {formatMnt(qpayCheckout.amountMnt)}
+                  {PLANS[bylCheckout.plan as 'pro' | 'max']?.name ?? bylCheckout.plan} багц ({bylCheckout.interval === 'year' ? 'жилээр' : 'сараар'}) — {formatMnt(bylCheckout.amountMnt)}
                 </p>
-                <p className="text-[10px] text-slate-500 font-mono mt-1">{qpayCheckout.senderInvoiceNo}</p>
+                <p className="text-[10px] text-slate-500 font-mono mt-1">{bylCheckout.senderInvoiceNo}</p>
               </div>
 
-              {/* QR for desktop / second device */}
-              {qrSrc ? (
-                <img src={qrSrc} alt="QPay QR" className="w-full max-w-[320px] mx-auto aspect-square object-contain bg-white rounded-xl p-3" />
-              ) : (
-                <div className="w-full max-w-[320px] mx-auto aspect-square bg-white/5 border border-white/10 rounded-xl flex items-center justify-center text-center p-4 text-xs text-slate-400 font-bold">
-                  QPay QR image хараахан ирээгүй байна.
-                </div>
-              )}
+              {/* Hosted checkout: QPay QR, SocialPay and Pocket all live on Byl's page */}
+              <a
+                href={bylCheckout.url}
+                target="_blank"
+                rel="noreferrer"
+                className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-emerald-500 hover:bg-emerald-400 text-slate-950 border border-emerald-300/40 rounded-xl font-black text-sm transition-colors"
+              >
+                Төлбөрийн хуудас нээх <ExternalLink className="w-4 h-4" />
+              </a>
               <p className="text-[11px] text-slate-400 text-center font-semibold">
-                QR-ыг дурын банкны аппаар уншуулна уу — эсвэл доороос өөрийн банкаа сонгоход апп шууд нээгдэнэ.
+                Нээгдсэн хуудсан дээр QPay QR уншуулах, SocialPay эсвэл Pocket-оор төлөх боломжтой.
               </p>
-
-              {qpayCheckout.shortUrl && (
-                <a
-                  href={qpayCheckout.shortUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-white/10 hover:bg-white/15 border border-white/10 rounded-xl text-xs font-bold text-white transition-colors"
-                >
-                  QPay checkout нээх <ExternalLink className="w-3.5 h-3.5" />
-                </a>
-              )}
-
-              {/* Every bank/wallet QPay connects — the learner pays from their own app */}
-              {(qpayCheckout.urls?.length ?? 0) > 0 && (
-                <div>
-                  <p className="text-[10px] text-slate-500 font-black uppercase font-space mb-2">Өөрийн банкаар төлөх ({qpayCheckout.urls!.length} апп)</p>
-                  <div className="grid grid-cols-2 gap-2 max-h-64 overflow-y-auto pr-1">
-                    {qpayCheckout.urls!.map((url, index) => (
-                      <a
-                        key={`${url.name ?? 'bank'}-${index}`}
-                        href={url.link}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="flex items-center gap-2.5 px-3 py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-[11px] font-bold text-slate-200 transition-colors"
-                      >
-                        {url.logo ? (
-                          <img src={url.logo} alt="" className="w-7 h-7 rounded-md object-contain bg-white/90 p-0.5 shrink-0" loading="lazy" />
-                        ) : (
-                          <span className="w-7 h-7 rounded-md bg-white/10 flex items-center justify-center shrink-0"><CreditCard className="w-3.5 h-3.5 text-slate-400" /></span>
-                        )}
-                        <span className="truncate">{url.name || url.description || 'Bank app'}</span>
-                      </a>
-                    ))}
-                  </div>
-                </div>
-              )}
 
               {/* Auto-confirmation status */}
               <div className="flex items-center justify-center gap-2 text-[11px] text-emerald-300/90 font-bold">
@@ -2090,7 +2057,7 @@ function LearnerApp() {
 
               <div className="grid grid-cols-2 gap-2">
                 <button
-                  onClick={checkQPayPaymentStatus}
+                  onClick={checkBylPaymentStatus}
                   disabled={paymentStatusLoading}
                   className="flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-500/15 hover:bg-blue-500/25 border border-blue-400/30 rounded-xl text-xs font-black text-blue-200 disabled:opacity-60 cursor-pointer"
                 >
@@ -2098,7 +2065,7 @@ function LearnerApp() {
                   Одоо шалгах
                 </button>
                 <button
-                  onClick={() => { setQpayCheckout(null); setPaymentMessage(null); }}
+                  onClick={() => { setBylCheckout(null); setPaymentMessage(null); }}
                   className="flex items-center justify-center gap-2 px-4 py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-xs font-black text-slate-300 cursor-pointer"
                 >
                   Болих
