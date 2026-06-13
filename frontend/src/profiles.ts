@@ -39,6 +39,9 @@ export interface UserProfile {
     unlocked: boolean;
     unlockedBy?: string;
   };
+  // Free placement-test reveals from subscription purchases (1 granted each).
+  // Spent server-side via /api/payments/placement/redeem-credit.
+  placementCredits?: number;
   // --- Нийгмийн өсөлтийн боломжууд (урилга, тулаан, найзууд) ---
   // Миний хуваалцах урилгын код (сервер үүсгэнэ).
   referralCode?: string;
@@ -59,6 +62,20 @@ export interface UserProfile {
     provider?: string;
     currentPeriodEnd?: string;
   };
+}
+
+// Fields that only the trusted backend (Firebase Admin SDK) may write:
+// entitlements and metered usage. Firestore rules reject client writes to
+// these; the client must also strip them before saving its own profile so a
+// stale value can never fail an otherwise-valid progress write.
+export const SERVER_OWNED_PROFILE_FIELDS = ['billing', 'placementCredits', 'aiUsage'] as const;
+
+export function stripServerOwnedFields(profile: UserProfile): UserProfile {
+  const copy = { ...(profile as unknown as Record<string, unknown>) };
+  for (const field of SERVER_OWNED_PROFILE_FIELDS) {
+    delete copy[field];
+  }
+  return copy as unknown as UserProfile;
 }
 
 export const DEFAULT_PROFILES: UserProfile[] = [

@@ -16,7 +16,14 @@ import {
   type BylWebhookEvent,
   type PaymentRecord,
 } from '../lib/payments/byl';
-import { getPaidPlans, parsePaidPlanId, parseBillingInterval, type BillingInterval } from '../lib/plans';
+import {
+  getPaidPlans,
+  parsePaidPlanId,
+  parseBillingInterval,
+  placementCreditGrant,
+  hasPlacementCredit,
+  type BillingInterval,
+} from '../lib/plans';
 
 // Per-user checkout rate limit: max 5 invoice creations per hour.
 const checkoutHits = new Map<string, { count: number; resetTime: number }>();
@@ -151,6 +158,8 @@ async function activatePaidInvoice(
       }, { merge: true });
     } else {
       tx.set(userRef, {
+        // Each subscription purchase includes one free placement-test reveal.
+        placementCredits: FieldValue.increment(placementCreditGrant(invoice.product)),
         billing: {
           plan: invoice.plan,
           status: 'active',
@@ -368,6 +377,46 @@ export function registerPaymentsRoute(app: Express) {
     } catch (err) {
       console.error('Byl invoice check failed:', err);
       return res.status(502).json({ error: 'Could not check Byl payment status.' });
+    }
+  });
+
+  // Spend one of the caller's free placement credits (granted by a
+  // subscription purchase) to unlock their placement-test reveal without
+  // paying the one-off fee. The decrement + unlock run in a single transaction
+  // so a credit can never be spent twice.
+  app.post('/api/payments/placement/redeem-credit', async (req: Request, res: Response) => {
+    const admin = getFirebaseAdmin();
+    if (!admin) return res.status(503).json({ error: firebaseAdminMissingMessage() });
+
+    let user;
+    try {
+      user = await verifyFirebaseBearer(req);
+    } catch {
+      user = null;
+    }
+    if (!user) return res.status(401).json({ error: 'Нэвтэрч орно уу.' });
+
+    const userRef = admin.db.collection('users').doc(user.uid);
+    try {
+      const result = await admin.db.runTransaction(async (tx) => {
+        const snap = await tx.get(userRef);
+        const data = snap.data() ?? {};
+        const credits = Number(data.placementCredits) || 0;
+        if (!hasPlacementCredit(credits)) return { ok: false as const };
+        tx.set(userRef, {
+          placementCredits: FieldValue.increment(-1),
+          placement: { unlocked: true, unlockedBy: 'subscription' },
+        }, { merge: true });
+        return { ok: true as const, remainingCredits: credits - 1 };
+      });
+
+      if (!result.ok) {
+        return res.status(402).json({ error: 'Үнэгүй үнэлгээний эрх үлдсэнгүй. Дахин нээхэд төлбөр шаардлагатай.' });
+      }
+      return res.json({ unlocked: true, unlockedBy: 'subscription', remainingCredits: result.remainingCredits });
+    } catch (err) {
+      console.error('Placement credit redeem failed:', err);
+      return res.status(502).json({ error: 'Эрх ашиглахад алдаа гарлаа. Дахин оролдоно уу.' });
     }
   });
 

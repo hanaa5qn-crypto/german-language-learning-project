@@ -12,6 +12,9 @@ import { getAuthInstance } from './firebase';
 
 interface PlacementTestProps {
   isFounder: boolean;
+  // Free placement reveals available from the learner's subscription. When > 0
+  // the paywall offers a no-cost unlock that spends one credit server-side.
+  evalCredits?: number;
   onFinish: (record: PlacementRecord) => void;
   onSkip: () => void;
 }
@@ -94,7 +97,7 @@ function clearSavedProgress() {
   }
 }
 
-export default function PlacementTest({ isFounder, onFinish, onSkip }: PlacementTestProps) {
+export default function PlacementTest({ isFounder, evalCredits = 0, onFinish, onSkip }: PlacementTestProps) {
   // Refresh-ийн дараа сэргээх хадгалсан явц. Тест дууссан (paywall/result)
   // төлвийг шууд сэргээнэ; дундаа байсан quiz-ийг танилцуулга дээрх
   // "Үргэлжлүүлэх" товчоор сэргээнэ.
@@ -312,6 +315,30 @@ export default function PlacementTest({ isFounder, onFinish, onSkip }: Placement
     }
   };
 
+  // Spend a subscription eval credit to unlock the detailed result for free.
+  const redeemEvalCredit = async () => {
+    if (!record) return;
+    setPayLoading(true);
+    setPayMessage(null);
+    try {
+      const token = await getAuthInstance().currentUser?.getIdToken();
+      const response = await fetch('/api/payments/placement/redeem-credit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || 'Эрх ашиглахад алдаа гарлаа.');
+      const unlockedRecord: PlacementRecord = { ...record, unlocked: true, unlockedBy: 'subscription' };
+      setRecord(unlockedRecord);
+      setPhase('result');
+      persistRecord('result', unlockedRecord);
+    } catch (err: any) {
+      setPayMessage({ type: 'error', text: err?.message || 'Эрх ашиглахад алдаа гарлаа.' });
+    } finally {
+      setPayLoading(false);
+    }
+  };
+
   const shell = (content: React.ReactNode, footer?: React.ReactNode) => (
     <div className="fixed inset-0 bg-[#020205] z-[100] flex flex-col items-center justify-between pb-10 pt-6 px-4 md:px-12 animate-fade-in text-white overflow-y-auto">
       <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-purple-900/10 rounded-full blur-[120px] pointer-events-none"></div>
@@ -510,15 +537,16 @@ export default function PlacementTest({ isFounder, onFinish, onSkip }: Placement
           </div>
           <h2 className="text-2xl md:text-3xl font-black font-space">Тест дууслаа! 🎉</h2>
           <p className="text-slate-400 text-sm leading-relaxed max-w-md mx-auto">
-            Таны дөрвөн ур чадварын үнэлгээ, CEFR түвшин бэлэн боллоо.
-            Дэлгэрэнгүй үр дүнг нээж үзэхэд <b className="text-white">{PLACEMENT_RESULT_PRICE_MNT.toLocaleString()}₮</b>.
+            Таны CEFR түвшин тогтоогдож, сургалт автоматаар энэ түвшнээс эхэлнэ.
+            Дөрвөн ур чадварын дэлгэрэнгүй задаргааг нээж үзэхэд{' '}
+            <b className="text-white">{PLACEMENT_RESULT_PRICE_MNT.toLocaleString()}₮</b>.
           </p>
         </div>
 
         <div className="bg-white/5 border border-white/10 rounded-2xl p-5 space-y-3">
           <div className="flex items-center justify-between">
             <span className="text-sm font-bold text-slate-300">Таны CEFR түвшин</span>
-            <span className="text-2xl font-black font-space blur-sm select-none">B?</span>
+            <span className="text-2xl font-black font-space bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">{record.level}</span>
           </div>
           {(Object.keys(SKILL_META) as PlacementSkill[]).map((s) => (
             <div key={s} className="flex items-center justify-between text-sm">
@@ -527,6 +555,17 @@ export default function PlacementTest({ isFounder, onFinish, onSkip }: Placement
             </div>
           ))}
         </div>
+
+        {evalCredits > 0 && (
+          <button
+            onClick={redeemEvalCredit}
+            disabled={payLoading}
+            className="w-full bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-bold rounded-xl py-3.5 px-6 disabled:opacity-50 hover:opacity-95 shadow-[0_4px_20px_rgba(16,185,129,0.3)] transition-all cursor-pointer flex items-center justify-center gap-2"
+          >
+            {payLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Crown className="w-5 h-5" />}
+            Захиалгад багтсан — үнэгүй нээх ({evalCredits})
+          </button>
+        )}
 
         {invoice ? (
           <div className="bg-white/5 border border-white/10 rounded-2xl p-5 flex flex-col items-center gap-3">

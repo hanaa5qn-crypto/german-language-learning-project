@@ -111,11 +111,15 @@ export function effectivePlan(profile: UserProfile | null): EffectivePlan {
   const billing = profile.billing ?? {};
   const status = (billing.status ?? '').toLowerCase();
   if (!ACTIVE_BILLING_STATUSES.includes(status)) return 'free';
-  // Trials (e.g. the 3-day referral Pro trial) have no renewal flow, so they
-  // expire strictly by currentPeriodEnd; paid plans keep trusting their status.
+  // Byl checkouts are one-off charges with no auto-renewal, so every plan
+  // expires once its paid period ends. Trials must always carry a valid,
+  // unexpired end date; paid plans trust legacy records that predate
+  // currentPeriodEnd tracking (no end date stored → still active).
+  const end = Date.parse(billing.currentPeriodEnd ?? '');
   if (status === 'trialing') {
-    const end = Date.parse(billing.currentPeriodEnd ?? '');
     if (!Number.isFinite(end) || end < Date.now()) return 'free';
+  } else if (Number.isFinite(end) && end < Date.now()) {
+    return 'free';
   }
 
   const plan = (billing.plan ?? '').toLowerCase();

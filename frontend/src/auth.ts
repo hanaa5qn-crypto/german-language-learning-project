@@ -16,7 +16,7 @@ import {
 } from 'firebase/auth';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { getAuthInstance, getDb } from './firebase';
-import { UserProfile, createCustomProfile } from './profiles';
+import { UserProfile, createCustomProfile, stripServerOwnedFields } from './profiles';
 
 function profileRef(uid: string) {
   return doc(getDb(), 'users', uid);
@@ -48,7 +48,7 @@ export async function signUpWithProfile(
   }
 
   try {
-    await setDoc(profileRef(cred.user.uid), profile, { merge: true });
+    await setDoc(profileRef(cred.user.uid), stripServerOwnedFields(profile), { merge: true });
   } catch (err) {
     // The Auth account now exists, so do not report signup failure just because
     // the deployment's Firestore setup is missing rules/database access. The
@@ -80,7 +80,10 @@ export async function sendResetEmail(email: string): Promise<void> {
 export async function saveProfileProgress(profile: UserProfile): Promise<void> {
   const user = getAuthInstance().currentUser;
   if (!user) return;
-  await setDoc(profileRef(user.uid), profile, { merge: true });
+  // Never echo back entitlement/usage fields — they are server-owned and
+  // rejected by Firestore rules. Stripping them also avoids a stale local
+  // value (e.g. aiUsage updated server-side meanwhile) failing the whole save.
+  await setDoc(profileRef(user.uid), stripServerOwnedFields(profile), { merge: true });
 }
 
 // Single source of truth for "who is logged in". Fires on page load (restoring a
@@ -99,7 +102,7 @@ export function subscribeToAuthedProfile(
       const profile = pendingSignupProfile;
       pendingSignupProfile = null;
       try {
-        await setDoc(profileRef(user.uid), profile, { merge: true });
+        await setDoc(profileRef(user.uid), stripServerOwnedFields(profile), { merge: true });
       } catch {
         // already written by signUpWithProfile; ignore
       }
@@ -120,7 +123,7 @@ export function subscribeToAuthedProfile(
           'A1',
           'Ерөнхий сургалт',
         );
-        await setDoc(profileRef(user.uid), fallback);
+        await setDoc(profileRef(user.uid), stripServerOwnedFields(fallback));
         onProfile(fallback);
       }
     } catch (err) {

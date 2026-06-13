@@ -47,7 +47,7 @@ import {
 } from './plans';
 import OnboardingWizard from './OnboardingWizard';
 import PlacementTest from './PlacementTest';
-import { isFounderEmail } from './placement';
+import { isFounderEmail, placementProfilePatch } from './placement';
 import GrammarTipCard from './GrammarTipCard';
 import DuelScreen from './DuelScreen';
 import SocialSection from './SocialSection';
@@ -2758,13 +2758,14 @@ function LearnerApp() {
     return (
       <PlacementTest
         isFounder={isFounderEmail(currentUser.email)}
+        evalCredits={currentUser.placementCredits ?? 0}
         onFinish={(record) => {
           setPlacementOpen(false);
+          // The CEFR result is given + assigned automatically; content gating
+          // (Free = A1 only) still locks higher-level lessons until upgrade.
           applyMetricProfile({
             ...currentUser,
-            placementPending: false,
-            placement: record,
-            ...(record.unlocked ? { targetLevel: record.level } : {}),
+            ...placementProfilePatch(record),
           });
         }}
         onSkip={() => {

@@ -82,22 +82,40 @@ const ACTIVE_BILLING_STATUSES = ['active', 'paid', 'trialing'];
 
 type EffectivePlan = 'free' | 'pro' | 'max' | 'founder';
 
-function planFromBilling(billing: { plan?: string; status?: string; currentPeriodEnd?: string }): EffectivePlan {
+export function planFromBilling(billing: { plan?: string; status?: string; currentPeriodEnd?: string }): EffectivePlan {
   const status = (billing.status ?? '').toLowerCase();
   const active = ACTIVE_BILLING_STATUSES.includes(status);
   if (!active) return 'free';
-  // Trials (e.g. the 3-day referral Pro trial) carry no renewal flow, so they
-  // expire strictly by currentPeriodEnd. Paid plans keep the legacy behavior
-  // of trusting their status until a payment flow updates it.
+  // Byl checkouts are one-off charges with no auto-renewal, so every plan
+  // expires once its paid period ends. Trials must always carry a valid,
+  // unexpired end date; paid plans trust legacy records that predate
+  // currentPeriodEnd tracking (no end date stored → still active).
+  const end = Date.parse(billing.currentPeriodEnd ?? '');
   if (status === 'trialing') {
-    const end = Date.parse(billing.currentPeriodEnd ?? '');
     if (!Number.isFinite(end) || end < Date.now()) return 'free';
+  } else if (Number.isFinite(end) && end < Date.now()) {
+    return 'free';
   }
   const plan = (billing.plan ?? '').toLowerCase();
   if (plan === 'pro') return 'pro';
   if (plan === 'max' || plan === 'founder') return 'max';
   // Legacy "Monthly" subscriptions predate the tier split and included AI.
   return plan ? 'max' : 'free';
+}
+
+// Each paid subscription purchase includes one free placement-test reveal.
+// Re-takes after the credit is spent cost the regular placement fee.
+export const PLACEMENT_CREDITS_PER_SUBSCRIPTION = 1;
+
+// How many eval credits a checkout grants. One-off placement purchases grant
+// none (they ARE the placement); everything else is a subscription.
+export function placementCreditGrant(product: 'subscription' | 'placement' | undefined): number {
+  return product === 'placement' ? 0 : PLACEMENT_CREDITS_PER_SUBSCRIPTION;
+}
+
+// Whether a stored credit balance can unlock a placement reveal for free.
+export function hasPlacementCredit(credits: number | undefined): boolean {
+  return (credits ?? 0) > 0;
 }
 
 // Monthly AI teaser quota per plan; null = unlimited.

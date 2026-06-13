@@ -57,7 +57,8 @@ export interface PlacementRecord {
   levelStats: Record<string, PlacementLevelStat>;
   unlocked: boolean;
   // 'qpay' kept so records stored before the Byl migration still parse.
-  unlockedBy?: 'founder' | 'byl' | 'qpay' | 'dummy';
+  // 'subscription' = unlocked with a free eval credit from a paid plan.
+  unlockedBy?: 'founder' | 'byl' | 'qpay' | 'dummy' | 'subscription';
 }
 
 export const PLACEMENT_RESULT_PRICE_MNT = 5000;
@@ -626,5 +627,25 @@ export function scorePlacement(answers: PlacementAnswer[]): PlacementRecord {
     skillScores,
     levelStats,
     unlocked: false,
+  };
+}
+
+// Profile patch applied when a learner finishes the placement test. The CEFR
+// level is always assigned to targetLevel — the test result is given to the
+// user automatically, regardless of whether they unlocked the detailed report.
+// Content gating (Free = A1 only) still applies separately, so assigning a
+// higher level just points a free learner at a locked-but-visible path that
+// upsells Pro.
+export interface PlacementProfilePatch {
+  placementPending: false;
+  placement: PlacementRecord;
+  targetLevel: string;
+}
+
+export function placementProfilePatch(record: PlacementRecord): PlacementProfilePatch {
+  return {
+    placementPending: false,
+    placement: record,
+    targetLevel: record.level,
   };
 }

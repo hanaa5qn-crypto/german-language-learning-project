@@ -15,10 +15,27 @@ service cloud.firestore {
       return request.auth != null && request.auth.uid == userId;
     }
 
+    // Entitlement + metered-usage fields are written ONLY by the trusted
+    // payments backend via the Firebase Admin SDK (which bypasses these rules).
+    // A client must never set or change them, or it could grant itself a paid
+    // plan, extend its own expiry, mint free eval credits, or reset its AI
+    // quota. The client strips these before every write (stripServerOwnedFields).
+    function serverOwnedFields() {
+      return ['billing', 'placementCredits', 'aiUsage'];
+    }
+    function createOmitsServerFields() {
+      return !request.resource.data.keys().hasAny(serverOwnedFields());
+    }
+    function updateKeepsServerFields() {
+      return !request.resource.data.diff(resource.data).affectedKeys().hasAny(serverOwnedFields());
+    }
+
     match /users/{userId} {
       allow get: if isOwner(userId) || isAdmin();
       allow list: if isAdmin();
-      allow create, update, delete: if isOwner(userId);
+      allow create: if (isOwner(userId) && createOmitsServerFields()) || isAdmin();
+      allow update: if (isOwner(userId) && updateKeepsServerFields()) || isAdmin();
+      allow delete: if isOwner(userId);
     }
 
     match /payments/{paymentId} {

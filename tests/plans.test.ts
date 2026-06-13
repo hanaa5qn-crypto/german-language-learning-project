@@ -43,11 +43,39 @@ describe('effectivePlan — referral Pro trial', () => {
     expect(effectivePlan(profileWith({ plan: 'pro', status: 'trialing' }))).toBe('free');
   });
 
-  it('keeps trusting paid (non-trial) subscriptions past currentPeriodEnd', () => {
+});
+
+describe('effectivePlan — paid subscription monthly expiry', () => {
+  it('grants the paid plan while the period is still running', () => {
     expect(effectivePlan(profileWith({
       plan: 'max',
       status: 'active',
-      currentPeriodEnd: new Date(Date.now() - days(30)).toISOString(),
+      currentPeriodEnd: new Date(Date.now() + days(10)).toISOString(),
     }))).toBe('max');
+  });
+
+  it('expires a paid subscription once currentPeriodEnd has passed', () => {
+    expect(effectivePlan(profileWith({
+      plan: 'max',
+      status: 'active',
+      currentPeriodEnd: new Date(Date.now() - days(1)).toISOString(),
+    }))).toBe('free');
+  });
+
+  it('expires a paid pro subscription a month after its period end', () => {
+    expect(effectivePlan(profileWith({
+      plan: 'pro',
+      status: 'active',
+      currentPeriodEnd: new Date(Date.now() - days(30)).toISOString(),
+    }))).toBe('free');
+  });
+
+  it('trusts legacy paid records that carry no currentPeriodEnd', () => {
+    expect(effectivePlan(profileWith({ plan: 'max', status: 'active' }))).toBe('max');
+    expect(effectivePlan(profileWith({ plan: 'pro', status: 'paid' }))).toBe('pro');
+  });
+
+  it('honors a legacy "Monthly" subscription without a period end as max', () => {
+    expect(effectivePlan(profileWith({ plan: 'Monthly', status: 'active' }))).toBe('max');
   });
 });
