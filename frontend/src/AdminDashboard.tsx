@@ -21,7 +21,7 @@ import {
   lifetimeValueCents,
 } from './adminMetrics';
 
-const ADMIN_EMAILS = ['hanaa5qn@gmail.com'];
+const ADMIN_EMAILS = ['hanaa5qn@gmail.com', 'yubndaayubnda@gmail.com'];
 
 interface CustomerRow {
   id: string;
