@@ -404,15 +404,7 @@ function paymentMethodsPayload() {
       missing: dummyOn && !adminReady ? ['Firebase Admin credentials'] : [],
       supports: ['instant simulated payment for testing'],
     },
-    alternatives: [
-      {
-        id: 'bonum',
-        name: 'Bonum Gateway',
-        status: 'planned',
-        supports: ['Apple Pay', 'Google Pay', 'cards', 'QPay'],
-        note: 'Best next option for Apple Pay / Google Pay and card-wallet coverage in Mongolia.',
-      },
-    ],
+    alternatives: [],
   };
 }
 
