@@ -25,20 +25,35 @@ import {
   type BillingInterval,
 } from '../lib/plans';
 
-// Per-user checkout rate limit: max 5 invoice creations per hour.
-const checkoutHits = new Map<string, { count: number; resetTime: number }>();
+// Per-user checkout rate limit: max 5 invoice creations per hour. Backed by
+// Firestore (collection `rateLimits`) so the cap holds across serverless
+// instances — an in-memory Map resets on every cold start and counts
+// per-instance, letting the limit be exceeded by N× on Vercel/Fluid Compute.
 const CHECKOUT_MAX = 5;
 const CHECKOUT_WINDOW_MS = 60 * 60 * 1000;
 
-function checkoutRateLimited(uid: string): boolean {
-  const now = Date.now();
-  const record = checkoutHits.get(uid);
-  if (!record || now > record.resetTime) {
-    checkoutHits.set(uid, { count: 1, resetTime: now + CHECKOUT_WINDOW_MS });
+// Atomically increments the caller's hourly counter and reports whether they
+// are now over the cap. Fails open: if Firestore is unreachable we let the
+// request through rather than block a paying customer over a limiter hiccup.
+async function checkoutRateLimited(db: FirebaseFirestore.Firestore, uid: string): Promise<boolean> {
+  const ref = db.collection('rateLimits').doc(`checkout_${uid}`);
+  try {
+    return await db.runTransaction(async (tx) => {
+      const snap = await tx.get(ref);
+      const now = Date.now();
+      const data = snap.data();
+      if (!data || now > Number(data.resetTime ?? 0)) {
+        tx.set(ref, { count: 1, resetTime: now + CHECKOUT_WINDOW_MS });
+        return false;
+      }
+      const count = Number(data.count ?? 0) + 1;
+      tx.set(ref, { count }, { merge: true });
+      return count > CHECKOUT_MAX;
+    });
+  } catch (err) {
+    console.warn('checkout rate-limit check failed (fail-open):', err);
     return false;
   }
-  record.count++;
-  return record.count > CHECKOUT_MAX;
 }
 
 interface PendingInvoice {
@@ -293,7 +308,7 @@ export function registerPaymentsRoute(app: Express) {
       return res.status(401).json({ error: 'Sign in again before starting payment.' });
     }
 
-    if (checkoutRateLimited(user.uid)) {
+    if (await checkoutRateLimited(admin.db, user.uid)) {
       res.setHeader('Retry-After', '3600');
       return res.status(429).json({ error: 'Хэт олон нэхэмжлэл үүсгэлээ. Нэг цагийн дараа дахин оролдоно уу.' });
     }
@@ -508,7 +523,7 @@ export function registerPaymentsRoute(app: Express) {
       return res.status(401).json({ error: 'Sign in again before starting payment.' });
     }
 
-    if (checkoutRateLimited(user.uid)) {
+    if (await checkoutRateLimited(admin.db, user.uid)) {
       res.setHeader('Retry-After', '3600');
       return res.status(429).json({ error: 'Хэт олон нэхэмжлэл үүсгэлээ. Нэг цагийн дараа дахин оролдоно уу.' });
     }

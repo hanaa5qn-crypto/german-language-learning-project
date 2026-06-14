@@ -27,6 +27,9 @@ app.use(express.json({
 app.use((_req, res, next) => {
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('X-Frame-Options', 'DENY');
+  // Force HTTPS for a year (browsers ignore this over plain http, so it's
+  // harmless in local dev). Prevents protocol-downgrade / SSL-strip.
+  res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
   res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
   res.setHeader('Permissions-Policy', 'microphone=(self), camera=(), geolocation=()');
   res.setHeader(

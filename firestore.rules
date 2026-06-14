@@ -6,9 +6,15 @@ rules_version = '2';
 // progress private and safe.
 service cloud.firestore {
   match /databases/{database}/documents {
+    // Admin is granted by a server-set custom claim (admin:true), NOT by email.
+    // The app uses email/password sign-in with no email verification, so an
+    // email claim is just an unverified string a stranger could register —
+    // matching on it would let anyone who types an admin's email become admin.
+    // The claim is set only by scripts/setAdminClaims.ts via the Admin SDK and
+    // cannot be forged by a client. Grant a new admin: add them to that script,
+    // run it, have them re-login, then redeploy these rules.
     function isAdmin() {
-      return request.auth != null
-        && request.auth.token.email in ['hanaa5qn@gmail.com', 'yubndaayubnda@gmail.com'];
+      return request.auth != null && request.auth.token.admin == true;
     }
 
     function isOwner(userId) {
