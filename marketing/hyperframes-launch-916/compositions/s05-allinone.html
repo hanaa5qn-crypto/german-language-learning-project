@@ -1,0 +1,261 @@
+<template id="s05-allinone-template">
+  <div data-composition-id="s05-allinone" data-width="1080" data-height="1920" data-duration="4">
+    <div class="s5-stage">
+      <div class="s5-head-wrap">
+        <div class="pill"><span class="pill-dot"></span>Герман хэл сургалтын платформ</div>
+        <h2 class="s5-head">
+          <span class="hl-line">Бүгдийг нэг дор</span>
+          <span class="grad-line">Нэгдсэн систем</span>
+        </h2>
+        <p class="s5-sub">Үг, дүрэм, давталт — бүгд нэг аппд</p>
+      </div>
+
+      <!-- Phone dashboard mockup -->
+      <div class="dash" data-layout-ignore="">
+        <!-- Phone top bar status -->
+        <div class="phone-header">
+          <div class="dash-brand"><span class="brand-mark">VL</span> Vivid</div>
+          <div class="dash-streak">⚡ 7 хоног</div>
+        </div>
+
+        <div class="dash-main">
+          <div class="dash-top">
+            <div class="dash-greet">Сайн уу, Болд</div>
+          </div>
+          <div class="dash-grid">
+            <div class="dcard wide review">
+              <div class="dc-label">Өнөөдрийн давталт</div>
+              <div class="dc-big">24 үг</div>
+              <div class="dc-bar"><div class="dc-bar-fill"></div></div>
+            </div>
+            <div class="dcard level">
+              <div class="dc-label">Түвшин</div>
+              <div class="lvl-track">
+                <span class="lvl on">A1</span><span class="lvl on">A2</span><span class="lvl now">B1</span><span class="lvl">B2</span>
+              </div>
+            </div>
+            <div class="dcard wordlist">
+              <div class="dc-label">Шинэ үгс</div>
+              <div class="wl-row"><span class="wl-de">die Reise</span><span class="wl-mn">аялал</span></div>
+              <div class="wl-row"><span class="wl-de">der Zug</span><span class="wl-mn">галт тэрэг</span></div>
+              <div class="wl-row"><span class="wl-de">die Schule</span><span class="wl-mn">сургууль</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Phone bottom navigation -->
+        <div class="phone-nav">
+          <div class="nav-item active">Хичээл</div>
+          <div class="nav-item">Давталт</div>
+          <div class="nav-item">Ахиц</div>
+        </div>
+      </div>
+
+      <!-- highlight annotations (positioned absolute relative to stage) -->
+      <div class="anno anno-1" data-layout-ignore="">
+        <div data-hf-studio-original-display="" data-hf-studio-original-box-sizing="" data-hf-studio-original-flex-shrink="" data-hf-studio-original-flex-grow="" data-hf-studio-original-flex-basis="" data-hf-studio-original-max-height="" data-hf-studio-original-max-width="" data-hf-studio-original-min-height="" data-hf-studio-original-min-width="" data-hf-studio-original-height="" data-hf-studio-original-width="" data-hf-studio-box-size="true" data-hf-studio-original-inline-translate="none" data-hf-studio-original-translate="" data-hf-studio-path-offset="true" style="--hf-studio-offset-x:16px;--hf-studio-offset-y:-43px;translate:var(--hf-studio-offset-x, 0px) var(--hf-studio-offset-y, 0px);--hf-studio-width:335px;--hf-studio-height:59px;width:335px;height:59px;min-width:0px;min-height:0px;max-width:none;max-height:none;box-sizing:border-box;scale:none" class="anno-box"></div>
+        <div data-hf-studio-original-inline-translate="none" data-hf-studio-original-translate="" data-hf-studio-path-offset="true" style="--hf-studio-offset-x:-3px;--hf-studio-offset-y:-44px;translate:var(--hf-studio-offset-x, 0px) var(--hf-studio-offset-y, 0px)" class="anno-tag">Сайн уу, Болд</div>
+      </div>
+      <div class="anno anno-2" data-layout-ignore="">
+        <div data-hf-studio-original-inline-translate="none" data-hf-studio-original-translate="" data-hf-studio-path-offset="true" style="--hf-studio-offset-x:11px;--hf-studio-offset-y:-48px;translate:var(--hf-studio-offset-x, 0px) var(--hf-studio-offset-y, 0px)" class="anno-box box2"></div>
+        <div data-hf-studio-original-inline-translate="none" data-hf-studio-original-translate="" data-hf-studio-path-offset="true" style="--hf-studio-offset-x:225px;--hf-studio-offset-y:-44px;translate:var(--hf-studio-offset-x, 0px) var(--hf-studio-offset-y, 0px)" class="anno-tag tag2">Өнөөдрийн давталт 24 үг</div>
+      </div>
+    </div>
+
+    <style>
+      [data-composition-id="s05-allinone"] .s5-stage {
+        width: 1080px;
+        height: 1920px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 140px 0 0;
+        box-sizing: border-box;
+        position: relative;
+      }
+      [data-composition-id="s05-allinone"] .s5-head-wrap {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 14px;
+        margin-bottom: 28px;
+        z-index: 3;
+      }
+      [data-composition-id="s05-allinone"] .pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 12px;
+        background: rgba(179, 136, 250, 0.14);
+        border: 1px solid rgba(179, 136, 250, 0.4);
+        color: #b388fa;
+        border-radius: 999px;
+        padding: 11px 26px;
+        font-family: "Golos Text", sans-serif;
+        font-weight: 600;
+        font-size: 26px;
+      }
+      [data-composition-id="s05-allinone"] .pill-dot {
+        width: 12px; height: 12px; border-radius: 50%; background: #b388fa;
+      }
+      [data-composition-id="s05-allinone"] .s5-head {
+        font-family: "Unbounded", sans-serif;
+        font-weight: 700;
+        font-size: 76px;
+        line-height: 1.15;
+        letter-spacing: -0.02em;
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+      }
+      [data-composition-id="s05-allinone"] .hl-line { color: #f2f0fa; }
+      [data-composition-id="s05-allinone"] .grad-line {
+        background: linear-gradient(100deg, #b388fa, #66aafd);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+      }
+      [data-composition-id="s05-allinone"] .s5-sub {
+        font-family: "Golos Text", sans-serif;
+        font-weight: 500;
+        font-size: 30px;
+        color: #a8a3c8;
+      }
+
+      /* Phone Dashboard Mockup */
+      [data-composition-id="s05-allinone"] .dash {
+        width: 600px;
+        height: 980px;
+        background: #ffffff;
+        border-radius: 48px;
+        box-shadow: 0 40px 110px rgba(0, 0, 0, 0.5);
+        border: 12px solid #241c44; /* phone bezel */
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        position: relative;
+        z-index: 2;
+        margin-top: 40px;
+      }
+      [data-composition-id="s05-allinone"] .phone-header {
+        background: #f4f0fd;
+        border-bottom: 1px solid #e6dcfa;
+        padding: 24px 30px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      [data-composition-id="s05-allinone"] .dash-brand {
+        display: flex; align-items: center; gap: 12px;
+        font-family: "Unbounded", sans-serif; font-weight: 600; font-size: 24px;
+        color: #241c44;
+      }
+      [data-composition-id="s05-allinone"] .brand-mark {
+        width: 44px; height: 44px; border-radius: 12px;
+        background: linear-gradient(135deg, #b388fa, #66aafd);
+        color: #fff; display: flex; align-items: center; justify-content: center;
+        font-size: 20px; font-weight: 800;
+      }
+      [data-composition-id="s05-allinone"] .dash-streak {
+        font-family: "Golos Text", sans-serif; font-weight: 600; font-size: 24px; color: #5b3fa0;
+      }
+      [data-composition-id="s05-allinone"] .dash-main {
+        flex: 1;
+        padding: 30px;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+      }
+      [data-composition-id="s05-allinone"] .dash-greet {
+        font-family: "Unbounded", sans-serif; font-weight: 600; font-size: 34px; color: #241c44;
+      }
+      [data-composition-id="s05-allinone"] .dash-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+      }
+      [data-composition-id="s05-allinone"] .dcard {
+        background: #faf8ff; border: 1px solid #ece4fb; border-radius: 20px; padding: 22px 24px;
+      }
+      [data-composition-id="s05-allinone"] .dc-label {
+        font-family: "Golos Text", sans-serif; font-weight: 600; font-size: 20px; color: #9a8fc0; margin-bottom: 10px;
+      }
+      [data-composition-id="s05-allinone"] .dc-big {
+        font-family: "Unbounded", sans-serif; font-weight: 700; font-size: 46px; color: #241c44; margin-bottom: 14px;
+      }
+      [data-composition-id="s05-allinone"] .dc-bar { width: 100%; height: 12px; background: #ece4fb; border-radius: 999px; overflow: hidden; }
+      [data-composition-id="s05-allinone"] .dc-bar-fill {
+        width: 64%; height: 100%; border-radius: 999px; background: linear-gradient(90deg, #b388fa, #66aafd);
+      }
+      [data-composition-id="s05-allinone"] .lvl-track { display: flex; gap: 8px; margin-top: 10px; }
+      [data-composition-id="s05-allinone"] .lvl {
+        flex: 1; text-align: center; padding: 12px 0; border-radius: 12px;
+        font-family: "Golos Text", sans-serif; font-weight: 700; font-size: 22px;
+        background: #ece4fb; color: #b3a9d4;
+      }
+      [data-composition-id="s05-allinone"] .lvl.on { background: #d9ccfa; color: #6b4fc0; }
+      [data-composition-id="s05-allinone"] .lvl.now {
+        background: linear-gradient(135deg, #b388fa, #66aafd); color: #fff;
+      }
+      [data-composition-id="s05-allinone"] .wl-row {
+        display: flex; justify-content: space-between; align-items: center;
+        padding: 10px 4px; border-bottom: 1px solid #f0eafb;
+      }
+      [data-composition-id="s05-allinone"] .wl-de {
+        font-family: "Unbounded", sans-serif; font-weight: 600; font-size: 24px; color: #241c44;
+      }
+      [data-composition-id="s05-allinone"] .wl-mn {
+        font-family: "Golos Text", sans-serif; font-weight: 600; font-size: 22px; color: #66aafd;
+      }
+      [data-composition-id="s05-allinone"] .phone-nav {
+        height: 84px; background: #faf8ff; border-top: 1px solid #e6dcfa;
+        display: flex; justify-content: space-around; align-items: center;
+      }
+      [data-composition-id="s05-allinone"] .phone-nav .nav-item {
+        font-family: "Golos Text", sans-serif; font-weight: 700; font-size: 22px; color: #9a8fc0;
+      }
+      [data-composition-id="s05-allinone"] .phone-nav .nav-item.active {
+        color: #5b3fa0;
+      }
+
+      /* Annotations (Absolute coordinates over the stage to frame elements) */
+      [data-composition-id="s05-allinone"] .anno { position: absolute; z-index: 10; }
+      /* Pointing to "Сайн уу, Болд" (inside phone top:40px, left:30px -> relative to stage: top:690px, left:280px approx) */
+      [data-composition-id="s05-allinone"] .anno-1 { top: 676px; left: 260px; }
+      /* Pointing to review card (inside phone top:100px -> relative to stage: top:750px, left:260px approx) */
+      [data-composition-id="s05-allinone"] .anno-2 { top: 766px; left: 260px; }
+      [data-composition-id="s05-allinone"] .anno-box {
+        width: 290px; height: 58px; border: 3px solid #fb6d8e; border-radius: 14px;
+        box-shadow: 0 0 16px rgba(251, 109, 142, 0.4);
+      }
+      [data-composition-id="s05-allinone"] .box2 { width: 500px; height: 160px; border-color: #b388fa; box-shadow: 0 0 16px rgba(179, 136, 250, 0.4); }
+      [data-composition-id="s05-allinone"] .anno-tag {
+        position: absolute; top: -38px; left: 0;
+        background: #fb6d8e; color: #fff; border-radius: 10px; padding: 6px 16px;
+        font-family: "Golos Text", sans-serif; font-weight: 600; font-size: 22px; white-space: nowrap;
+      }
+      [data-composition-id="s05-allinone"] .tag2 { background: #b388fa; top: auto; bottom: -38px; left: 0; }
+    </style>
+
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <script>
+      (function () {
+        const tl = gsap.timeline({ paused: true });
+        const q = (s) => '[data-composition-id="s05-allinone"] ' + s;
+
+        tl.from(q(".pill"), { y: -30, opacity: 0, duration: 0.5, ease: "power3.out" }, 0.1);
+        tl.from(q(".hl-line"), { y: 40, opacity: 0, duration: 0.5, ease: "power3.out" }, 0.3);
+        tl.from(q(".grad-line"), { y: 40, opacity: 0, duration: 0.5, ease: "power3.out" }, 0.45);
+        tl.from(q(".s5-sub"), { y: 24, opacity: 0, duration: 0.45, ease: "power2.out" }, 0.65);
+        tl.from(q(".dash"), { y: 70, opacity: 0, duration: 0.7, ease: "cubic-bezier(0.22,1,0.36,1)" }, 0.55);
+        tl.fromTo(q(".dc-bar-fill"), { width: "10%" }, { width: "64%", duration: 0.9, ease: "power2.inOut" }, 1.3);
+
+        // Annotations pop after the dashboard lands.
+        tl.from(q(".anno-1"), { scale: 0.6, opacity: 0, duration: 0.45, ease: "back.out(1.7)", transformOrigin: "left top" }, 1.5);
+        tl.from(q(".anno-2"), { scale: 0.6, opacity: 0, duration: 0.45, ease: "back.out(1.7)", transformOrigin: "left top" }, 1.9);
+
+        window.__timelines = window.__timelines || {};
+        window.__timelines["s05-allinone"] = tl;
+      })();
+    </script>
+  </div>
+</template>

@@ -1,0 +1,668 @@
+◆  Linting hyperframes-launch-916/17 files
+
+  ⚠ [index.html] studio_missing_editable_id: <audio data-start="0.25" data-track-index="3"> has no id, so Studio cannot use a stable edit target for its timeline and canvas controls.
+    Fix: Add a stable, human-readable id such as id="hero-title" or id="scene-1-card" to every timeline-visible element you want agents or Studio to edit.
+  ⚠ [index.html] studio_missing_editable_id: <audio data-start="19.8" data-track-index="3"> has no id, so Studio cannot use a stable edit target for its timeline and canvas controls.
+    Fix: Add a stable, human-readable id such as id="hero-title" or id="scene-1-card" to every timeline-visible element you want agents or Studio to edit.
+  ⚠ [index.html] studio_missing_editable_id: <audio data-start="22.2" data-track-index="3"> has no id, so Studio cannot use a stable edit target for its timeline and canvas controls.
+    Fix: Add a stable, human-readable id such as id="hero-title" or id="scene-1-card" to every timeline-visible element you want agents or Studio to edit.
+  ⚠ [index.html] studio_missing_editable_id: <audio data-start="23.7" data-track-index="3"> has no id, so Studio cannot use a stable edit target for its timeline and canvas controls.
+    Fix: Add a stable, human-readable id such as id="hero-title" or id="scene-1-card" to every timeline-visible element you want agents or Studio to edit.
+  ⚠ [index.html] studio_missing_editable_id: <audio data-start="25.2" data-track-index="3"> has no id, so Studio cannot use a stable edit target for its timeline and canvas controls.
+    Fix: Add a stable, human-readable id such as id="hero-title" or id="scene-1-card" to every timeline-visible element you want agents or Studio to edit.
+  ⚠ [index.html] studio_missing_editable_id: <audio data-start="44.5" data-track-index="3"> has no id, so Studio cannot use a stable edit target for its timeline and canvas controls.
+    Fix: Add a stable, human-readable id such as id="hero-title" or id="scene-1-card" to every timeline-visible element you want agents or Studio to edit.
+  ⚠ [index.html] studio_missing_editable_id: <audio data-start="46.55" data-track-index="3"> has no id, so Studio cannot use a stable edit target for its timeline and canvas controls.
+    Fix: Add a stable, human-readable id such as id="hero-title" or id="scene-1-card" to every timeline-visible element you want agents or Studio to edit.
+  ✗ [index.html] media_missing_id: <audio> has data-start but no id attribute. The renderer requires id to discover media elements — this audio will be SILENT in renders.
+    Fix: Add a unique id attribute: <audio id="my-audio" ...>
+  ⚠ [compositions/bg-aurora.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #bg-aurora for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/bg-aurora.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #bg-aurora for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/bg-aurora.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #bg-aurora for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/bg-aurora.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #bg-aurora for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/bg-aurora.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #bg-aurora for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/bg-aurora.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #bg-aurora for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/bg-aurora.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #bg-aurora for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/bg-aurora.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #bg-aurora for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/bg-aurora.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #bg-aurora for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/bg-aurora.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #bg-aurora for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/bg-aurora.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #bg-aurora for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/bg-aurora.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #bg-aurora for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/bg-aurora.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #bg-aurora for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/bg-aurora.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #bg-aurora for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/bg-aurora.html] overlapping_gsap_tweens: GSAP tweens overlap on "__unresolved__" for x, y between 0.00s and 35.00s.
+    Fix: Shorten the earlier tween, move the later tween, or add `overwrite: "auto"`.
+  ⚠ [compositions/bg-aurora.html] overlapping_gsap_tweens: GSAP tweens overlap on "__unresolved__" for x, y between 14.00s and 35.00s.
+    Fix: Shorten the earlier tween, move the later tween, or add `overwrite: "auto"`.
+  ⚠ [compositions/bg-aurora.html] overlapping_gsap_tweens: GSAP tweens overlap on "__unresolved__" for x, y between 35.00s and 70.00s.
+    Fix: Shorten the earlier tween, move the later tween, or add `overwrite: "auto"`.
+  ⚠ [compositions/bg-aurora.html] overlapping_gsap_tweens: GSAP tweens overlap on "__unresolved__" for x, y between 35.00s and 46.00s.
+    Fix: Shorten the earlier tween, move the later tween, or add `overwrite: "auto"`.
+  ⚠ [compositions/bg-aurora.html] overlapping_gsap_tweens: GSAP tweens overlap on "__unresolved__" for x, y between 48.00s and 66.00s.
+    Fix: Shorten the earlier tween, move the later tween, or add `overwrite: "auto"`.
+  ⚠ [compositions/bg-aurora.html] overlapping_gsap_tweens: GSAP tweens overlap on "__unresolved__" for x, y between 14.00s and 46.00s.
+    Fix: Shorten the earlier tween, move the later tween, or add `overwrite: "auto"`.
+  ⚠ [compositions/bg-aurora.html] overlapping_gsap_tweens: GSAP tweens overlap on "__unresolved__" for opacity between 13.55s and 14.00s.
+    Fix: Shorten the earlier tween, move the later tween, or add `overwrite: "auto"`.
+  ⚠ [compositions/bg-aurora.html] overlapping_gsap_tweens: GSAP tweens overlap on "__unresolved__" for opacity between 29.55s and 30.00s.
+    Fix: Shorten the earlier tween, move the later tween, or add `overwrite: "auto"`.
+  ⚠ [compositions/bg-aurora.html] overlapping_gsap_tweens: GSAP tweens overlap on "__unresolved__" for opacity between 47.55s and 48.00s.
+    Fix: Shorten the earlier tween, move the later tween, or add `overwrite: "auto"`.
+  ⚠ [compositions/bg-aurora.html] overlapping_gsap_tweens: GSAP tweens overlap on "__unresolved__" for opacity between 52.55s and 53.00s.
+    Fix: Shorten the earlier tween, move the later tween, or add `overwrite: "auto"`.
+  ⚠ [compositions/bg-aurora.html] overlapping_gsap_tweens: GSAP tweens overlap on "__unresolved__" for opacity between 61.55s and 62.00s.
+    Fix: Shorten the earlier tween, move the later tween, or add `overwrite: "auto"`.
+  ⚠ [compositions/bg-aurora.html] overlapping_gsap_tweens: GSAP tweens overlap on "__unresolved__" for opacity between 65.60s and 66.40s.
+    Fix: Shorten the earlier tween, move the later tween, or add `overwrite: "auto"`.
+  ⚠ [compositions/s01-hook.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s01-hook for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s01-hook.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s01-hook for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s01-hook.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s01-hook for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s01-hook.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s01-hook for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s01-hook.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s01-hook for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s01-hook.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s01-hook for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s01-hook.html] font_family_without_font_face: Font family used without @font-face declaration: unbounded. These are not in the auto-resolved font list, so the renderer cannot supply them automatically. Text will fall back to a generic font, producing incorrect typography in the video.
+    Fix: Add @font-face { font-family: '...'; src: url('capture/assets/fonts/...woff2'); } for each font family, pointing to the captured .woff2 files.
+  ⚠ [compositions/s02-ai.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s02-ai for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s02-ai.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s02-ai for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s02-ai.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s02-ai for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s02-ai.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s02-ai for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s02-ai.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s02-ai for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s02-ai.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s02-ai for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s02-ai.html] overlapping_gsap_tweens: GSAP tweens overlap on "__unresolved__" for opacity between 0.20s and 0.50s.
+    Fix: Shorten the earlier tween, move the later tween, or add `overwrite: "auto"`.
+  ⚠ [compositions/s02-ai.html] overlapping_gsap_tweens: GSAP tweens overlap on "__unresolved__" for opacity between 0.35s and 0.50s.
+    Fix: Shorten the earlier tween, move the later tween, or add `overwrite: "auto"`.
+  ⚠ [compositions/s02-ai.html] overlapping_gsap_tweens: GSAP tweens overlap on "__unresolved__" for opacity between 0.35s and 0.70s.
+    Fix: Shorten the earlier tween, move the later tween, or add `overwrite: "auto"`.
+  ⚠ [compositions/s02-ai.html] overlapping_gsap_tweens: GSAP tweens overlap on "__unresolved__" for rotation, transformOrigin between 0.60s and 0.70s.
+    Fix: Shorten the earlier tween, move the later tween, or add `overwrite: "auto"`.
+  ⚠ [compositions/s02-ai.html] overlapping_gsap_tweens: GSAP tweens overlap on "__unresolved__" for opacity between 0.70s and 0.95s.
+    Fix: Shorten the earlier tween, move the later tween, or add `overwrite: "auto"`.
+  ⚠ [compositions/s02-ai.html] font_family_without_font_face: Font family used without @font-face declaration: unbounded. These are not in the auto-resolved font list, so the renderer cannot supply them automatically. Text will fall back to a generic font, producing incorrect typography in the video.
+    Fix: Add @font-face { font-family: '...'; src: url('capture/assets/fonts/...woff2'); } for each font family, pointing to the captured .woff2 files.
+  ⚠ [compositions/s03-giant-vivid.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s03-giant-vivid for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s03-giant-vivid.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s03-giant-vivid for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s03-giant-vivid.html] font_family_without_font_face: Font family used without @font-face declaration: unbounded. These are not in the auto-resolved font list, so the renderer cannot supply them automatically. Text will fall back to a generic font, producing incorrect typography in the video.
+    Fix: Add @font-face { font-family: '...'; src: url('capture/assets/fonts/...woff2'); } for each font family, pointing to the captured .woff2 files.
+  ⚠ [compositions/s04-introducing.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s04-introducing for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s04-introducing.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s04-introducing for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s04-introducing.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s04-introducing for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s04-introducing.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s04-introducing for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s04-introducing.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s04-introducing for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s04-introducing.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s04-introducing for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s04-introducing.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s04-introducing for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s04-introducing.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s04-introducing for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s04-introducing.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s04-introducing for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s04-introducing.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s04-introducing for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s04-introducing.html] overlapping_gsap_tweens: GSAP tweens overlap on "__unresolved__" for opacity between 0.50s and 0.70s.
+    Fix: Shorten the earlier tween, move the later tween, or add `overwrite: "auto"`.
+  ⚠ [compositions/s04-introducing.html] overlapping_gsap_tweens: GSAP tweens overlap on "__unresolved__" for opacity between 0.80s and 1.10s.
+    Fix: Shorten the earlier tween, move the later tween, or add `overwrite: "auto"`.
+  ⚠ [compositions/s04-introducing.html] overlapping_gsap_tweens: GSAP tweens overlap on "__unresolved__" for y between 0.70s and 1.10s.
+    Fix: Shorten the earlier tween, move the later tween, or add `overwrite: "auto"`.
+  ⚠ [compositions/s04-introducing.html] font_family_without_font_face: Font family used without @font-face declaration: unbounded. These are not in the auto-resolved font list, so the renderer cannot supply them automatically. Text will fall back to a generic font, producing incorrect typography in the video.
+    Fix: Add @font-face { font-family: '...'; src: url('capture/assets/fonts/...woff2'); } for each font family, pointing to the captured .woff2 files.
+  ⚠ [compositions/s05-allinone.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s05-allinone for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s05-allinone.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s05-allinone for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s05-allinone.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s05-allinone for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s05-allinone.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s05-allinone for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s05-allinone.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s05-allinone for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s05-allinone.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s05-allinone for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s05-allinone.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s05-allinone for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s05-allinone.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s05-allinone for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s05-allinone.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s05-allinone for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s05-allinone.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s05-allinone for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s05-allinone.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s05-allinone for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s05-allinone.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s05-allinone for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s05-allinone.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s05-allinone for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s05-allinone.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s05-allinone for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s05-allinone.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s05-allinone for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s05-allinone.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s05-allinone for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s05-allinone.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s05-allinone for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s05-allinone.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s05-allinone for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s05-allinone.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s05-allinone for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s05-allinone.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s05-allinone for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s05-allinone.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s05-allinone for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s05-allinone.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s05-allinone for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s05-allinone.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s05-allinone for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s05-allinone.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s05-allinone for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s05-allinone.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s05-allinone for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s05-allinone.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s05-allinone for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s05-allinone.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s05-allinone for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s05-allinone.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s05-allinone for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s05-allinone.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s05-allinone for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s05-allinone.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s05-allinone for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s05-allinone.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s05-allinone for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s05-allinone.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s05-allinone for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s05-allinone.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s05-allinone for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s05-allinone.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s05-allinone for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s05-allinone.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s05-allinone for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s05-allinone.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s05-allinone for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s05-allinone.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s05-allinone for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s05-allinone.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s05-allinone for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s05-allinone.html] overlapping_gsap_tweens: GSAP tweens overlap on "__unresolved__" for y, opacity between 0.30s and 0.60s.
+    Fix: Shorten the earlier tween, move the later tween, or add `overwrite: "auto"`.
+  ⚠ [compositions/s05-allinone.html] overlapping_gsap_tweens: GSAP tweens overlap on "__unresolved__" for y, opacity between 0.45s and 0.60s.
+    Fix: Shorten the earlier tween, move the later tween, or add `overwrite: "auto"`.
+  ⚠ [compositions/s05-allinone.html] overlapping_gsap_tweens: GSAP tweens overlap on "__unresolved__" for y, opacity between 0.55s and 0.60s.
+    Fix: Shorten the earlier tween, move the later tween, or add `overwrite: "auto"`.
+  ⚠ [compositions/s05-allinone.html] overlapping_gsap_tweens: GSAP tweens overlap on "__unresolved__" for y, opacity between 0.45s and 0.80s.
+    Fix: Shorten the earlier tween, move the later tween, or add `overwrite: "auto"`.
+  ⚠ [compositions/s05-allinone.html] overlapping_gsap_tweens: GSAP tweens overlap on "__unresolved__" for y, opacity between 0.65s and 0.80s.
+    Fix: Shorten the earlier tween, move the later tween, or add `overwrite: "auto"`.
+  ⚠ [compositions/s05-allinone.html] overlapping_gsap_tweens: GSAP tweens overlap on "__unresolved__" for y, opacity between 0.55s and 0.80s.
+    Fix: Shorten the earlier tween, move the later tween, or add `overwrite: "auto"`.
+  ⚠ [compositions/s05-allinone.html] overlapping_gsap_tweens: GSAP tweens overlap on "__unresolved__" for y, opacity between 0.65s and 0.95s.
+    Fix: Shorten the earlier tween, move the later tween, or add `overwrite: "auto"`.
+  ⚠ [compositions/s05-allinone.html] overlapping_gsap_tweens: GSAP tweens overlap on "__unresolved__" for y, opacity between 0.55s and 0.95s.
+    Fix: Shorten the earlier tween, move the later tween, or add `overwrite: "auto"`.
+  ⚠ [compositions/s05-allinone.html] overlapping_gsap_tweens: GSAP tweens overlap on "__unresolved__" for y, opacity between 0.65s and 1.10s.
+    Fix: Shorten the earlier tween, move the later tween, or add `overwrite: "auto"`.
+  ⚠ [compositions/s05-allinone.html] overlapping_gsap_tweens: GSAP tweens overlap on "__unresolved__" for scale, opacity, transformOrigin between 1.90s and 1.95s.
+    Fix: Shorten the earlier tween, move the later tween, or add `overwrite: "auto"`.
+  ⚠ [compositions/s05-allinone.html] font_family_without_font_face: Font families used without @font-face declaration: golos text, unbounded. These are not in the auto-resolved font list, so the renderer cannot supply them automatically. Text will fall back to a generic font, producing incorrect typography in the video.
+    Fix: Add @font-face { font-family: '...'; src: url('capture/assets/fonts/...woff2'); } for each font family, pointing to the captured .woff2 files.
+  ⚠ [compositions/s06-deepdive.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s06-deepdive for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s06-deepdive.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s06-deepdive for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s06-deepdive.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s06-deepdive for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s06-deepdive.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s06-deepdive for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s06-deepdive.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s06-deepdive for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s06-deepdive.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s06-deepdive for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s06-deepdive.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s06-deepdive for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s06-deepdive.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s06-deepdive for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s06-deepdive.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s06-deepdive for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s06-deepdive.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s06-deepdive for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s06-deepdive.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s06-deepdive for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s06-deepdive.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s06-deepdive for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s06-deepdive.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s06-deepdive for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s06-deepdive.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s06-deepdive for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s06-deepdive.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s06-deepdive for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s06-deepdive.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s06-deepdive for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s06-deepdive.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s06-deepdive for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s06-deepdive.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s06-deepdive for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s06-deepdive.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s06-deepdive for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s06-deepdive.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s06-deepdive for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s06-deepdive.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s06-deepdive for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s06-deepdive.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s06-deepdive for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s06-deepdive.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s06-deepdive for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s06-deepdive.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s06-deepdive for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s06-deepdive.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s06-deepdive for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s06-deepdive.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s06-deepdive for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s06-deepdive.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s06-deepdive for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s06-deepdive.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s06-deepdive for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s06-deepdive.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s06-deepdive for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s06-deepdive.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s06-deepdive for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s06-deepdive.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s06-deepdive for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s06-deepdive.html] overlapping_gsap_tweens: GSAP tweens overlap on "__unresolved__" for y, opacity between 0.25s and 0.50s.
+    Fix: Shorten the earlier tween, move the later tween, or add `overwrite: "auto"`.
+  ⚠ [compositions/s06-deepdive.html] overlapping_gsap_tweens: GSAP tweens overlap on "__unresolved__" for scale between 1.90s and 2.04s.
+    Fix: Shorten the earlier tween, move the later tween, or add `overwrite: "auto"`.
+  ⚠ [compositions/s06-deepdive.html] overlapping_gsap_tweens: GSAP tweens overlap on "__unresolved__" for xPercent, opacity between 2.90s and 3.40s.
+    Fix: Shorten the earlier tween, move the later tween, or add `overwrite: "auto"`.
+  ⚠ [compositions/s06-deepdive.html] overlapping_gsap_tweens: GSAP tweens overlap on "__unresolved__" for opacity between 3.30s and 3.40s.
+    Fix: Shorten the earlier tween, move the later tween, or add `overwrite: "auto"`.
+  ⚠ [compositions/s06-deepdive.html] overlapping_gsap_tweens: GSAP tweens overlap on "__unresolved__" for xPercent, opacity between 5.95s and 6.45s.
+    Fix: Shorten the earlier tween, move the later tween, or add `overwrite: "auto"`.
+  ⚠ [compositions/s06-deepdive.html] overlapping_gsap_tweens: GSAP tweens overlap on "__unresolved__" for opacity between 6.35s and 6.45s.
+    Fix: Shorten the earlier tween, move the later tween, or add `overwrite: "auto"`.
+  ⚠ [compositions/s06-deepdive.html] overlapping_gsap_tweens: GSAP tweens overlap on "__unresolved__" for opacity between 7.90s and 8.20s.
+    Fix: Shorten the earlier tween, move the later tween, or add `overwrite: "auto"`.
+  ⚠ [compositions/s06-deepdive.html] font_family_without_font_face: Font families used without @font-face declaration: unbounded, golos text. These are not in the auto-resolved font list, so the renderer cannot supply them automatically. Text will fall back to a generic font, producing incorrect typography in the video.
+    Fix: Add @font-face { font-family: '...'; src: url('capture/assets/fonts/...woff2'); } for each font family, pointing to the captured .woff2 files.
+  ⚠ [compositions/s07-unified.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s07-unified for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s07-unified.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s07-unified for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s07-unified.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s07-unified for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s07-unified.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s07-unified for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s07-unified.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s07-unified for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s07-unified.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s07-unified for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s07-unified.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s07-unified for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s07-unified.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s07-unified for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s07-unified.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s07-unified for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s07-unified.html] overlapping_gsap_tweens: GSAP tweens overlap on "__unresolved__" for opacity between 0.20s and 0.60s.
+    Fix: Shorten the earlier tween, move the later tween, or add `overwrite: "auto"`.
+  ⚠ [compositions/s07-unified.html] overlapping_gsap_tweens: GSAP tweens overlap on "__unresolved__" for opacity between 0.50s and 0.60s.
+    Fix: Shorten the earlier tween, move the later tween, or add `overwrite: "auto"`.
+  ⚠ [compositions/s07-unified.html] overlapping_gsap_tweens: GSAP tweens overlap on "__unresolved__" for y, opacity between 0.50s and 0.80s.
+    Fix: Shorten the earlier tween, move the later tween, or add `overwrite: "auto"`.
+  ⚠ [compositions/s07-unified.html] overlapping_gsap_tweens: GSAP tweens overlap on "__unresolved__" for y, opacity between 0.70s and 0.80s.
+    Fix: Shorten the earlier tween, move the later tween, or add `overwrite: "auto"`.
+  ⚠ [compositions/s07-unified.html] overlapping_gsap_tweens: GSAP tweens overlap on "__unresolved__" for y between 0.40s and 0.80s.
+    Fix: Shorten the earlier tween, move the later tween, or add `overwrite: "auto"`.
+  ⚠ [compositions/s07-unified.html] overlapping_gsap_tweens: GSAP tweens overlap on "__unresolved__" for y, opacity between 0.70s and 1.10s.
+    Fix: Shorten the earlier tween, move the later tween, or add `overwrite: "auto"`.
+  ⚠ [compositions/s07-unified.html] overlapping_gsap_tweens: GSAP tweens overlap on "__unresolved__" for y between 0.50s and 1.10s.
+    Fix: Shorten the earlier tween, move the later tween, or add `overwrite: "auto"`.
+  ⚠ [compositions/s07-unified.html] overlapping_gsap_tweens: GSAP tweens overlap on "__unresolved__" for y between 0.70s and 1.10s.
+    Fix: Shorten the earlier tween, move the later tween, or add `overwrite: "auto"`.
+  ⚠ [compositions/s07-unified.html] font_family_without_font_face: Font family used without @font-face declaration: unbounded. These are not in the auto-resolved font list, so the renderer cannot supply them automatically. Text will fall back to a generic font, producing incorrect typography in the video.
+    Fix: Add @font-face { font-family: '...'; src: url('capture/assets/fonts/...woff2'); } for each font family, pointing to the captured .woff2 files.
+  ⚠ [compositions/s08-cascade.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s08-cascade for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s08-cascade.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s08-cascade for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s08-cascade.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s08-cascade for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s08-cascade.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s08-cascade for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s08-cascade.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s08-cascade for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s08-cascade.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s08-cascade for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s08-cascade.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s08-cascade for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s08-cascade.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s08-cascade for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s08-cascade.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s08-cascade for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s08-cascade.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s08-cascade for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s08-cascade.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s08-cascade for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s08-cascade.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s08-cascade for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s08-cascade.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s08-cascade for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s08-cascade.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s08-cascade for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s08-cascade.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s08-cascade for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s08-cascade.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s08-cascade for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s08-cascade.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s08-cascade for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s08-cascade.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s08-cascade for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s08-cascade.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s08-cascade for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s08-cascade.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s08-cascade for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s08-cascade.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s08-cascade for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s08-cascade.html] overlapping_gsap_tweens: GSAP tweens overlap on "__unresolved__" for y, opacity between 0.30s and 0.80s.
+    Fix: Shorten the earlier tween, move the later tween, or add `overwrite: "auto"`.
+  ⚠ [compositions/s08-cascade.html] overlapping_gsap_tweens: GSAP tweens overlap on "__unresolved__" for y, x, opacity between 0.50s and 0.80s.
+    Fix: Shorten the earlier tween, move the later tween, or add `overwrite: "auto"`.
+  ⚠ [compositions/s08-cascade.html] overlapping_gsap_tweens: GSAP tweens overlap on "__unresolved__" for y, opacity between 0.50s and 1.00s.
+    Fix: Shorten the earlier tween, move the later tween, or add `overwrite: "auto"`.
+  ⚠ [compositions/s08-cascade.html] font_family_without_font_face: Font family used without @font-face declaration: unbounded. These are not in the auto-resolved font list, so the renderer cannot supply them automatically. Text will fall back to a generic font, producing incorrect typography in the video.
+    Fix: Add @font-face { font-family: '...'; src: url('capture/assets/fonts/...woff2'); } for each font family, pointing to the captured .woff2 files.
+  ⚠ [compositions/s09-map.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s09-map for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s09-map.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s09-map for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s09-map.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s09-map for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s09-map.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s09-map for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s09-map.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s09-map for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s09-map.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s09-map for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s09-map.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s09-map for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s09-map.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s09-map for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s09-map.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s09-map for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s09-map.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s09-map for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s09-map.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s09-map for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s09-map.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s09-map for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s09-map.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s09-map for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s09-map.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s09-map for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s09-map.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s09-map for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s09-map.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s09-map for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s09-map.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s09-map for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s09-map.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s09-map for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s09-map.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s09-map for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s09-map.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s09-map for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s09-map.html] overlapping_gsap_tweens: GSAP tweens overlap on "__unresolved__" for opacity between 2.10s and 2.30s.
+    Fix: Shorten the earlier tween, move the later tween, or add `overwrite: "auto"`.
+  ⚠ [compositions/s09-map.html] overlapping_gsap_tweens: GSAP tweens overlap on "__unresolved__" for x, opacity between 2.35s and 2.60s.
+    Fix: Shorten the earlier tween, move the later tween, or add `overwrite: "auto"`.
+  ⚠ [compositions/s09-map.html] overlapping_gsap_tweens: GSAP tweens overlap on "__unresolved__" for opacity between 2.60s and 2.85s.
+    Fix: Shorten the earlier tween, move the later tween, or add `overwrite: "auto"`.
+  ⚠ [compositions/s09-map.html] overlapping_gsap_tweens: GSAP tweens overlap on "__unresolved__" for y, opacity between 2.85s and 3.10s.
+    Fix: Shorten the earlier tween, move the later tween, or add `overwrite: "auto"`.
+  ⚠ [compositions/s09-map.html] font_family_without_font_face: Font families used without @font-face declaration: unbounded, golos text. These are not in the auto-resolved font list, so the renderer cannot supply them automatically. Text will fall back to a generic font, producing incorrect typography in the video.
+    Fix: Add @font-face { font-family: '...'; src: url('capture/assets/fonts/...woff2'); } for each font family, pointing to the captured .woff2 files.
+  ⚠ [compositions/s10-giant-aibagsh.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s10-giant-aibagsh for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s10-giant-aibagsh.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s10-giant-aibagsh for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s10-giant-aibagsh.html] font_family_without_font_face: Font family used without @font-face declaration: unbounded. These are not in the auto-resolved font list, so the renderer cannot supply them automatically. Text will fall back to a generic font, producing incorrect typography in the video.
+    Fix: Add @font-face { font-family: '...'; src: url('capture/assets/fonts/...woff2'); } for each font family, pointing to the captured .woff2 files.
+  ⚠ [compositions/s11-chat.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s11-chat for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s11-chat.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s11-chat for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s11-chat.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s11-chat for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s11-chat.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s11-chat for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s11-chat.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s11-chat for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s11-chat.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s11-chat for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s11-chat.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s11-chat for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s11-chat.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s11-chat for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s11-chat.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s11-chat for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s11-chat.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s11-chat for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s11-chat.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s11-chat for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s11-chat.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s11-chat for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s11-chat.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s11-chat for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s11-chat.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s11-chat for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s11-chat.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s11-chat for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s11-chat.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s11-chat for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s11-chat.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s11-chat for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s11-chat.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s11-chat for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s11-chat.html] overlapping_gsap_tweens: GSAP tweens overlap on "__unresolved__" for opacity, y between 1.40s and 1.45s.
+    Fix: Shorten the earlier tween, move the later tween, or add `overwrite: "auto"`.
+  ⚠ [compositions/s11-chat.html] overlapping_gsap_tweens: GSAP tweens overlap on "__unresolved__" for opacity, y between 2.60s and 2.65s.
+    Fix: Shorten the earlier tween, move the later tween, or add `overwrite: "auto"`.
+  ⚠ [compositions/s11-chat.html] overlapping_gsap_tweens: GSAP tweens overlap on "__unresolved__" for scale between 5.70s and 5.79s.
+    Fix: Shorten the earlier tween, move the later tween, or add `overwrite: "auto"`.
+  ⚠ [compositions/s11-chat.html] overlapping_gsap_tweens: GSAP tweens overlap on "__unresolved__" for scale between 5.80s and 6.25s.
+    Fix: Shorten the earlier tween, move the later tween, or add `overwrite: "auto"`.
+  ⚠ [compositions/s11-chat.html] overlapping_gsap_tweens: GSAP tweens overlap on "__unresolved__" for opacity, y between 6.00s and 6.25s.
+    Fix: Shorten the earlier tween, move the later tween, or add `overwrite: "auto"`.
+  ⚠ [compositions/s11-chat.html] overlapping_gsap_tweens: GSAP tweens overlap on "__unresolved__" for scale between 6.30s and 6.40s.
+    Fix: Shorten the earlier tween, move the later tween, or add `overwrite: "auto"`.
+  ⚠ [compositions/s11-chat.html] overlapping_gsap_tweens: GSAP tweens overlap on "__unresolved__" for opacity, y between 6.30s and 6.45s.
+    Fix: Shorten the earlier tween, move the later tween, or add `overwrite: "auto"`.
+  ⚠ [compositions/s11-chat.html] font_family_without_font_face: Font families used without @font-face declaration: unbounded, golos text. These are not in the auto-resolved font list, so the renderer cannot supply them automatically. Text will fall back to a generic font, producing incorrect typography in the video.
+    Fix: Add @font-face { font-family: '...'; src: url('capture/assets/fonts/...woff2'); } for each font family, pointing to the captured .woff2 files.
+  ⚠ [compositions/s12-notification.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s12-notification for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s12-notification.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s12-notification for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s12-notification.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s12-notification for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s12-notification.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s12-notification for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s12-notification.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s12-notification for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s12-notification.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s12-notification for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s12-notification.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s12-notification for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s12-notification.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s12-notification for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s12-notification.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s12-notification for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s12-notification.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s12-notification for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s12-notification.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s12-notification for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s12-notification.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s12-notification for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s12-notification.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s12-notification for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s12-notification.html] font_family_without_font_face: Font families used without @font-face declaration: unbounded, golos text. These are not in the auto-resolved font list, so the renderer cannot supply them automatically. Text will fall back to a generic font, producing incorrect typography in the video.
+    Fix: Add @font-face { font-family: '...'; src: url('capture/assets/fonts/...woff2'); } for each font family, pointing to the captured .woff2 files.
+  ⚠ [compositions/s13-learners.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s13-learners for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s13-learners.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s13-learners for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s13-learners.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s13-learners for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s13-learners.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s13-learners for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s13-learners.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s13-learners for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s13-learners.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s13-learners for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s13-learners.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s13-learners for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s13-learners.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s13-learners for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s13-learners.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s13-learners for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s13-learners.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s13-learners for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s13-learners.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s13-learners for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s13-learners.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s13-learners for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s13-learners.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s13-learners for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s13-learners.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s13-learners for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s13-learners.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s13-learners for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s13-learners.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s13-learners for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s13-learners.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s13-learners for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s13-learners.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s13-learners for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s13-learners.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s13-learners for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s13-learners.html] overlapping_gsap_tweens: GSAP tweens overlap on "__unresolved__" for opacity between 0.70s and 0.80s.
+    Fix: Shorten the earlier tween, move the later tween, or add `overwrite: "auto"`.
+  ⚠ [compositions/s13-learners.html] overlapping_gsap_tweens: GSAP tweens overlap on "__unresolved__" for opacity between 1.00s and 1.30s.
+    Fix: Shorten the earlier tween, move the later tween, or add `overwrite: "auto"`.
+  ⚠ [compositions/s13-learners.html] overlapping_gsap_tweens: GSAP tweens overlap on "__unresolved__" for opacity between 1.20s and 1.30s.
+    Fix: Shorten the earlier tween, move the later tween, or add `overwrite: "auto"`.
+  ⚠ [compositions/s13-learners.html] overlapping_gsap_tweens: GSAP tweens overlap on "__unresolved__" for y, opacity between 1.20s and 1.40s.
+    Fix: Shorten the earlier tween, move the later tween, or add `overwrite: "auto"`.
+  ⚠ [compositions/s13-learners.html] overlapping_gsap_tweens: GSAP tweens overlap on "__unresolved__" for y between 1.60s and 1.70s.
+    Fix: Shorten the earlier tween, move the later tween, or add `overwrite: "auto"`.
+  ⚠ [compositions/s13-learners.html] font_family_without_font_face: Font families used without @font-face declaration: golos text, unbounded. These are not in the auto-resolved font list, so the renderer cannot supply them automatically. Text will fall back to a generic font, producing incorrect typography in the video.
+    Fix: Add @font-face { font-family: '...'; src: url('capture/assets/fonts/...woff2'); } for each font family, pointing to the captured .woff2 files.
+  ⚠ [compositions/s14-morethan.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s14-morethan for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s14-morethan.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s14-morethan for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s14-morethan.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s14-morethan for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s14-morethan.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s14-morethan for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s14-morethan.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s14-morethan for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s14-morethan.html] overlapping_gsap_tweens: GSAP tweens overlap on "__unresolved__" for scale, opacity between 0.50s and 0.90s.
+    Fix: Shorten the earlier tween, move the later tween, or add `overwrite: "auto"`.
+  ⚠ [compositions/s14-morethan.html] font_family_without_font_face: Font family used without @font-face declaration: unbounded. These are not in the auto-resolved font list, so the renderer cannot supply them automatically. Text will fall back to a generic font, producing incorrect typography in the video.
+    Fix: Add @font-face { font-family: '...'; src: url('capture/assets/fonts/...woff2'); } for each font family, pointing to the captured .woff2 files.
+  ⚠ [compositions/s15-cta.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s15-cta for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s15-cta.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s15-cta for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s15-cta.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s15-cta for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s15-cta.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s15-cta for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s15-cta.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s15-cta for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s15-cta.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s15-cta for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s15-cta.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s15-cta for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s15-cta.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s15-cta for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s15-cta.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s15-cta for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s15-cta.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s15-cta for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s15-cta.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s15-cta for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s15-cta.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s15-cta for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s15-cta.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s15-cta for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s15-cta.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s15-cta for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s15-cta.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s15-cta for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s15-cta.html] composition_self_attribute_selector: Selector matches the block's own id; will leak to sibling instances when the block is embedded twice.
+    Fix: Use #s15-cta for clearer authoring intent and instance-isolated styling.
+  ⚠ [compositions/s15-cta.html] overlapping_gsap_tweens: GSAP tweens overlap on "__unresolved__" for scale between 0.60s and 1.00s.
+    Fix: Shorten the earlier tween, move the later tween, or add `overwrite: "auto"`.
+  ⚠ [compositions/s15-cta.html] overlapping_gsap_tweens: GSAP tweens overlap on "__unresolved__" for opacity between 0.60s and 1.00s.
+    Fix: Shorten the earlier tween, move the later tween, or add `overwrite: "auto"`.
+  ⚠ [compositions/s15-cta.html] overlapping_gsap_tweens: GSAP tweens overlap on "__unresolved__" for scale, opacity between 0.00s and 0.50s.
+    Fix: Shorten the earlier tween, move the later tween, or add `overwrite: "auto"`.
+  ⚠ [compositions/s15-cta.html] overlapping_gsap_tweens: GSAP tweens overlap on "__unresolved__" for scale, opacity between 3.60s and 4.20s.
+    Fix: Shorten the earlier tween, move the later tween, or add `overwrite: "auto"`.
+  ⚠ [compositions/s15-cta.html] overlapping_gsap_tweens: GSAP tweens overlap on "__unresolved__" for opacity between 3.80s and 4.40s.
+    Fix: Shorten the earlier tween, move the later tween, or add `overwrite: "auto"`.
+  ⚠ [compositions/s15-cta.html] overlapping_gsap_tweens: GSAP tweens overlap on "__unresolved__" for opacity between 3.80s and 4.20s.
+    Fix: Shorten the earlier tween, move the later tween, or add `overwrite: "auto"`.
+  ⚠ [compositions/s15-cta.html] overlapping_gsap_tweens: GSAP tweens overlap on "__unresolved__" for opacity between 5.90s and 6.60s.
+    Fix: Shorten the earlier tween, move the later tween, or add `overwrite: "auto"`.
+  ⚠ [compositions/s15-cta.html] overlapping_gsap_tweens: GSAP tweens overlap on "__unresolved__" for scale between 6.00s and 6.60s.
+    Fix: Shorten the earlier tween, move the later tween, or add `overwrite: "auto"`.
+  ⚠ [compositions/s15-cta.html] overlapping_gsap_tweens: GSAP tweens overlap on "__unresolved__" for opacity between 6.30s and 6.60s.
+    Fix: Shorten the earlier tween, move the later tween, or add `overwrite: "auto"`.
+  ⚠ [compositions/s15-cta.html] overlapping_gsap_tweens: GSAP tweens overlap on "__unresolved__" for opacity between 6.50s and 6.60s.
+    Fix: Shorten the earlier tween, move the later tween, or add `overwrite: "auto"`.
+  ⚠ [compositions/s15-cta.html] overlapping_gsap_tweens: GSAP tweens overlap on "__unresolved__" for y, opacity between 6.50s and 6.80s.
+    Fix: Shorten the earlier tween, move the later tween, or add `overwrite: "auto"`.
+  ⚠ [compositions/s15-cta.html] overlapping_gsap_tweens: GSAP tweens overlap on "__unresolved__" for y, opacity between 6.70s and 6.80s.
+    Fix: Shorten the earlier tween, move the later tween, or add `overwrite: "auto"`.
+  ⚠ [compositions/s15-cta.html] overlapping_gsap_tweens: GSAP tweens overlap on "__unresolved__" for y, opacity between 6.70s and 6.95s.
+    Fix: Shorten the earlier tween, move the later tween, or add `overwrite: "auto"`.
+  ⚠ [compositions/s15-cta.html] overlapping_gsap_tweens: GSAP tweens overlap on "__unresolved__" for opacity between 7.00s and 7.15s.
+    Fix: Shorten the earlier tween, move the later tween, or add `overwrite: "auto"`.
+  ⚠ [compositions/s15-cta.html] font_family_without_font_face: Font families used without @font-face declaration: unbounded, golos text. These are not in the auto-resolved font list, so the renderer cannot supply them automatically. Text will fall back to a generic font, producing incorrect typography in the video.
+    Fix: Add @font-face { font-family: '...'; src: url('capture/assets/fonts/...woff2'); } for each font family, pointing to the captured .woff2 files.
+
+◇  1 error(s), 331 warning(s)

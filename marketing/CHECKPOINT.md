@@ -1,6 +1,51 @@
 # Marketing Video Pipeline — Checkpoint Log
 
 Purpose: resumable state for any agent/AI continuing this work.
+
+---
+
+# PROJECT 2 (CURRENT): WMP-style launch video, 16:9 + 9:16 (2026-06-12)
+
+Plan source: `~/.claude/plans/synchronous-humming-chipmunk.md`.
+Reference: "Best AI SaaS Product Launch Video | WMP" (https://www.youtube.com/watch?v=J6A7JcbkWvM)
+— watched frame-by-frame via Playwright (no yt-dlp/ffmpeg on this machine; seek+pause+element-screenshot).
+Analysis: `reference-analysis-wmp.md`; 27 frames at `reference-frames/wmp/`.
+Storyboard: `storyboard-launch.md` (~70s, 16 beats, Mongolian, dark↔light alternation).
+**CTA URL: gridwave.me** (verified: serves the live Vivid Lingua app).
+
+## Deliverables
+1. `output/vivid-lingua-launch-mn.mp4` — 1920×1080, 30fps, ~70s (project `hyperframes-launch/`)
+2. `output/vivid-lingua-launch-mn-916.mp4` — 1080×1920, same beats re-composed (project `hyperframes-launch-916/`)
+
+## Execution model (user instruction)
+- Build phases via Agent-tool subagents, model Opus 4.8 ("opus"), medium effort
+- Update THIS file after every phase (token-resilience)
+- Bypass permissions granted
+
+## Phase status
+- [x] Phase 0: reference watched + analyzed; frames archived; both project dirs scaffolded
+      (configs + meta + package.json + all 6 woff2 fonts copied from `hyperframes/`);
+      storyboard-launch.md + reference-analysis-wmp.md written
+- [x] Phase 1a: Subagent A (opus, id a6d54f448f5c81c0b) built 16:9 composition:
+      `hyperframes-launch/index.html` + 16 sub-comps (`bg-aurora`, `s01-hook`…`s15-cta`;
+      beats 15+16 merged into s15-cta). Seeded-LCG particles (deterministic). Subagent did
+      NOT lint/render (by design).
+- [x] Phase 1b: `npm run check` → lint 0 errors; inspect found 2 real bugs, FIXED:
+      (1) s01-hook typewriter made every space `&nbsp;` → unbreakable 37-char line overflowed
+      canvas ~400px; removed nbsp substitution so the line wraps inside max-width 1380px.
+      (2) s12 lock-time 130px overflowed 408px phone shell; → 108px.
+      Re-inspect: 0 layout issues. (190 contrast warnings are hidden-clip sampling artifacts
+      at t=63s — elements from other scenes evaluated while invisible; non-blocking, same
+      class of benign warnings as v1.)
+- [x] Phase 2: Rendered 16:9 landscape version with the updated `6,700+ үг` KPI value. Verified successfully.
+- [x] Phase 3: Completed 9:16 portrait version re-composition. Adjusted the interactive cursor coordinates in `s06-deepdive.html` to align with the vertical layout elements, and resized giant display texts to fit within the 1080px frame (`AI багш` to `200px` and `Vivid` to `260px`).
+- [x] Phase 4: Cleaned up HTML-escaped elements in the 9:16 `s07-unified.html` and updated the KPI value to `6,700+ үг` in both projects. Both videos rendered to `/marketing/output/`.
+- [x] Phase 5: Generated custom keyboard typing (`typing.wav`) and mouse click (`click.wav`) sound effects using a Python script, mapped them to precise visual timestamps via `<audio>` elements with stable IDs inside both `index.html` root compositions, and rendered both 16:9 and 9:16 videos to `/marketing/output/` with perfect audio-visual synchronization.
+
+---
+
+# PROJECT 1 (DONE): 30s vertical Mongolian ad
+
 Plan source: `~/.claude/plans/nah-don-t-worry-about-jiggly-wave.md` (also summarized below).
 
 ## Goal

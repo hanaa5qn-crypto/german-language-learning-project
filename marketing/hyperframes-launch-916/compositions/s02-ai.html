@@ -1,0 +1,128 @@
+<template id="s02-ai-template">
+  <div data-composition-id="s02-ai" data-width="1080" data-height="1920" data-duration="3">
+    <div class="s2-content">
+      <div class="sparkle" data-layout-ignore>
+        <svg viewBox="0 0 100 100" width="64" height="64">
+          <path d="M50 4 L58 42 L96 50 L58 58 L50 96 L42 58 L4 50 L42 42 Z" fill="#b388fa" />
+        </svg>
+      </div>
+      <h2 class="s2-head">Хиймэл оюунаар <br><span class="hl">хөтлөгдсөн</span></h2>
+      <div class="dotwave" id="s2-dotwave" data-layout-ignore></div>
+    </div>
+
+    <style>
+      [data-composition-id="s02-ai"] .s2-content {
+        width: 1080px;
+        height: 1920px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 48px;
+        position: relative;
+      }
+      [data-composition-id="s02-ai"] .sparkle {
+        filter: drop-shadow(0 0 24px rgba(179, 136, 250, 0.8));
+      }
+      [data-composition-id="s02-ai"] .s2-head {
+        font-family: "Unbounded", sans-serif;
+        font-weight: 700;
+        font-size: 80px;
+        line-height: 1.25;
+        letter-spacing: -0.02em;
+        color: #f2f0fa;
+        text-align: center;
+        padding: 0 40px;
+      }
+      [data-composition-id="s02-ai"] .hl {
+        color: #b388fa;
+      }
+      [data-composition-id="s02-ai"] .dotwave {
+        position: absolute;
+        bottom: 350px;
+        left: 0;
+        width: 1080px;
+        height: 320px;
+      }
+      [data-composition-id="s02-ai"] .dot {
+        position: absolute;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: #66aafd;
+        box-shadow: 0 0 14px rgba(102, 170, 253, 0.7);
+        will-change: transform, opacity;
+      }
+    </style>
+
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <script>
+      (function () {
+        const tl = gsap.timeline({ paused: true });
+        const q = (s) => '[data-composition-id="s02-ai"] ' + s;
+
+        // Deterministic LCG (fixed seed) for the dot-particle wave.
+        let seed = 1337;
+        function rnd() {
+          seed = (seed * 1103515245 + 12345) & 0x7fffffff;
+          return seed / 0x7fffffff;
+        }
+
+        const wave = document.querySelector(q("#s2-dotwave"));
+        const COLS = 40;
+        const dots = [];
+        const baseY = [];
+        const amp = [];
+        const phase = [];
+        for (let i = 0; i < COLS; i++) {
+          const d = document.createElement("div");
+          d.className = "dot";
+          const x = (i / (COLS - 1)) * 1040 + 20;
+          const by = 160 + (rnd() - 0.5) * 30;
+          d.style.left = x + "px";
+          d.style.top = by + "px";
+          d.style.opacity = "0";
+          wave.appendChild(d);
+          dots.push(d);
+          baseY.push(by);
+          amp.push(40 + rnd() * 70);
+          phase.push(rnd() * Math.PI * 2);
+        }
+
+        // Reveal dots in a sweep.
+        dots.forEach((d, i) => {
+          tl.to(d, { opacity: 0.9, duration: 0.3, ease: "power2.out" }, 0.2 + i * 0.015);
+        });
+
+        // Sine-wave bob: sample the wave deterministically across 3s.
+        const driver = { t: 0 };
+        tl.to(
+          driver,
+          {
+            t: 1,
+            duration: 3,
+            ease: "none",
+            onUpdate: function () {
+              const tt = driver.t * Math.PI * 4;
+              for (let i = 0; i < COLS; i++) {
+                const y = Math.sin(tt + phase[i] + i * 0.25) * amp[i];
+                dots[i].style.transform = "translateY(" + y + "px)";
+              }
+            },
+          },
+          0,
+        );
+
+        // Headline + sparkle entrance.
+        tl.from(q(".sparkle"), { scale: 0, opacity: 0, rotation: -90, duration: 0.6, ease: "back.out(1.8)", transformOrigin: "50% 50%" }, 0.1);
+        tl.from(q(".s2-head"), { y: 50, opacity: 0, duration: 0.6, ease: "power3.out" }, 0.35);
+        tl.from(q(".hl"), { scale: 0.8, opacity: 0, duration: 0.45, ease: "back.out(1.7)" }, 0.7);
+        // gentle sparkle spin while on screen
+        tl.to(q(".sparkle"), { rotation: 90, duration: 3, ease: "sine.inOut", transformOrigin: "50% 50%" }, 0.6);
+
+        window.__timelines = window.__timelines || {};
+        window.__timelines["s02-ai"] = tl;
+      })();
+    </script>
+  </div>
+</template>
