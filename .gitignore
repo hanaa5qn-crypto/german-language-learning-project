@@ -19,6 +19,5 @@ coverage/
 .vscode/
 .vercel
 
-# Marketing video renders (large binaries)
-marketing/output/
-marketing/**/*.mp4
+# Ignore all marketing assets and folders
+marketing/
