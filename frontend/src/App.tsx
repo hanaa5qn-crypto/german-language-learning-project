@@ -30,6 +30,7 @@ import { UserProfile, DEFAULT_PROFILES, createGuestProfile, stripServerOwnedFiel
 import { getMyPromo, redeemPromoCode, ensureSignupTrial, type MyPromo } from './promo';
 import LoginScreen from './LoginScreen';
 import LandingPage from './LandingPage';
+import { track, trackVisitOncePerDay } from './analytics';
 import {
   subscribeToAuthedProfile, logOutUser, saveProfileProgress, sendResetEmail,
 } from './auth';
@@ -1486,10 +1487,19 @@ function LearnerApp() {
     }
   };
 
+  // Count each browser once per day so the admin dashboard sees real traffic,
+  // not just signups. Runs regardless of auth state (the whole point is to
+  // measure logged-out visitors who never convert).
+  useEffect(() => {
+    if (isTest) return;
+    trackVisitOncePerDay();
+  }, []);
+
   // Enter a no-account guest session so visitors can sample the app (free tier)
   // before signing up. Nothing persists — saveProfileProgress() bails with no
   // Firebase user. The free-tier gating already limits guests appropriately.
   const startGuest = () => {
+    if (!isTest) track('guest_start');
     setActiveTab('read');
     const guest = createGuestProfile();
     currentUserRef.current = guest;
@@ -1499,6 +1509,7 @@ function LearnerApp() {
   // Guest hits a "sign up to save" prompt → drop the guest session and show the
   // signup screen.
   const exitGuestToSignup = () => {
+    if (!isTest) track('signup_click');
     currentUserRef.current = null;
     setCurrentUser(null);
     setShowAuth(true);
@@ -2190,7 +2201,7 @@ function LearnerApp() {
     }
     return (
       <LandingPage
-        onGetStarted={() => setShowAuth(true)}
+        onGetStarted={() => { if (!isTest) track('signup_click'); setShowAuth(true); }}
         onLogin={() => setShowAuth(true)}
         onTryGuest={startGuest}
       />

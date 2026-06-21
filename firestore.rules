@@ -65,5 +65,13 @@ service cloud.firestore {
     match /commissions/{commissionId} {
       allow get, list, update: if isAdmin();
     }
+
+    // Per-day anonymous traffic counters (visits + signup funnel). Written ONLY
+    // by the /api/track backend via the Admin SDK (which bypasses rules); the
+    // admin dashboard reads them. No client read/write — visitors increment via
+    // the server endpoint, never by touching Firestore directly.
+    match /analytics/{day} {
+      allow get, list: if isAdmin();
+    }
   }
 }

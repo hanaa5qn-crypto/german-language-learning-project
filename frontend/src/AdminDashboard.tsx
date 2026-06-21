@@ -94,6 +94,26 @@ interface CommissionRecord {
   paymentId: string;
 }
 
+// One day of anonymous traffic counters, written by /api/track. doc id = date.
+interface AnalyticsDay {
+  date: string; // YYYY-MM-DD (UTC)
+  visitors: number;
+  guestStarts: number;
+  signupClicks: number;
+  signups: number;
+}
+
+function parseAnalyticsDay(id: string, raw: Record<string, unknown>): AnalyticsDay {
+  const num = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) ? v : 0);
+  return {
+    date: typeof raw.date === 'string' ? raw.date : id,
+    visitors: num(raw.visitors),
+    guestStarts: num(raw.guestStarts),
+    signupClicks: num(raw.signupClicks),
+    signups: num(raw.signups),
+  };
+}
+
 function totalStudyHours(profile: UserProfile): number {
   return Object.values(profile.studySecondsByDate ?? {}).reduce((sum, seconds) => sum + seconds, 0) / 3600;
 }
@@ -157,6 +177,7 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(false);
   const [customers, setCustomers] = useState<CustomerRow[]>([]);
   const [payments, setPayments] = useState<PaymentRecord[]>([]);
+  const [analytics, setAnalytics] = useState<AnalyticsDay[]>([]);
   const [dataError, setDataError] = useState('');
   const [queryText, setQueryText] = useState('');
   const [lastLoadedAt, setLastLoadedAt] = useState<Date | null>(null);
@@ -198,13 +219,21 @@ export default function AdminDashboard() {
     setDataError('');
     try {
       const db = getDb();
-      const [userSnap, paymentSnap] = await Promise.all([
+      const [userSnap, paymentSnap, analyticsSnap] = await Promise.all([
         getDocs(collection(db, 'users')),
         getDocs(collection(db, 'payments')).catch(() => null),
+        getDocs(collection(db, 'analytics')).catch(() => null),
       ]);
 
       setCustomers(userSnap.docs.map((doc) => ({ id: doc.id, profile: doc.data() as UserProfile })));
       setPayments(paymentSnap ? paymentSnap.docs.map((doc) => doc.data() as PaymentRecord) : []);
+      setAnalytics(
+        analyticsSnap
+          ? analyticsSnap.docs
+              .map((doc) => parseAnalyticsDay(doc.id, doc.data() as Record<string, unknown>))
+              .sort((a, b) => a.date.localeCompare(b.date))
+          : [],
+      );
       setLastLoadedAt(new Date());
     } catch (err) {
       console.error('Admin dashboard load failed:', err);
@@ -408,6 +437,49 @@ export default function AdminDashboard() {
     return map;
   }, [commissions]);
 
+  // Traffic + signup-funnel rollups from the per-day analytics counters.
+  const traffic = useMemo(() => {
+    const byDate = new Map<string, AnalyticsDay>(analytics.map((d) => [d.date, d] as const));
+    const dayKey = (offset: number) => {
+      const d = new Date();
+      d.setUTCDate(d.getUTCDate() - offset);
+      return d.toISOString().slice(0, 10);
+    };
+    const todayStr = dayKey(0);
+
+    // Zero-filled last-14-day series so the bar chart has no gaps.
+    const series = Array.from({ length: 14 }, (_, i) => {
+      const date = dayKey(13 - i);
+      const row = byDate.get(date);
+      return { date, label: date.slice(5), visitors: row?.visitors ?? 0 };
+    });
+
+    const sumSince = (days: number, field: keyof AnalyticsDay) => {
+      const cutoff = dayKey(days - 1);
+      return analytics.reduce((sum, d) => (d.date >= cutoff ? sum + (d[field] as number) : sum), 0);
+    };
+    const total = (field: keyof AnalyticsDay) =>
+      analytics.reduce((sum, d) => sum + (d[field] as number), 0);
+
+    const visitorsTotal = total('visitors');
+    const signupsTotal = total('signups');
+    return {
+      hasData: analytics.length > 0,
+      visitorsToday: byDate.get(todayStr)?.visitors ?? 0,
+      visitors7d: sumSince(7, 'visitors'),
+      visitors30d: sumSince(30, 'visitors'),
+      visitorsTotal,
+      guestStartsTotal: total('guestStarts'),
+      signupClicksTotal: total('signupClicks'),
+      signupsTotal,
+      // What share of all visitors became accounts. The headline number behind
+      // "signups are stuck" — measure it instead of guessing.
+      conversionPct: visitorsTotal > 0 ? Math.round((signupsTotal / visitorsTotal) * 1000) / 10 : 0,
+      series,
+      maxVisitors: Math.max(...series.map((s) => s.visitors), 1),
+    };
+  }, [analytics]);
+
   const handleLogin = async (event: React.FormEvent) => {
     event.preventDefault();
     setLoginError('');
@@ -523,6 +595,74 @@ export default function AdminDashboard() {
           <KpiCard label="Gross Revenue" value={formatMoney(metrics.grossRevenueCents, metrics.currency)} detail={`${metrics.paidCustomers} paid customers`} icon={DollarSign} tone="bg-teal-50 text-teal-700" />
           <KpiCard label="MRR" value={formatMoney(metrics.mrrCents, metrics.currency)} detail={`${formatMoney(metrics.arpuCents, metrics.currency)} ARPU`} icon={CreditCard} tone="bg-amber-50 text-amber-700" />
           <KpiCard label="Engagement" value={`${metrics.avgProgress}%`} detail={`${metrics.active30d} active in the last 30 days`} icon={Activity} tone="bg-amber-50 text-amber-700" />
+        </section>
+
+        {/* Site traffic + signup funnel — how many people actually reach the
+            site, and where they drop before creating an account. */}
+        <section className="bg-white border border-slate-200 rounded-lg p-5 shadow-sm space-y-5">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-lg font-black">Site Traffic & Signup Funnel</h2>
+              <p className="text-xs text-slate-500 font-semibold">
+                Anonymous visitor counts (unique per browser/day) and how many convert to accounts
+              </p>
+            </div>
+            <TrendingUp className="w-5 h-5 text-slate-400" />
+          </div>
+
+          {!traffic.hasData ? (
+            <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 text-sm font-semibold text-slate-500 flex gap-2">
+              <Clock className="w-5 h-5 shrink-0 text-slate-400" />
+              <span>No traffic recorded yet. Counts appear here as visitors arrive (tracking is live on every page load).</span>
+            </div>
+          ) : (
+            <>
+              <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-5 gap-4">
+                <KpiCard label="Visitors Today" value={String(traffic.visitorsToday)} detail={`${traffic.visitors7d} in the last 7 days`} icon={TrendingUp} tone="bg-blue-50 text-blue-700" />
+                <KpiCard label="Visitors (30d)" value={String(traffic.visitors30d)} detail={`${traffic.visitorsTotal} all time`} icon={Users} tone="bg-sky-50 text-sky-700" />
+                <KpiCard label="Guest Tries" value={String(traffic.guestStartsTotal)} detail="entered the no-account guest mode" icon={Activity} tone="bg-amber-50 text-amber-700" />
+                <KpiCard label="Signups" value={String(traffic.signupsTotal)} detail={`${traffic.signupClicksTotal} clicked sign up`} icon={UserPlus} tone="bg-emerald-50 text-emerald-700" />
+                <KpiCard label="Visitor → Signup" value={`${traffic.conversionPct}%`} detail="of all visitors created an account" icon={UserCheck} tone="bg-violet-50 text-violet-700" />
+              </div>
+
+              {/* Daily visitors, last 14 days */}
+              <div>
+                <p className="text-xs font-black uppercase tracking-wider text-slate-500 mb-3">Daily visitors · last 14 days</p>
+                <div className="h-40 flex items-end gap-1.5 border-b border-slate-200 pb-2">
+                  {traffic.series.map((day) => (
+                    <div key={day.date} className="flex-1 h-full flex flex-col justify-end items-center gap-1.5" title={`${day.date}: ${day.visitors} visitors`}>
+                      <div className="text-[10px] font-black text-slate-500">{day.visitors || ''}</div>
+                      <div
+                        className="w-full rounded-t-md bg-blue-600 min-h-[2px]"
+                        style={{ height: `${Math.max(2, (day.visitors / traffic.maxVisitors) * 120)}px` }}
+                      />
+                      <div className="text-[9px] font-bold text-slate-400">{day.label}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Funnel: where people drop between landing and account */}
+              <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+                {[
+                  { label: 'Visitors', value: traffic.visitorsTotal, tone: 'text-blue-700' },
+                  { label: 'Guest tries', value: traffic.guestStartsTotal, tone: 'text-amber-700' },
+                  { label: 'Signup clicks', value: traffic.signupClicksTotal, tone: 'text-sky-700' },
+                  { label: 'Signups', value: traffic.signupsTotal, tone: 'text-emerald-700' },
+                ].map((step, i, arr) => {
+                  const prev = i > 0 ? arr[i - 1].value : 0;
+                  const pct = i > 0 && prev > 0 ? Math.round((step.value / prev) * 100) : null;
+                  return (
+                    <div key={step.label} className="bg-slate-50 border border-slate-200 rounded-lg p-3">
+                      <p className="text-[11px] font-black uppercase tracking-wider text-slate-500">{step.label}</p>
+                      <p className={`mt-1 text-2xl font-black ${step.tone}`}>{step.value}</p>
+                      {pct !== null && <p className="text-[11px] font-semibold text-slate-400">{pct}% of previous step</p>}
+                    </div>
+                  );
+                })}
+              </div>
+            </>
+          )}
         </section>
 
         <section className="grid grid-cols-1 xl:grid-cols-3 gap-6">

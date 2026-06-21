@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import { signUpWithProfile, logInWithEmail, sendResetEmail } from './auth';
 import { isFirebaseConfigured } from './firebase';
+import { track } from './analytics';
 
 type Mode = 'login' | 'signup';
 
@@ -137,6 +138,7 @@ export default function LoginScreen({ inviteContext, onBack }: LoginScreenProps 
     try {
       if (mode === 'signup') {
         await signUpWithProfile(email, password, name, level, goal);
+        track('signup'); // new account created → funnel conversion
       } else {
         await logInWithEmail(email, password);
       }
