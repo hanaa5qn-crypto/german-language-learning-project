@@ -14,11 +14,13 @@ import { SAT_VOCAB } from '../satVocab';
 import { speak } from '../../audio';
 import { EnglishLevel } from '../../types';
 import { LevelFilter } from '../../ielts/tabs/quizKit';
+import { useEnglishStats } from '../../stats';
 
 // CEFR levels present in the SAT deck (B1..C2 high-frequency words).
 const SAT_LEVELS: EnglishLevel[] = ['B1', 'B2', 'C1', 'C2'];
 
 export default function SatVocabTab() {
+  const { recordStudy } = useEnglishStats();
   const [level, setLevel] = useState<EnglishLevel | 'all'>('all');
   const [index, setIndex] = useState(0);
   const [revealed, setRevealed] = useState(false);
@@ -54,7 +56,7 @@ export default function SatVocabTab() {
     <div className="max-w-2xl mx-auto px-4 py-6 space-y-6">
       <div>
         <h2 className="text-2xl font-serif font-light tracking-tight text-paper flex items-center gap-2">
-          <BookA className="w-6 h-6 text-primary" /> SAT Vocabulary
+          <BookA className="w-6 h-6 text-paper" /> SAT Vocabulary
         </h2>
         <p className="text-paper-2 mt-1">
           Шалгалтад байнга тааралддаг {SAT_VOCAB.length} үгийг Монгол орчуулгатай нь сурцгаая.
@@ -69,7 +71,7 @@ export default function SatVocabTab() {
         <>
           <div className="rounded-3xl bg-ink-raise p-6 sm:p-8 min-h-[18rem] flex flex-col">
             <div className="flex items-center justify-between mb-4">
-              <span className="rounded-full bg-primary-container text-on-primary-container px-2.5 py-0.5 text-xs font-bold">
+              <span className="rounded-full bg-ink-2 text-paper px-2.5 py-0.5 text-xs font-bold">
                 {card.level}
               </span>
               <span className="text-xs text-paper-2">{card.category}</span>
@@ -80,7 +82,7 @@ export default function SatVocabTab() {
                 <h3 className="text-3xl font-serif font-light tracking-tight text-paper">{card.word}</h3>
                 <button
                   onClick={say}
-                  className="rounded-full bg-ink-2 text-paper p-2 hover:bg-primary-container hover:text-on-primary-container transition-colors"
+                  className="rounded-full bg-ink-2 text-paper p-2 hover:bg-ink-2 hover:text-paper transition-colors"
                   aria-label="Say it"
                 >
                   <Volume2 className="w-5 h-5" />
@@ -94,7 +96,7 @@ export default function SatVocabTab() {
 
               {revealed ? (
                 <div className="mt-4 space-y-3">
-                  <div className="rounded-xl bg-secondary-container text-on-secondary-container p-3">
+                  <div className="rounded-xl bg-paper text-ink p-3">
                     <span className="text-xs font-bold uppercase tracking-wide opacity-80">Монгол</span>
                     <p className="text-lg font-bold">{card.mongolian}</p>
                   </div>
@@ -102,8 +104,8 @@ export default function SatVocabTab() {
                 </div>
               ) : (
                 <button
-                  onClick={() => setRevealed(true)}
-                  className="mt-4 inline-flex items-center gap-2 rounded-full bg-primary text-on-primary px-5 py-2.5 font-bold"
+                  onClick={() => { setRevealed(true); recordStudy(); }}
+                  className="mt-4 inline-flex items-center gap-2 rounded-full bg-paper text-ink px-5 py-2.5 font-bold"
                 >
                   <Eye className="w-4 h-4" /> Орчуулга харах
                 </button>

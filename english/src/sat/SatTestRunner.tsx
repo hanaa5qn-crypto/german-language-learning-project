@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { SatTest, SatSection, SatQuestion } from '../types';
 import { satScaledScore } from './satTests';
+import { useEnglishStats } from '../stats';
 
 // Map a section's module name to the scoring key satScaledScore expects.
 function sectionScoreKey(section: SatSection): 'reading' | 'math' {
@@ -82,7 +83,7 @@ function ModuleTimer({ minutes, sectionKey }: { minutes: number; sectionKey: str
   return (
     <span
       className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-semibold tabular-nums ${
-        low ? 'bg-error-container text-on-error-container' : 'bg-ink-2 text-paper'
+        low ? 'bg-ink-2 text-paper-2' : 'bg-ink-2 text-paper'
       }`}
       aria-label="Time remaining in this module"
     >
@@ -118,7 +119,7 @@ function QuestionCard({
   return (
     <div className="rounded-2xl bg-ink-raise p-5 sm:p-6">
       <div className="flex items-center justify-between mb-3">
-        <span className="text-xs font-bold text-primary uppercase tracking-wide">
+        <span className="text-xs font-bold text-paper uppercase tracking-wide">
           Question {index + 1} of {total}
         </span>
         <span className="text-xs font-medium text-paper-2">{q.domain}</span>
@@ -147,9 +148,9 @@ function QuestionCard({
             className={`w-full sm:w-64 rounded-xl border bg-ink-raise px-4 py-3 text-paper outline-none transition-colors ${
               graded
                 ? wasCorrect
-                  ? 'border-secondary bg-secondary-container text-on-secondary-container'
-                  : 'border-error bg-error-container text-on-error-container'
-                : 'border-ink-line focus:border-primary'
+                  ? 'border-paper/60 bg-paper text-ink'
+                  : 'border-ink-line bg-ink-2 text-paper-2'
+                : 'border-ink-line focus:border-paper'
             }`}
           />
           {graded && (
@@ -173,13 +174,13 @@ function QuestionCard({
             const isRight = ci === q.correctIndex;
             const cls = graded
               ? isRight
-                ? 'border-secondary bg-secondary-container text-on-secondary-container'
+                ? 'border-paper/60 bg-paper text-ink'
                 : picked
-                ? 'border-error bg-error-container text-on-error-container'
+                ? 'border-ink-line bg-ink-2 text-paper-2'
                 : 'border-ink-line text-paper-2'
               : picked
-              ? 'border-primary bg-primary-container text-on-primary-container'
-              : 'border-ink-line hover:border-primary/60 text-paper';
+              ? 'border-paper bg-ink-2 text-paper'
+              : 'border-ink-line hover:border-paper/60 text-paper';
             return (
               <button
                 key={ci}
@@ -191,9 +192,9 @@ function QuestionCard({
                 <span
                   className={`flex-shrink-0 w-7 h-7 rounded-full grid place-items-center text-sm font-bold border ${
                     picked && !graded
-                      ? 'border-primary bg-primary text-on-primary'
+                      ? 'border-paper bg-paper text-ink'
                       : graded && isRight
-                      ? 'border-secondary'
+                      ? 'border-paper/60'
                       : 'border-ink-line'
                   }`}
                 >
@@ -210,7 +211,7 @@ function QuestionCard({
 
       {graded && (
         <div className="mt-4 rounded-xl bg-ink-raise p-4">
-          <p className="text-xs font-bold text-primary uppercase tracking-wide mb-1">Explanation</p>
+          <p className="text-xs font-bold text-paper uppercase tracking-wide mb-1">Explanation</p>
           <p className="text-sm text-paper-2 leading-relaxed whitespace-pre-line">
             {q.explanation}
           </p>
@@ -252,10 +253,10 @@ function Palette({
             ? gridInCorrect(q, grids[q.id] ?? '')
             : mcqCorrect(q, answers[q.id]);
           state = ok
-            ? 'border-secondary bg-secondary-container text-on-secondary-container'
-            : 'border-error bg-error-container text-on-error-container';
+            ? 'border-paper/60 bg-paper text-ink'
+            : 'border-ink-line bg-ink-2 text-paper-2';
         } else if (answered) {
-          state = 'border-primary bg-primary-container text-on-primary-container';
+          state = 'border-paper bg-ink-2 text-paper';
         }
         return (
           <button
@@ -263,13 +264,13 @@ function Palette({
             type="button"
             onClick={() => onJump(i)}
             className={`relative h-9 rounded-lg border text-sm font-semibold transition-colors ${state} ${
-              isCurrent ? 'ring-2 ring-primary ring-offset-1 ring-offset-background' : ''
+              isCurrent ? 'ring-2 ring-paper ring-offset-1 ring-offset-ink' : ''
             }`}
             aria-label={`Go to question ${i + 1}`}
           >
             {i + 1}
             {flagged[q.id] && !graded && (
-              <Flag className="w-3 h-3 absolute -top-1 -right-1 text-primary fill-primary" />
+              <Flag className="w-3 h-3 absolute -top-1 -right-1 text-paper fill-paper" />
             )}
           </button>
         );
@@ -294,7 +295,7 @@ function ModuleResult({
 }) {
   const scaled = satScaledScore(correct, sectionScoreKey(section));
   return (
-    <div className="rounded-2xl bg-primary-container text-on-primary-container p-5 sm:p-6">
+    <div className="rounded-2xl bg-ink-2 text-paper p-5 sm:p-6">
       <p className="text-sm font-semibold opacity-80">{sectionLabel(section)} · graded</p>
       <div className="flex flex-wrap items-end gap-x-8 gap-y-3 mt-2">
         <div>
@@ -316,14 +317,14 @@ function ModuleResult({
         <button
           type="button"
           onClick={onReview}
-          className="inline-flex items-center gap-2 rounded-full bg-primary text-on-primary px-5 py-2.5 text-sm font-semibold"
+          className="inline-flex items-center gap-2 rounded-full bg-paper text-ink px-5 py-2.5 text-sm font-semibold"
         >
           <ListChecks className="w-4 h-4" /> Review answers
         </button>
         <button
           type="button"
           onClick={onRetry}
-          className="inline-flex items-center gap-2 rounded-full border border-on-primary-container/40 px-5 py-2.5 text-sm font-semibold"
+          className="inline-flex items-center gap-2 rounded-full border border-ink-line/40 px-5 py-2.5 text-sm font-semibold"
         >
           <RotateCcw className="w-4 h-4" /> Retry module
         </button>
@@ -340,6 +341,7 @@ export default function SatTestRunner({
   test: SatTest;
   onExit: () => void;
 }) {
+  const { recordStudy } = useEnglishStats();
   const sections = test.sections;
   const [activeSection, setActiveSection] = useState(0);
   const [current, setCurrent] = useState(0);
@@ -395,6 +397,7 @@ export default function SatTestRunner({
   const submitModule = () => {
     setGraded((g) => ({ ...g, [activeSection]: true }));
     setCurrent(0);
+    recordStudy();
   };
 
   const retryModule = () => {
@@ -458,7 +461,7 @@ export default function SatTestRunner({
               onClick={() => switchSection(i)}
               className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold border transition-colors ${
                 active
-                  ? 'bg-primary text-on-primary border-primary'
+                  ? 'bg-paper text-ink border-paper'
                   : 'border-ink-line text-paper-2 hover:text-paper'
               }`}
             >
@@ -549,11 +552,11 @@ export default function SatTestRunner({
             }
             className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium ${
               flagged[q.id]
-                ? 'border-primary text-primary'
+                ? 'border-paper text-paper'
                 : 'border-ink-line text-paper-2'
             }`}
           >
-            <Flag className={`w-4 h-4 ${flagged[q.id] ? 'fill-primary' : ''}`} />
+            <Flag className={`w-4 h-4 ${flagged[q.id] ? 'fill-paper' : ''}`} />
             {flagged[q.id] ? 'Flagged' : 'Flag'}
           </button>
         )}
@@ -570,7 +573,7 @@ export default function SatTestRunner({
           <button
             type="button"
             onClick={submitModule}
-            className="inline-flex items-center gap-2 rounded-full bg-primary text-on-primary px-6 py-2.5 font-semibold"
+            className="inline-flex items-center gap-2 rounded-full bg-paper text-ink px-6 py-2.5 font-semibold"
           >
             <CheckCircle2 className="w-5 h-5" /> Submit module
           </button>
@@ -584,7 +587,7 @@ export default function SatTestRunner({
             <button
               type="button"
               onClick={() => switchSection(activeSection + 1)}
-              className="inline-flex items-center gap-2 rounded-full bg-primary text-on-primary px-6 py-2.5 font-semibold"
+              className="inline-flex items-center gap-2 rounded-full bg-paper text-ink px-6 py-2.5 font-semibold"
             >
               Next module: {sectionLabel(sections[activeSection + 1])}
               <ArrowRight className="w-5 h-5" />

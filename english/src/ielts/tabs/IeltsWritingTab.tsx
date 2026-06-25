@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { reviewWriting, AiReview } from '../../api';
 import { AiReviewCard } from './AiReviewCard';
+import { useEnglishStats } from '../../stats';
 
 interface IeltsWritingPrompt {
   id: string;
@@ -81,6 +82,7 @@ function countWords(text: string): number {
 }
 
 export default function IeltsWritingTab() {
+  const { recordStudy } = useEnglishStats();
   const [selectedId, setSelectedId] = useState<string>(PROMPTS[0].id);
   const [answer, setAnswer] = useState('');
   const [showModel, setShowModel] = useState(false);
@@ -115,6 +117,7 @@ export default function IeltsWritingTab() {
         answer: answer.trim(),
       });
       setReview(res);
+      recordStudy();
     } catch (e) {
       setError(
         e instanceof Error ? e.message : 'AI үнэлгээ авахад алдаа гарлаа. Дахин оролдоно уу.',
@@ -128,7 +131,7 @@ export default function IeltsWritingTab() {
     <div className="max-w-3xl mx-auto px-4 py-6 space-y-6">
       <div>
         <h2 className="text-2xl font-serif font-light tracking-tight text-paper flex items-center gap-2">
-          <Edit3 className="w-6 h-6 text-primary" /> Writing practice
+          <Edit3 className="w-6 h-6 text-paper" /> Writing practice
         </h2>
         <p className="text-paper-2 mt-1">
           Task 1 ба Task 2-ыг бичээд AI-аас Монгол хэлээр үнэлгээ аваарай.
@@ -145,7 +148,7 @@ export default function IeltsWritingTab() {
               className={[
                 'rounded-full px-4 py-1.5 text-sm font-semibold transition-colors',
                 on
-                  ? 'bg-primary text-on-primary'
+                  ? 'bg-paper text-ink'
                   : 'bg-ink-2 text-paper-2 hover:text-paper',
               ].join(' ')}
             >
@@ -157,7 +160,7 @@ export default function IeltsWritingTab() {
 
       <div className="rounded-2xl bg-ink-raise p-5 space-y-3">
         <div className="flex items-center gap-2">
-          <span className="rounded-full bg-primary-container text-on-primary-container px-2.5 py-0.5 text-xs font-bold">
+          <span className="rounded-full bg-ink-2 text-paper px-2.5 py-0.5 text-xs font-bold">
             {prompt.label}
           </span>
           <span className="text-xs text-paper-2">Хамгийн багадаа {prompt.minWords} үг</span>
@@ -165,7 +168,7 @@ export default function IeltsWritingTab() {
         <p className="leading-relaxed text-paper">{prompt.prompt}</p>
         {prompt.visual && (
           <div className="rounded-xl bg-ink-2 p-4 text-sm text-paper flex gap-2">
-            <BarChart3 className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+            <BarChart3 className="w-4 h-4 text-paper shrink-0 mt-0.5" />
             <span><span className="font-semibold">Visual: </span>{prompt.visual}</span>
           </div>
         )}
@@ -173,18 +176,18 @@ export default function IeltsWritingTab() {
 
       <div className="space-y-2">
         <label className="flex items-center gap-2 text-sm font-bold text-paper">
-          <PenLine className="w-4 h-4 text-primary" /> Таны хариулт
+          <PenLine className="w-4 h-4 text-paper" /> Таны хариулт
         </label>
         <textarea
           value={answer}
           onChange={(e) => setAnswer(e.target.value)}
           rows={12}
           placeholder="Эндээс бичиж эхэлнэ үү…"
-          className="w-full rounded-2xl bg-ink-raise border border-ink-line p-4 text-paper placeholder:text-paper-2 focus:outline-none focus:border-primary leading-relaxed resize-y"
+          className="w-full rounded-2xl bg-ink-raise border border-ink-line p-4 text-paper placeholder:text-paper-2 focus:outline-none focus:border-paper leading-relaxed resize-y"
         />
         <div className="flex items-center justify-between text-sm">
           <span className={meetsMin ? 'text-paper-2' : 'text-paper-2'}>
-            <span className={`font-bold ${meetsMin ? 'text-primary' : 'text-paper'}`}>{words}</span>
+            <span className={`font-bold ${meetsMin ? 'text-paper' : 'text-paper'}`}>{words}</span>
             {' '}/ {prompt.minWords} үг
           </span>
           {!meetsMin && words > 0 && (
@@ -197,7 +200,7 @@ export default function IeltsWritingTab() {
         <button
           onClick={getFeedback}
           disabled={loading || words === 0}
-          className="inline-flex items-center gap-2 rounded-full bg-primary text-on-primary px-6 py-3 font-bold disabled:opacity-40"
+          className="inline-flex items-center gap-2 rounded-full bg-paper text-ink px-6 py-3 font-bold disabled:opacity-40"
         >
           {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
           {loading ? 'Үнэлж байна…' : 'Get AI feedback / AI үнэлгээ авах'}
@@ -212,7 +215,7 @@ export default function IeltsWritingTab() {
       </div>
 
       {error && (
-        <div className="rounded-2xl bg-error-container text-on-error-container p-4 flex items-start gap-2">
+        <div className="rounded-2xl bg-ink-2 text-paper-2 p-4 flex items-start gap-2">
           <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
           <span>{error}</span>
         </div>

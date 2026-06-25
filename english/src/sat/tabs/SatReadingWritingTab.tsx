@@ -114,7 +114,7 @@ export default function SatReadingWritingTab() {
     <div className="max-w-3xl mx-auto px-4 py-6 space-y-6">
       <div>
         <h2 className="text-2xl font-serif font-light tracking-tight text-paper flex items-center gap-2">
-          <BookOpen className="w-6 h-6 text-primary" /> Reading & Writing
+          <BookOpen className="w-6 h-6 text-paper" /> Reading & Writing
         </h2>
         <p className="text-paper-2 mt-1">
           Дөрвөн домэйнаар ангилсан {all.length} дасгал — богино эх бичвэр уншаад
@@ -131,7 +131,7 @@ export default function SatReadingWritingTab() {
           {groups.map((g) => (
             <section key={g.domain} className="space-y-4">
               <h3 className="text-lg font-bold text-paper flex items-center gap-2">
-                <span className="h-5 w-1.5 rounded-full bg-primary" />
+                <span className="h-5 w-1.5 rounded-full bg-paper" />
                 {g.domain}
                 <span className="text-sm font-normal text-paper-2">
                   · {g.questions.length}

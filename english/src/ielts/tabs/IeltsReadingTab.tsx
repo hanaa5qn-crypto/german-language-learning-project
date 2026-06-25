@@ -10,8 +10,10 @@ import { BookOpen, ListChecks, RotateCcw, ChevronLeft } from 'lucide-react';
 import { READING_LIBRARY } from '../../content';
 import { ReadingItem, EnglishLevel } from '../../types';
 import { McqBlock, LevelFilter, ScoreBanner, IELTS_LEVELS } from './quizKit';
+import { useEnglishStats } from '../../stats';
 
 export default function IeltsReadingTab() {
+  const { recordStudy } = useEnglishStats();
   const [level, setLevel] = useState<EnglishLevel | 'all'>('B2');
   const [active, setActive] = useState<ReadingItem | null>(null);
   const [answers, setAnswers] = useState<Record<number, number>>({});
@@ -50,7 +52,7 @@ export default function IeltsReadingTab() {
 
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <span className="rounded-full bg-primary-container text-on-primary-container px-2.5 py-0.5 text-xs font-bold">
+            <span className="rounded-full bg-ink-2 text-paper px-2.5 py-0.5 text-xs font-bold">
               {active.level}
             </span>
             <span className="text-xs text-paper-2">{active.topic}</span>
@@ -64,7 +66,7 @@ export default function IeltsReadingTab() {
 
         <div className="space-y-4">
           <h3 className="flex items-center gap-2 text-lg font-bold text-paper">
-            <ListChecks className="w-5 h-5 text-primary" /> Асуултууд
+            <ListChecks className="w-5 h-5 text-paper" /> Асуултууд
           </h3>
           {active.questions.map((q, i) => (
             <McqBlock
@@ -90,9 +92,9 @@ export default function IeltsReadingTab() {
           </div>
         ) : (
           <button
-            onClick={() => setSubmitted(true)}
+            onClick={() => { setSubmitted(true); recordStudy(); }}
             disabled={!allAnswered}
-            className="rounded-full bg-primary text-on-primary px-6 py-3 font-bold disabled:opacity-40"
+            className="rounded-full bg-paper text-ink px-6 py-3 font-bold disabled:opacity-40"
           >
             Хариуг шалгах
           </button>
@@ -105,7 +107,7 @@ export default function IeltsReadingTab() {
     <div className="max-w-3xl mx-auto px-4 py-6 space-y-6">
       <div>
         <h2 className="text-2xl font-serif font-light tracking-tight text-paper flex items-center gap-2">
-          <BookOpen className="w-6 h-6 text-primary" /> Reading practice
+          <BookOpen className="w-6 h-6 text-paper" /> Reading practice
         </h2>
         <p className="text-paper-2 mt-1">
           Эрдэм шинжилгээний эх бичвэр уншиж, ойлгосноо асуултаар шалгаарай.
@@ -122,7 +124,7 @@ export default function IeltsReadingTab() {
             className="text-left rounded-2xl bg-ink-raise hover:bg-ink-2 p-5 transition-colors"
           >
             <div className="flex items-center gap-2 mb-2">
-              <span className="rounded-full bg-primary-container text-on-primary-container px-2.5 py-0.5 text-xs font-bold">
+              <span className="rounded-full bg-ink-2 text-paper px-2.5 py-0.5 text-xs font-bold">
                 {p.level}
               </span>
               <span className="text-xs text-paper-2">{p.topic}</span>

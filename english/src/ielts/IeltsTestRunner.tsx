@@ -17,6 +17,7 @@ import {
 } from '../types';
 import { ieltsBandScore } from './ieltsTests';
 import { speak as neuralSpeak, stopSpeaking } from '../audio';
+import { useEnglishStats } from '../stats';
 
 // ---- Paper navigation ------------------------------------------------------
 type Paper = 'reading' | 'listening' | 'writing' | 'speaking';
@@ -105,10 +106,10 @@ const QuestionInput: React.FC<{
               key={oi}
               className={[
                 'flex items-start gap-3 rounded-xl border px-4 py-2.5 cursor-pointer transition-colors',
-                submitted && norm(opt) === norm(accepted[0]) ? 'border-secondary bg-secondary-container text-on-secondary-container' :
-                submitted && picked ? 'border-error bg-error-container text-on-error-container' :
-                picked ? 'border-primary bg-primary-container text-on-primary-container' :
-                'border-ink-line hover:border-primary/60',
+                submitted && norm(opt) === norm(accepted[0]) ? 'border-paper/60 bg-paper text-ink' :
+                submitted && picked ? 'border-ink-line bg-ink-2 text-paper-2' :
+                picked ? 'border-paper bg-ink-2 text-paper' :
+                'border-ink-line hover:border-paper/60',
               ].join(' ')}
             >
               <input
@@ -172,7 +173,7 @@ const QuestionInput: React.FC<{
   return (
     <div className="rounded-2xl bg-ink-raise p-4">
       <div className="flex items-center justify-between gap-3 mb-2">
-        <span className="text-xs font-bold text-primary">Q{index + 1}</span>
+        <span className="text-xs font-bold text-paper">Q{index + 1}</span>
         <span className="text-[11px] uppercase tracking-wide text-paper-2">{TYPE_LABEL[q.type]}</span>
       </div>
       <p className="font-medium mb-3 whitespace-pre-line">{q.prompt}</p>
@@ -180,7 +181,7 @@ const QuestionInput: React.FC<{
       {submitted && (
         <div className={[
           'mt-3 rounded-xl px-3 py-2 text-sm flex items-start gap-2',
-          correct ? 'bg-secondary-container text-on-secondary-container' : 'bg-error-container text-on-error-container',
+          correct ? 'bg-paper text-ink' : 'bg-ink-2 text-paper-2',
         ].join(' ')}>
           {correct ? <CheckCircle2 className="w-4 h-4 mt-0.5 shrink-0" /> : <XCircle className="w-4 h-4 mt-0.5 shrink-0" />}
           <span>
@@ -199,7 +200,7 @@ function BandBanner({
 }: { correct: number; total: number; kind: 'reading' | 'listening' }) {
   const band = ieltsBandScore(correct, kind);
   return (
-    <div className="rounded-2xl bg-primary-container text-on-primary-container px-5 py-4 flex flex-wrap items-center justify-between gap-3">
+    <div className="rounded-2xl bg-ink-2 text-paper px-5 py-4 flex flex-wrap items-center justify-between gap-3">
       <span className="inline-flex items-center gap-2 font-semibold">
         <ClipboardCheck className="w-5 h-5" /> {correct} / {total} correct
       </span>
@@ -215,6 +216,7 @@ function BandBanner({
 // Reading paper
 // ===========================================================================
 function ReadingPaper({ passages }: { passages: IeltsReadingPassage[] }) {
+  const { recordStudy } = useEnglishStats();
   const [active, setActive] = useState(0);
   const [responses, setResponses] = useState<Record<number, string>>({});
   const [submitted, setSubmitted] = useState(false);
@@ -244,7 +246,7 @@ function ReadingPaper({ passages }: { passages: IeltsReadingPassage[] }) {
             onClick={() => setActive(i)}
             className={[
               'px-4 py-2 rounded-full text-sm font-semibold border',
-              i === active ? 'bg-primary text-on-primary border-primary' : 'border-ink-line text-paper-2 hover:text-paper',
+              i === active ? 'bg-paper text-ink border-paper' : 'border-ink-line text-paper-2 hover:text-paper',
             ].join(' ')}
           >
             Passage {p.number}
@@ -277,7 +279,7 @@ function ReadingPaper({ passages }: { passages: IeltsReadingPassage[] }) {
 
       <PaperActions
         submitted={submitted}
-        onSubmit={() => setSubmitted(true)}
+        onSubmit={() => { setSubmitted(true); recordStudy(); }}
         onReset={() => { setSubmitted(false); setResponses({}); }}
       />
       {submitted && <BandBanner correct={correctCount} total={allQuestions.length} kind="reading" />}
@@ -289,6 +291,7 @@ function ReadingPaper({ passages }: { passages: IeltsReadingPassage[] }) {
 // Listening paper
 // ===========================================================================
 function ListeningPaper({ sections }: { sections: IeltsListeningSection[] }) {
+  const { recordStudy } = useEnglishStats();
   const [active, setActive] = useState(0);
   const [responses, setResponses] = useState<Record<number, string>>({});
   const [submitted, setSubmitted] = useState(false);
@@ -336,7 +339,7 @@ function ListeningPaper({ sections }: { sections: IeltsListeningSection[] }) {
             onClick={() => selectSection(i)}
             className={[
               'px-4 py-2 rounded-full text-sm font-semibold border',
-              i === active ? 'bg-primary text-on-primary border-primary' : 'border-ink-line text-paper-2 hover:text-paper',
+              i === active ? 'bg-paper text-ink border-paper' : 'border-ink-line text-paper-2 hover:text-paper',
             ].join(' ')}
           >
             Section {s.number}
@@ -349,11 +352,11 @@ function ListeningPaper({ sections }: { sections: IeltsListeningSection[] }) {
         <p className="text-xs text-paper-2 mb-4">Section {section.number}</p>
         <div className="flex flex-wrap gap-3">
           {!playing ? (
-            <button onClick={play} className="inline-flex items-center gap-2 rounded-full bg-primary text-on-primary px-5 py-2.5 font-semibold">
+            <button onClick={play} className="inline-flex items-center gap-2 rounded-full bg-paper text-ink px-5 py-2.5 font-semibold">
               <Volume2 className="w-4 h-4" /> Play section audio
             </button>
           ) : (
-            <button onClick={stop} className="inline-flex items-center gap-2 rounded-full bg-primary text-on-primary px-5 py-2.5 font-semibold">
+            <button onClick={stop} className="inline-flex items-center gap-2 rounded-full bg-paper text-ink px-5 py-2.5 font-semibold">
               <VolumeX className="w-4 h-4" /> Stop audio
             </button>
           )}
@@ -387,7 +390,7 @@ function ListeningPaper({ sections }: { sections: IeltsListeningSection[] }) {
 
       <PaperActions
         submitted={submitted}
-        onSubmit={() => setSubmitted(true)}
+        onSubmit={() => { setSubmitted(true); recordStudy(); }}
         onReset={() => { setSubmitted(false); setResponses({}); }}
       />
       {submitted && <BandBanner correct={correctCount} total={allQuestions.length} kind="listening" />}
@@ -427,7 +430,7 @@ function WritingPaper({ tasks }: { tasks: IeltsTest['writing'] }) {
               className="w-full rounded-xl bg-ink-raise border border-ink-line p-3 text-paper"
             />
             <div className="flex items-center justify-between mt-2">
-              <span className={`text-xs font-medium ${enough ? 'text-paper-2' : 'text-primary'}`}>
+              <span className={`text-xs font-medium ${enough ? 'text-paper-2' : 'text-paper'}`}>
                 {words} / {t.minWords} words {enough ? '✓' : ''}
               </span>
               <button
@@ -442,7 +445,7 @@ function WritingPaper({ tasks }: { tasks: IeltsTest['writing'] }) {
               <div className="mt-4 space-y-4">
                 <div className="rounded-xl bg-ink-raise p-4 leading-relaxed whitespace-pre-line">{t.modelAnswer}</div>
                 {t.examinerNotes.length > 0 && (
-                  <div className="rounded-xl bg-secondary-container text-on-secondary-container p-4">
+                  <div className="rounded-xl bg-paper text-ink p-4">
                     <p className="font-semibold mb-2 inline-flex items-center gap-2"><Award className="w-4 h-4" /> Examiner notes</p>
                     <ul className="list-disc pl-5 space-y-1 text-sm">
                       {t.examinerNotes.map((n, i) => <li key={i}>{n}</li>)}
@@ -478,7 +481,7 @@ function SpeakingPaper({ parts }: { parts: IeltsTest['speaking'] }) {
             {isCueCard ? (
               // Part 2 — single cue card with bullet prompts.
               <div className="rounded-2xl bg-ink-2 p-5 mb-4">
-                <p className="text-xs font-bold text-primary mb-2">Cue card</p>
+                <p className="text-xs font-bold text-paper mb-2">Cue card</p>
                 <ul className="space-y-1.5">
                   {p.questions.map((line, i) => (
                     <li key={i} className={i === 0 ? 'font-semibold' : 'list-disc ml-5 text-paper-2'}>
@@ -497,7 +500,7 @@ function SpeakingPaper({ parts }: { parts: IeltsTest['speaking'] }) {
             )}
 
             <div className="space-y-3">
-              <p className="text-xs font-bold text-primary inline-flex items-center gap-2"><Mic className="w-4 h-4" /> Sample answers</p>
+              <p className="text-xs font-bold text-paper inline-flex items-center gap-2"><Mic className="w-4 h-4" /> Sample answers</p>
               {p.sampleAnswers.map((ans, i) => {
                 const key = `${p.part}-${i}`;
                 return (
@@ -506,7 +509,7 @@ function SpeakingPaper({ parts }: { parts: IeltsTest['speaking'] }) {
                     <div className="flex flex-wrap gap-2 mt-3">
                       <button
                         onClick={() => speak(ans)}
-                        className="inline-flex items-center gap-2 rounded-full bg-primary text-on-primary px-4 py-1.5 text-sm font-semibold"
+                        className="inline-flex items-center gap-2 rounded-full bg-paper text-ink px-4 py-1.5 text-sm font-semibold"
                       >
                         <Volume2 className="w-4 h-4" /> Hear answer
                       </button>
@@ -536,7 +539,7 @@ function PaperActions({
   return (
     <div className="flex flex-wrap gap-3">
       {!submitted ? (
-        <button onClick={onSubmit} className="inline-flex items-center gap-2 rounded-full bg-primary text-on-primary px-6 py-2.5 font-semibold">
+        <button onClick={onSubmit} className="inline-flex items-center gap-2 rounded-full bg-paper text-ink px-6 py-2.5 font-semibold">
           <ClipboardCheck className="w-4 h-4" /> Submit answers
         </button>
       ) : (
@@ -581,7 +584,7 @@ export default function IeltsTestRunner({ test, onExit }: { test: IeltsTest; onE
             onClick={() => { stopSpeaking(); setPaper(p.key); }}
             className={[
               'inline-flex items-center gap-2 px-4 sm:px-5 py-2 rounded-full text-sm font-semibold transition-colors',
-              paper === p.key ? 'bg-primary text-on-primary' : 'text-paper-2 hover:text-paper',
+              paper === p.key ? 'bg-paper text-ink' : 'text-paper-2 hover:text-paper',
             ].join(' ')}
           >
             <p.icon className="w-4 h-4" /> {p.label}

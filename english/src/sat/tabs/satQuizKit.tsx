@@ -9,6 +9,7 @@
 import React, { useState } from 'react';
 import { CheckCircle2, XCircle, RotateCcw } from 'lucide-react';
 import { SatQuestion } from '../../types';
+import { useEnglishStats } from '../../stats';
 
 const LETTERS = ['A', 'B', 'C', 'D', 'E', 'F'];
 
@@ -37,6 +38,7 @@ export function gridInCorrect(q: SatQuestion, value: string): boolean {
 // A single self-grading SAT question (passage + MCQ or grid-in) with a worked
 // explanation shown after answering.
 export const SatPracticeCard: React.FC<{ q: SatQuestion; index: number }> = ({ q, index }) => {
+  const { recordStudy } = useEnglishStats();
   const gridIn = isGridIn(q);
   const [picked, setPicked] = useState<number | undefined>(undefined);
   const [grid, setGrid] = useState('');
@@ -86,9 +88,9 @@ export const SatPracticeCard: React.FC<{ q: SatQuestion; index: number }> = ({ q
               'w-full sm:w-64 rounded-xl border bg-ink-raise px-4 py-3 text-paper outline-none transition-colors',
               submitted
                 ? wasCorrect
-                  ? 'border-secondary-container bg-secondary-container text-on-secondary-container'
-                  : 'border-error-container bg-error-container text-on-error-container'
-                : 'border-ink-line focus:border-primary',
+                  ? 'border-paper bg-paper text-ink'
+                  : 'border-ink-line bg-ink-2 text-paper-2'
+                : 'border-ink-line focus:border-paper',
             ].join(' ')}
           />
           {submitted && (
@@ -113,12 +115,12 @@ export const SatPracticeCard: React.FC<{ q: SatQuestion; index: number }> = ({ q
             const cls = [
               'flex items-start gap-3 rounded-xl border px-4 py-2.5 text-left transition-colors',
               submitted && isAnswer
-                ? 'border-secondary-container bg-secondary-container text-on-secondary-container'
+                ? 'border-paper bg-paper text-ink'
                 : submitted && isPicked
-                  ? 'border-error-container bg-error-container text-on-error-container'
+                  ? 'border-ink-line bg-ink-2 text-paper-2'
                   : isPicked
-                    ? 'border-primary bg-primary-container text-on-primary-container'
-                    : 'border-ink-line text-paper hover:border-primary/60',
+                    ? 'border-paper bg-ink-2 text-paper'
+                    : 'border-ink-line text-paper hover:border-paper/60',
             ].join(' ');
             return (
               <button
@@ -143,8 +145,8 @@ export const SatPracticeCard: React.FC<{ q: SatQuestion; index: number }> = ({ q
           <button
             type="button"
             disabled={!canSubmit}
-            onClick={() => setSubmitted(true)}
-            className="inline-flex items-center gap-2 rounded-full bg-primary text-on-primary px-5 py-2 text-sm font-semibold disabled:opacity-40"
+            onClick={() => { setSubmitted(true); recordStudy(); }}
+            className="inline-flex items-center gap-2 rounded-full bg-paper text-ink px-5 py-2 text-sm font-semibold disabled:opacity-40"
           >
             <CheckCircle2 className="w-4 h-4" /> Check answer
           </button>
@@ -161,7 +163,7 @@ export const SatPracticeCard: React.FC<{ q: SatQuestion; index: number }> = ({ q
 
       {submitted && q.explanation && (
         <div className="mt-3 rounded-xl bg-ink-raise p-4">
-          <p className="text-xs font-bold text-primary uppercase tracking-wide mb-1">
+          <p className="text-xs font-bold text-paper uppercase tracking-wide mb-1">
             Тайлбар · Explanation
           </p>
           <p className="text-sm text-paper-2 leading-relaxed whitespace-pre-line">
@@ -196,7 +198,7 @@ export function DomainFilter<T extends string>({
             className={[
               'rounded-full px-4 py-1.5 text-sm font-semibold transition-colors',
               on
-                ? 'bg-primary text-on-primary'
+                ? 'bg-paper text-ink'
                 : 'bg-ink-2 text-paper-2 hover:text-paper',
             ].join(' ')}
           >

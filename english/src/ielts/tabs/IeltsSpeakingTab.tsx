@@ -13,6 +13,7 @@ import {
 import { reviewSpeaking, AiReview } from '../../api';
 import { speak, stopSpeaking } from '../../audio';
 import { AiReviewCard } from './AiReviewCard';
+import { useEnglishStats } from '../../stats';
 
 const IELTS_VOICE = 'en-GB-SoniaNeural';
 
@@ -90,6 +91,7 @@ function getRecognitionCtor(): (new () => SpeechRecognitionLike) | null {
 }
 
 export default function IeltsSpeakingTab() {
+  const { recordStudy } = useEnglishStats();
   const [selectedId, setSelectedId] = useState<string>(PROMPTS[0].id);
   const [transcript, setTranscript] = useState('');
   const [recording, setRecording] = useState(false);
@@ -170,6 +172,7 @@ export default function IeltsSpeakingTab() {
         transcript: transcript.trim(),
       });
       setReview(res);
+      recordStudy();
     } catch (e) {
       setError(
         e instanceof Error ? e.message : 'AI үнэлгээ авахад алдаа гарлаа. Дахин оролдоно уу.',
@@ -183,7 +186,7 @@ export default function IeltsSpeakingTab() {
     <div className="max-w-3xl mx-auto px-4 py-6 space-y-6">
       <div>
         <h2 className="text-2xl font-serif font-light tracking-tight text-paper flex items-center gap-2">
-          <Mic className="w-6 h-6 text-primary" /> Speaking practice
+          <Mic className="w-6 h-6 text-paper" /> Speaking practice
         </h2>
         <p className="text-paper-2 mt-1">
           Part 1–3-ыг ярьж бичүүлээд, эсвэл бичээд AI-аас Монгол хэлээр үнэлгээ аваарай.
@@ -200,7 +203,7 @@ export default function IeltsSpeakingTab() {
               className={[
                 'rounded-full px-4 py-1.5 text-sm font-semibold transition-colors',
                 on
-                  ? 'bg-primary text-on-primary'
+                  ? 'bg-paper text-ink'
                   : 'bg-ink-2 text-paper-2 hover:text-paper',
               ].join(' ')}
             >
@@ -212,7 +215,7 @@ export default function IeltsSpeakingTab() {
 
       <div className="rounded-2xl bg-ink-raise p-5 space-y-3">
         <div className="flex items-center gap-2">
-          <span className="rounded-full bg-primary-container text-on-primary-container px-2.5 py-0.5 text-xs font-bold">
+          <span className="rounded-full bg-ink-2 text-paper px-2.5 py-0.5 text-xs font-bold">
             {prompt.label}
           </span>
           <span className="text-sm font-bold text-paper">{prompt.title}</span>
@@ -233,14 +236,14 @@ export default function IeltsSpeakingTab() {
 
       <div className="space-y-2">
         <label className="flex items-center gap-2 text-sm font-bold text-paper">
-          <MessageSquare className="w-4 h-4 text-primary" /> Таны хариулт (transcript)
+          <MessageSquare className="w-4 h-4 text-paper" /> Таны хариулт (transcript)
         </label>
         <textarea
           value={transcript}
           onChange={(e) => setTranscript(e.target.value)}
           rows={8}
           placeholder="Ярьж бичүүлэх эсвэл шууд бичнэ үү…"
-          className="w-full rounded-2xl bg-ink-raise border border-ink-line p-4 text-paper placeholder:text-paper-2 focus:outline-none focus:border-primary leading-relaxed resize-y"
+          className="w-full rounded-2xl bg-ink-raise border border-ink-line p-4 text-paper placeholder:text-paper-2 focus:outline-none focus:border-paper leading-relaxed resize-y"
         />
         <div className="flex flex-wrap gap-3">
           {recognitionAvailable ? (
@@ -249,7 +252,7 @@ export default function IeltsSpeakingTab() {
               className={[
                 'inline-flex items-center gap-2 rounded-full px-5 py-2.5 font-semibold transition-colors',
                 recording
-                  ? 'bg-error-container text-on-error-container'
+                  ? 'bg-ink-2 text-paper-2'
                   : 'bg-ink-2 text-paper hover:bg-ink-raise',
               ].join(' ')}
             >
@@ -267,14 +270,14 @@ export default function IeltsSpeakingTab() {
       <button
         onClick={getFeedback}
         disabled={loading || transcript.trim() === ''}
-        className="inline-flex items-center gap-2 rounded-full bg-primary text-on-primary px-6 py-3 font-bold disabled:opacity-40"
+        className="inline-flex items-center gap-2 rounded-full bg-paper text-ink px-6 py-3 font-bold disabled:opacity-40"
       >
         {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
         {loading ? 'Үнэлж байна…' : 'Get AI feedback / AI үнэлгээ авах'}
       </button>
 
       {error && (
-        <div className="rounded-2xl bg-error-container text-on-error-container p-4 flex items-start gap-2">
+        <div className="rounded-2xl bg-ink-2 text-paper-2 p-4 flex items-start gap-2">
           <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
           <span>{error}</span>
         </div>

@@ -102,7 +102,7 @@ export default function SatMathTab() {
     <div className="max-w-3xl mx-auto px-4 py-6 space-y-6">
       <div>
         <h2 className="text-2xl font-serif font-light tracking-tight text-paper flex items-center gap-2">
-          <Sigma className="w-6 h-6 text-primary" /> Math
+          <Sigma className="w-6 h-6 text-paper" /> Math
         </h2>
         <p className="text-paper-2 mt-1">
           Дөрвөн домэйнаар ангилсан {all.length} дасгал — сонголттой болон нөхөх
@@ -119,7 +119,7 @@ export default function SatMathTab() {
           {groups.map((g) => (
             <section key={g.domain} className="space-y-4">
               <h3 className="text-lg font-bold text-paper flex items-center gap-2">
-                <span className="h-5 w-1.5 rounded-full bg-primary" />
+                <span className="h-5 w-1.5 rounded-full bg-paper" />
                 {g.domain}
                 <span className="text-sm font-normal text-paper-2">
                   · {g.questions.length}

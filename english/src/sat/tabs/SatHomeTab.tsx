@@ -12,6 +12,7 @@ import {
   Layers, ArrowRight,
 } from 'lucide-react';
 import { SatTabKey } from '../SatApp';
+import StreakLeaderboard from '../../StreakLeaderboard';
 
 const SECTIONS: {
   icon: React.ElementType;
@@ -46,8 +47,10 @@ const QUICK: { tab: SatTabKey; icon: React.ElementType; title: string; mn: strin
 export default function SatHomeTab({ onGo }: { onGo: (tab: SatTabKey) => void }) {
   return (
     <div className="max-w-4xl mx-auto px-4 py-6 space-y-10">
+      <StreakLeaderboard />
+
       <section className="rounded-3xl bg-ink-raise p-7 sm:p-9">
-        <span className="inline-flex items-center gap-1.5 rounded-full bg-primary-container text-on-primary-container px-3 py-1 text-xs font-bold">
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-ink-2 text-paper px-3 py-1 text-xs font-bold">
           <GraduationCap className="w-4 h-4" /> Digital SAT бэлтгэл
         </span>
         <h1 className="text-3xl sm:text-4xl font-serif font-light tracking-tight text-paper mt-4">
@@ -60,7 +63,7 @@ export default function SatHomeTab({ onGo }: { onGo: (tab: SatTabKey) => void })
         <div className="flex flex-wrap gap-3 mt-6">
           <button
             onClick={() => onGo('tests')}
-            className="inline-flex items-center gap-2 rounded-full bg-primary text-on-primary px-6 py-3 font-bold"
+            className="inline-flex items-center gap-2 rounded-full bg-paper text-ink px-6 py-3 font-bold"
           >
             <ClipboardList className="w-4 h-4" /> Дасгал шалгалт өгөх
           </button>
@@ -80,7 +83,7 @@ export default function SatHomeTab({ onGo }: { onGo: (tab: SatTabKey) => void })
         <div className="grid gap-3 sm:grid-cols-2">
           {SECTIONS.map((s) => (
             <div key={s.name} className="rounded-2xl bg-ink-raise p-5 flex gap-4">
-              <span className="rounded-2xl bg-primary-container text-on-primary-container p-3 h-fit">
+              <span className="rounded-2xl bg-ink-2 text-paper p-3 h-fit">
                 <s.icon className="w-6 h-6" />
               </span>
               <div>
@@ -89,7 +92,7 @@ export default function SatHomeTab({ onGo }: { onGo: (tab: SatTabKey) => void })
                 </h3>
                 <p className="text-sm text-paper-2 mt-1">{s.detail}</p>
                 <p className="text-sm text-paper-2 mt-1 inline-flex items-center gap-1.5">
-                  <Layers className="w-4 h-4 text-primary" /> {s.modules}
+                  <Layers className="w-4 h-4 text-paper" /> {s.modules}
                 </p>
               </div>
             </div>
@@ -100,23 +103,23 @@ export default function SatHomeTab({ onGo }: { onGo: (tab: SatTabKey) => void })
       <section className="grid gap-4 sm:grid-cols-2">
         <div className="rounded-2xl bg-ink-raise p-6">
           <h2 className="font-bold text-paper flex items-center gap-2">
-            <Award className="w-5 h-5 text-primary" /> Scoring 400–1600
+            <Award className="w-5 h-5 text-paper" /> Scoring 400–1600
           </h2>
           <p className="text-paper-2 text-sm mt-2">
-            Хэсэг бүр <span className="font-bold text-primary">200–800</span> оноотой.
+            Хэсэг бүр <span className="font-bold text-paper">200–800</span> оноотой.
             Хоёр хэсгийн нийлбэр нь нийт{' '}
-            <span className="font-bold text-primary">400–1600</span> оноо болно.
+            <span className="font-bold text-paper">400–1600</span> оноо болно.
           </p>
           <ul className="mt-3 space-y-1.5 text-sm text-paper">
-            <li><span className="font-bold text-primary">1400+</span> — маш өндөр, шилдэг сургуульд</li>
-            <li><span className="font-bold text-primary">1200</span> — дунджаас дээгүүр</li>
-            <li><span className="font-bold text-primary">1050</span> — улсын дундаж орчим</li>
-            <li><span className="font-bold text-primary">400</span> — доод хязгаар</li>
+            <li><span className="font-bold text-paper">1400+</span> — маш өндөр, шилдэг сургуульд</li>
+            <li><span className="font-bold text-paper">1200</span> — дунджаас дээгүүр</li>
+            <li><span className="font-bold text-paper">1050</span> — улсын дундаж орчим</li>
+            <li><span className="font-bold text-paper">400</span> — доод хязгаар</li>
           </ul>
         </div>
         <div className="rounded-2xl bg-ink-raise p-6">
           <h2 className="font-bold text-paper flex items-center gap-2">
-            <Clock className="w-5 h-5 text-primary" /> Timing & adaptivity
+            <Clock className="w-5 h-5 text-paper" /> Timing & adaptivity
           </h2>
           <p className="text-paper-2 text-sm mt-2">
             Тоон SAT нь адаптив: эхний модулийн гүйцэтгэлээс хоёр дахь модулийн
@@ -142,12 +145,12 @@ export default function SatHomeTab({ onGo }: { onGo: (tab: SatTabKey) => void })
               onClick={() => onGo(q.tab)}
               className="group text-left rounded-2xl bg-ink-raise hover:bg-ink-2 p-5 transition-colors"
             >
-              <span className="rounded-2xl bg-primary-container text-on-primary-container p-2.5 inline-flex">
+              <span className="rounded-2xl bg-ink-2 text-paper p-2.5 inline-flex">
                 <q.icon className="w-5 h-5" />
               </span>
               <h3 className="font-bold text-paper mt-3">{q.title}</h3>
               <p className="text-sm text-paper-2 mt-1">{q.mn}</p>
-              <span className="mt-3 inline-flex items-center gap-1 text-primary text-sm font-semibold">
+              <span className="mt-3 inline-flex items-center gap-1 text-paper text-sm font-semibold">
                 Эхлэх <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
               </span>
             </button>

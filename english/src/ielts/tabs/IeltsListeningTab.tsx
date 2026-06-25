@@ -13,10 +13,12 @@ import { LISTENING_LIBRARY } from '../../content';
 import { speak, stopSpeaking } from '../../audio';
 import { ListeningItem, EnglishLevel } from '../../types';
 import { McqBlock, LevelFilter, ScoreBanner, IELTS_LEVELS } from './quizKit';
+import { useEnglishStats } from '../../stats';
 
 const IELTS_VOICE = 'en-GB-SoniaNeural';
 
 export default function IeltsListeningTab() {
+  const { recordStudy } = useEnglishStats();
   const [level, setLevel] = useState<EnglishLevel | 'all'>('B2');
   const [active, setActive] = useState<ListeningItem | null>(null);
   const [answers, setAnswers] = useState<Record<number, number>>({});
@@ -70,7 +72,7 @@ export default function IeltsListeningTab() {
 
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <span className="rounded-full bg-primary-container text-on-primary-container px-2.5 py-0.5 text-xs font-bold">
+            <span className="rounded-full bg-ink-2 text-paper px-2.5 py-0.5 text-xs font-bold">
               {active.level}
             </span>
             <span className="text-xs text-paper-2">{active.topic}</span>
@@ -85,7 +87,7 @@ export default function IeltsListeningTab() {
           <div className="flex flex-wrap gap-3">
             <button
               onClick={() => play(active)}
-              className="inline-flex items-center gap-2 rounded-full bg-primary text-on-primary px-5 py-2.5 font-bold"
+              className="inline-flex items-center gap-2 rounded-full bg-paper text-ink px-5 py-2.5 font-bold"
             >
               {playing ? <Square className="w-4 h-4" /> : <Play className="w-4 h-4" />}
               {playing ? 'Зогсоох' : 'Аудио тоглуулах'}
@@ -107,7 +109,7 @@ export default function IeltsListeningTab() {
 
         <div className="space-y-4">
           <h3 className="flex items-center gap-2 text-lg font-bold text-paper">
-            <ListChecks className="w-5 h-5 text-primary" /> Асуултууд
+            <ListChecks className="w-5 h-5 text-paper" /> Асуултууд
           </h3>
           {active.questions.map((q, i) => (
             <McqBlock
@@ -133,9 +135,9 @@ export default function IeltsListeningTab() {
           </div>
         ) : (
           <button
-            onClick={() => setSubmitted(true)}
+            onClick={() => { setSubmitted(true); recordStudy(); }}
             disabled={!allAnswered}
-            className="rounded-full bg-primary text-on-primary px-6 py-3 font-bold disabled:opacity-40"
+            className="rounded-full bg-paper text-ink px-6 py-3 font-bold disabled:opacity-40"
           >
             Хариуг шалгах
           </button>
@@ -148,7 +150,7 @@ export default function IeltsListeningTab() {
     <div className="max-w-3xl mx-auto px-4 py-6 space-y-6">
       <div>
         <h2 className="text-2xl font-serif font-light tracking-tight text-paper flex items-center gap-2">
-          <Headphones className="w-6 h-6 text-primary" /> Listening practice
+          <Headphones className="w-6 h-6 text-paper" /> Listening practice
         </h2>
         <p className="text-paper-2 mt-1">
           Британи хүний хоолойгоор уншсан аудиог сонсоод асуултад хариулаарай.
@@ -165,7 +167,7 @@ export default function IeltsListeningTab() {
             className="text-left rounded-2xl bg-ink-raise hover:bg-ink-2 p-5 transition-colors"
           >
             <div className="flex items-center gap-2 mb-2">
-              <span className="rounded-full bg-primary-container text-on-primary-container px-2.5 py-0.5 text-xs font-bold">
+              <span className="rounded-full bg-ink-2 text-paper px-2.5 py-0.5 text-xs font-bold">
                 {p.level}
               </span>
               <span className="text-xs text-paper-2">{p.topic}</span>

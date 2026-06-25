@@ -37,12 +37,12 @@ export const McqBlock: React.FC<{
           const cls = [
             'flex items-start gap-3 rounded-xl border px-4 py-2.5 text-left transition-colors',
             submitted && isAnswer
-              ? 'border-secondary-container bg-secondary-container text-on-secondary-container'
+              ? 'border-paper bg-paper text-ink'
               : submitted && picked
-                ? 'border-error-container bg-error-container text-on-error-container'
+                ? 'border-ink-line bg-ink-2 text-paper-2'
                 : picked
-                  ? 'border-primary bg-primary-container text-on-primary-container'
-                  : 'border-ink-line text-paper hover:border-primary/60',
+                  ? 'border-paper bg-ink-2 text-paper'
+                  : 'border-ink-line text-paper hover:border-paper/60',
           ].join(' ');
           return (
             <button
@@ -95,7 +95,7 @@ export function LevelFilter({
             className={[
               'rounded-full px-4 py-1.5 text-sm font-semibold transition-colors',
               on
-                ? 'bg-primary text-on-primary'
+                ? 'bg-paper text-ink'
                 : 'bg-ink-2 text-paper-2 hover:text-paper',
             ].join(' ')}
           >
@@ -111,7 +111,7 @@ export function LevelFilter({
 export function ScoreBanner({ correct, total }: { correct: number; total: number }) {
   const pct = total === 0 ? 0 : Math.round((correct / total) * 100);
   return (
-    <div className="rounded-2xl bg-secondary-container text-on-secondary-container px-5 py-4 flex items-center justify-between">
+    <div className="rounded-2xl bg-paper text-ink px-5 py-4 flex items-center justify-between">
       <span className="font-bold text-lg">
         {correct} / {total} зөв
       </span>

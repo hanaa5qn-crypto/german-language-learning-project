@@ -15,11 +15,11 @@ export function AiReviewCard({ review }: { review: AiReview }) {
     <div className="rounded-2xl bg-ink-raise p-5 space-y-5">
       <div className="flex items-start justify-between gap-3">
         <h3 className="text-xl font-serif font-light tracking-tight text-paper flex items-center gap-2">
-          <Sparkles className="w-5 h-5 text-primary" />
+          <Sparkles className="w-5 h-5 text-paper" />
           {review.feedbackMessage}
         </h3>
         {review.estimate && (
-          <span className="shrink-0 inline-flex items-center gap-1.5 rounded-full bg-primary text-on-primary px-3 py-1.5 font-bold">
+          <span className="shrink-0 inline-flex items-center gap-1.5 rounded-full bg-paper text-ink px-3 py-1.5 font-bold">
             <Award className="w-4 h-4" /> Band {review.estimate}
           </span>
         )}
@@ -53,7 +53,7 @@ export function AiReviewCard({ review }: { review: AiReview }) {
 
       <div className="grid gap-4 sm:grid-cols-2">
         {review.strengths.length > 0 && (
-          <div className="rounded-xl bg-secondary-container text-on-secondary-container p-4">
+          <div className="rounded-xl bg-paper text-ink p-4">
             <h4 className="font-bold mb-2 flex items-center gap-2">
               <ThumbsUp className="w-4 h-4" /> Давуу тал
             </h4>
@@ -67,7 +67,7 @@ export function AiReviewCard({ review }: { review: AiReview }) {
         {review.improvements.length > 0 && (
           <div className="rounded-xl bg-ink-2 p-4">
             <h4 className="font-bold mb-2 flex items-center gap-2 text-paper">
-              <Wrench className="w-4 h-4 text-primary" /> Сайжруулах зүйл
+              <Wrench className="w-4 h-4 text-paper" /> Сайжруулах зүйл
             </h4>
             <ul className="space-y-1.5 text-sm list-disc pl-5 text-paper">
               {review.improvements.map((s, i) => (

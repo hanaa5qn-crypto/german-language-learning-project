@@ -25,8 +25,8 @@ function BrandLogo({ className = 'w-7 h-7' }: { className?: string }) {
     <svg viewBox="0 0 64 64" className={className} aria-hidden="true">
       <defs>
         <linearGradient id="ielts-brand-grad" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="#f0cd7e" />
-          <stop offset="1" stopColor="#cf982f" />
+          <stop offset="0" stopColor="#ededeb" />
+          <stop offset="1" stopColor="#9b9893" />
         </linearGradient>
       </defs>
       <circle cx="13" cy="19" r="9" fill="url(#ielts-brand-grad)" />
@@ -73,8 +73,8 @@ export default function IeltsApp({
         <div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between gap-3">
           <div className="flex items-center gap-2 font-serif font-bold text-lg tracking-tight">
             <BrandLogo className="w-8 h-8" />
-            <span><span className="text-primary">Vivid</span> Lingua</span>
-            <span className="ml-1 text-xs font-semibold rounded-full bg-primary-container text-on-primary-container px-2 py-0.5">
+            <span><span className="text-paper">Vivid</span> Lingua</span>
+            <span className="ml-1 text-xs font-semibold rounded-full bg-ink-2 text-paper px-2 py-0.5">
               IELTS
             </span>
           </div>
@@ -107,7 +107,7 @@ export default function IeltsApp({
                   className={[
                     'inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-semibold whitespace-nowrap transition-colors',
                     on
-                      ? 'bg-primary text-on-primary'
+                      ? 'bg-paper text-ink'
                       : 'text-paper-2 hover:bg-ink-raise hover:text-paper',
                   ].join(' ')}
                 >

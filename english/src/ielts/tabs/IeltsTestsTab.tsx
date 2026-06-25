@@ -21,7 +21,7 @@ export default function IeltsTestsTab() {
     <div className="max-w-3xl mx-auto px-4 py-6 space-y-6">
       <div>
         <h2 className="text-2xl font-serif font-light tracking-tight text-paper flex items-center gap-2">
-          <ClipboardList className="w-6 h-6 text-primary" /> Practice Tests
+          <ClipboardList className="w-6 h-6 text-paper" /> Practice Tests
         </h2>
         <p className="text-paper-2 mt-1">
           Бүрэн дөрвөн ур чадварын дасгал шалгалт — Reading, Listening, Writing, Speaking.
@@ -36,7 +36,7 @@ export default function IeltsTestsTab() {
             className="group text-left rounded-2xl bg-ink-raise hover:bg-ink-2 p-5 transition-colors"
           >
             <div className="flex items-center gap-2 mb-2">
-              <span className="rounded-full bg-primary-container text-on-primary-container px-2.5 py-0.5 text-xs font-bold">
+              <span className="rounded-full bg-ink-2 text-paper px-2.5 py-0.5 text-xs font-bold">
                 {t.module}
               </span>
               <span className="text-xs text-paper-2">{t.source}</span>
@@ -56,7 +56,7 @@ export default function IeltsTestsTab() {
                 <Mic className="w-4 h-4" /> {t.speaking.length} parts
               </span>
             </div>
-            <span className="mt-4 inline-flex items-center gap-1 text-primary font-semibold">
+            <span className="mt-4 inline-flex items-center gap-1 text-paper font-semibold">
               Шалгалт эхлүүлэх
               <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
             </span>
