@@ -425,6 +425,11 @@ export default function HeroPage({ onLogin, onSignup, onGuest }: HeroPageProps) 
           className="mx-auto flex max-w-[1280px] flex-col items-center justify-between gap-4 px-5 py-8 text-[#8e9192] md:flex-row md:px-16"
         >
           <span className="text-xl text-white" style={serif}>Vivid&nbsp;Lingua<sup className="ml-0.5 text-[10px] align-super">®</sup></span>
+          <div className="flex items-center gap-6 text-[11px] font-medium uppercase tracking-[0.18em]">
+            <a href="/terms" className="transition-colors hover:text-white">Terms</a>
+            <a href="/privacy" className="transition-colors hover:text-white">Privacy</a>
+            <a href="/contact" className="transition-colors hover:text-white">Contact</a>
+          </div>
           <span className="text-xs tracking-wide">© {new Date().getFullYear()} Vivid Lingua · Khansumber Altankhuyag</span>
         </motion.div>
       </footer>

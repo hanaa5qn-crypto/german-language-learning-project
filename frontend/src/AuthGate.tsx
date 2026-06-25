@@ -6,6 +6,9 @@ import LanguageGate from './LanguageGate';
 import LoginScreen from './LoginScreen';
 import HeroPage from './HeroPage';
 import AdminDashboard from './AdminDashboard';
+import TermsPage from './pages/TermsPage';
+import PrivacyPage from './pages/PrivacyPage';
+import ContactPage from './pages/ContactPage';
 
 // Login comes first — before the user picks a language. Once they're signed in
 // (or chose to continue as a guest), we hand off to LanguageGate, which renders
@@ -33,9 +36,10 @@ function BrandLoader() {
   );
 }
 
-// /admin (+ /admin/english, /admin/german) must reach the dashboard for anyone —
-// it has its own Firebase admin login. Check the path before the auth flow so
-// the route isn't swallowed by the signed-out hero / login screen.
+// Static routes (admin dashboard, legal pages, contact) must resolve for anyone,
+// including signed-out visitors — the hero footer links straight to them. Check
+// the path before the auth flow so these aren't swallowed by the hero / login
+// screen. The admin dashboard carries its own Firebase admin login.
 export default function AuthGate() {
   const path = window.location.pathname;
   if (path.startsWith('/admin')) {
@@ -44,6 +48,9 @@ export default function AuthGate() {
       : undefined;
     return <AdminDashboard track={track} />;
   }
+  if (path.startsWith('/terms')) return <TermsPage />;
+  if (path.startsWith('/privacy')) return <PrivacyPage />;
+  if (path.startsWith('/contact')) return <ContactPage />;
   return <AuthFlow />;
 }
 
