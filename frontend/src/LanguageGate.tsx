@@ -10,35 +10,69 @@ function isTrack(value: string | null): value is Track {
   return value === 'de' || value === 'en';
 }
 
-// First-screen chooser shown before any track is selected (or after a reset).
+// One selectable language card.
+function TrackCard({
+  flag, title, native, blurb, onPick, delay,
+}: {
+  flag: string; title: string; native: string; blurb: string;
+  onPick: () => void; delay: string;
+}) {
+  return (
+    <button
+      onClick={onPick}
+      style={{ animationDelay: delay }}
+      className="animate-scale-up group flex flex-col items-start gap-4 rounded-3xl bg-ink-raise/60 border border-ink-line p-7 text-left transition-all duration-300 hover:-translate-y-1 hover:border-paper/60 hover:bg-ink-raise focus:outline-none focus-visible:border-paper/80"
+    >
+      <span className="text-5xl transition-transform duration-300 group-hover:scale-110" aria-hidden="true">{flag}</span>
+      <span className="flex flex-col gap-1">
+        <span className="text-2xl font-serif font-light tracking-tight text-paper">{title}</span>
+        <span className="text-[0.7rem] uppercase tracking-[0.2em] font-medium text-paper-3">{native}</span>
+      </span>
+      <span className="text-sm leading-relaxed text-paper-2">{blurb}</span>
+      <span className="mt-1 inline-flex items-center gap-1.5 text-xs uppercase tracking-[0.18em] font-medium text-paper-3 transition-colors group-hover:text-paper">
+        Эхлэх · Start
+        <span aria-hidden="true" className="transition-transform duration-300 group-hover:translate-x-1">→</span>
+      </span>
+    </button>
+  );
+}
+
+// First-screen chooser shown right after login (or after a reset). Asks the user
+// what they want to learn before either track boots.
 function Chooser({ onPick }: { onPick: (track: Track) => void }) {
   return (
-    <div className="min-h-screen bg-ink text-paper font-sans flex flex-col items-center justify-center px-4">
-      <div className="w-full max-w-xl text-center">
-        <h1 className="font-serif font-light tracking-tight text-4xl sm:text-5xl mb-3">
-          <span className="text-paper">Choose your language</span>
-        </h1>
-        <p className="text-paper-3 text-xs uppercase tracking-[0.18em] font-medium mb-10">Хэл сонгох</p>
+    <div className="min-h-screen bg-ink text-paper font-sans flex flex-col items-center justify-center px-4 py-12">
+      <div className="animate-fade-in w-full max-w-2xl">
+        <div className="text-center mb-12">
+          <p className="text-[0.7rem] uppercase tracking-[0.28em] font-medium text-paper-3 mb-6">Vivid Lingua</p>
+          <h1 className="font-serif font-light tracking-tight text-4xl sm:text-5xl text-paper mb-4">
+            What do you want to learn?
+          </h1>
+          <p className="text-paper-2 text-base">Юу сурахыг хүсэж байна вэ?</p>
+        </div>
 
         <div className="grid sm:grid-cols-2 gap-4">
-          <button
-            onClick={() => onPick('de')}
-            className="flex flex-col items-center gap-2 rounded-3xl bg-transparent border border-ink-line hover:border-paper/60 hover:bg-ink-raise p-8 transition-colors"
-          >
-            <span className="text-5xl" aria-hidden="true">🇩🇪</span>
-            <span className="text-xl font-serif font-light tracking-tight text-paper">Germany — Learn German</span>
-            <span className="text-xs uppercase tracking-[0.18em] font-medium text-paper-2">Deutsch</span>
-          </button>
-
-          <button
-            onClick={() => onPick('en')}
-            className="flex flex-col items-center gap-2 rounded-3xl bg-transparent border border-ink-line hover:border-paper/60 hover:bg-ink-raise p-8 transition-colors"
-          >
-            <span className="text-5xl" aria-hidden="true">🇬🇧</span>
-            <span className="text-xl font-serif font-light tracking-tight text-paper">English — Learn English</span>
-            <span className="text-xs uppercase tracking-[0.18em] font-medium text-paper-2">English</span>
-          </button>
+          <TrackCard
+            flag="🇩🇪"
+            title="German"
+            native="Deutsch"
+            blurb="Live, work or study in Germany. Lessons, listening and grammar from A1 to C1."
+            onPick={() => onPick('de')}
+            delay="80ms"
+          />
+          <TrackCard
+            flag="🇬🇧"
+            title="English"
+            native="English"
+            blurb="Ace IELTS & the SAT. Vocabulary, practice exams and AI feedback in Mongolian."
+            onPick={() => onPick('en')}
+            delay="160ms"
+          />
         </div>
+
+        <p className="mt-10 text-center text-xs text-paper-3">
+          You can switch anytime · Дараа нь сольж болно
+        </p>
       </div>
     </div>
   );

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { onAuthStateChanged } from 'firebase/auth';
 import { Loader2 } from 'lucide-react';
 import { getAuthInstance, isFirebaseConfigured } from './firebase';
@@ -15,6 +15,11 @@ import HeroPage from './HeroPage';
 // choice in localStorage. The German track reads this same key to auto-enter its
 // built-in guest mode instead of bouncing back to its own landing page.
 const GUEST_KEY = 'vivid-lingua-guest';
+// LanguageGate persists the chosen track here so a plain reload resumes it. We
+// clear it on a fresh, interactive login so signing in always lands the user on
+// the "What do you want to learn?" chooser instead of silently reopening the
+// last track (which made every login jump straight into German).
+const TRACK_KEY = 'vivid-lingua-track';
 
 function BrandLoader() {
   return (
@@ -38,6 +43,10 @@ export default function AuthGate() {
   // Signed-out visitors see the hero first; the CTAs open the auth screen.
   const [view, setView] = useState<'hero' | 'login'>('hero');
   const [loginMode, setLoginMode] = useState<'login' | 'signup'>('login');
+  // True once the visitor actively opens the auth screen (or picks guest). It
+  // lets us tell a deliberate login from a silent session-restore on reload, so
+  // we only reset the saved track for the former.
+  const interactiveEntry = useRef(false);
 
   useEffect(() => {
     if (!isFirebaseConfigured) { setReady(true); return; }
@@ -47,14 +56,29 @@ export default function AuthGate() {
         // A real session always wins over a lingering guest flag.
         try { localStorage.removeItem(GUEST_KEY); } catch { /* ignore */ }
         setGuest(false);
+        // Fresh, interactive sign-in → forget the last track so the chooser shows.
+        if (interactiveEntry.current) {
+          try { localStorage.removeItem(TRACK_KEY); } catch { /* ignore */ }
+          interactiveEntry.current = false;
+        }
       }
       setReady(true);
     });
     return unsub;
   }, []);
 
+  function openLogin(mode: 'login' | 'signup') {
+    interactiveEntry.current = true;
+    setLoginMode(mode);
+    setView('login');
+  }
+
   function continueAsGuest() {
-    try { localStorage.setItem(GUEST_KEY, '1'); } catch { /* ignore */ }
+    // Entering as a guest is also a fresh start → land on the chooser.
+    try {
+      localStorage.setItem(GUEST_KEY, '1');
+      localStorage.removeItem(TRACK_KEY);
+    } catch { /* ignore */ }
     setGuest(true);
   }
 
@@ -78,8 +102,8 @@ export default function AuthGate() {
 
   return (
     <HeroPage
-      onLogin={() => { setLoginMode('login'); setView('login'); }}
-      onSignup={() => { setLoginMode('signup'); setView('login'); }}
+      onLogin={() => openLogin('login')}
+      onSignup={() => openLogin('signup')}
       onGuest={continueAsGuest}
     />
   );
