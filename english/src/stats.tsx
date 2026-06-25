@@ -233,17 +233,20 @@ export function EnglishStatsProvider({
 
   return (
     <StatsContext.Provider value={value}>
-      {settingsOpen && profile ? (
-        <AccountScreen
-          mode="settings"
-          profile={profile}
-          onSaved={applyProfile}
-          onLogout={logout}
-          onSwitchLanguage={onSwitchLanguage}
-          onClose={() => setSettingsOpen(false)}
-        />
-      ) : (
-        children
+      {children}
+      {/* Settings is a true overlay ON TOP of the track, so opening it mid-lesson
+          keeps the underlying tab + in-progress lesson state intact. */}
+      {settingsOpen && profile && (
+        <div className="fixed inset-0 z-[200] bg-ink overflow-y-auto">
+          <AccountScreen
+            mode="settings"
+            profile={profile}
+            onSaved={applyProfile}
+            onLogout={logout}
+            onSwitchLanguage={onSwitchLanguage}
+            onClose={() => setSettingsOpen(false)}
+          />
+        </div>
       )}
     </StatsContext.Provider>
   );
