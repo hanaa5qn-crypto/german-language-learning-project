@@ -17,7 +17,13 @@ import IeltsWritingTab from './tabs/IeltsWritingTab';
 import IeltsSpeakingTab from './tabs/IeltsSpeakingTab';
 import IeltsVocabTab from './tabs/IeltsVocabTab';
 import IeltsTestsTab from './tabs/IeltsTestsTab';
-import DashboardTab from '../DashboardTab';
+import DashboardTab, { type DashDest } from '../DashboardTab';
+
+// Map the dashboard's generic skill destinations to IELTS tab keys.
+const DASH_TO_IELTS: Record<DashDest, IeltsTabKey> = {
+  read: 'reading', listen: 'listening', write: 'writing', speak: 'speaking',
+  vocab: 'vocab', tests: 'tests',
+};
 
 const TABS: ShellTab[] = [
   { key: 'dashboard', label: 'Dashboard', short: 'Самбар', icon: LayoutDashboard },
@@ -41,7 +47,7 @@ export default function IeltsApp({
 
   function renderTab() {
     switch (tab) {
-      case 'dashboard': return <DashboardTab />;
+      case 'dashboard': return <DashboardTab onNavigate={(d) => setTab(DASH_TO_IELTS[d])} />;
       case 'home': return <IeltsHomeTab onGo={setTab} />;
       case 'reading': return <IeltsReadingTab />;
       case 'listening': return <IeltsListeningTab />;

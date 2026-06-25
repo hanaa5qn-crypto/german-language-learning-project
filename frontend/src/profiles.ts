@@ -20,6 +20,25 @@ export interface UserProfile {
   // English never touches the German streak and vice versa.
   studyDaysEn?: string[];
   studySecondsByDateEn?: Record<string, number>;
+  // English-track learning state (kept separate from the German fields above so
+  // the two tracks never interfere). Drive the English dashboard's Today's
+  // Session, mistake log, progress and learning path.
+  completedActivityIdsEn?: string[];
+  mistakeIdsEn?: string[];
+  // English CEFR target level (A1..C2). Set by the English placement test on
+  // first English signup, or chosen by the learner on the English dashboard.
+  targetLevelEn?: string;
+  // New English learners take the placement test on first entry; cleared once
+  // it is finished or the learner picks a level manually.
+  placementPendingEn?: boolean;
+  // English placement outcome (CEFR level + per-skill scores).
+  placementEn?: {
+    takenAt: string;
+    level: string;
+    totalCorrect: number;
+    totalQuestions: number;
+    skillScores: Record<string, { correct: number; total: number }>;
+  };
   createdAt?: string;
   lastActiveAt?: string;
   // Spaced repetition state per vocabulary word (SM-2 style)

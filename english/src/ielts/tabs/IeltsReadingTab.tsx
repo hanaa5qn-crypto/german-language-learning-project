@@ -11,9 +11,10 @@ import { READING_LIBRARY } from '../../content';
 import { ReadingItem, EnglishLevel } from '../../types';
 import { McqBlock, LevelFilter, ScoreBanner, IELTS_LEVELS } from './quizKit';
 import { useEnglishStats } from '../../stats';
+import { enActivityKey } from '../../englishLearning';
 
 export default function IeltsReadingTab() {
-  const { recordStudy } = useEnglishStats();
+  const { recordStudy, recordEnglishActivity } = useEnglishStats();
   const [level, setLevel] = useState<EnglishLevel | 'all'>('B2');
   const [active, setActive] = useState<ReadingItem | null>(null);
   const [answers, setAnswers] = useState<Record<number, number>>({});
@@ -92,7 +93,15 @@ export default function IeltsReadingTab() {
           </div>
         ) : (
           <button
-            onClick={() => { setSubmitted(true); recordStudy(); }}
+            onClick={() => {
+              setSubmitted(true);
+              recordStudy();
+              // Feed the dashboard: completed + (mistake if < 60% correct).
+              if (active) {
+                const pass = active.questions.length > 0 && correctCount / active.questions.length >= 0.6;
+                recordEnglishActivity(enActivityKey('read', active.id), pass);
+              }
+            }}
             disabled={!allAnswered}
             className="rounded-full bg-paper text-ink px-6 py-3 font-bold disabled:opacity-40"
           >

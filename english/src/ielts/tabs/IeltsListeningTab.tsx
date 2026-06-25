@@ -14,11 +14,12 @@ import { speak, stopSpeaking } from '../../audio';
 import { ListeningItem, EnglishLevel } from '../../types';
 import { McqBlock, LevelFilter, ScoreBanner, IELTS_LEVELS } from './quizKit';
 import { useEnglishStats } from '../../stats';
+import { enActivityKey } from '../../englishLearning';
 
 const IELTS_VOICE = 'en-GB-SoniaNeural';
 
 export default function IeltsListeningTab() {
-  const { recordStudy } = useEnglishStats();
+  const { recordStudy, recordEnglishActivity } = useEnglishStats();
   const [level, setLevel] = useState<EnglishLevel | 'all'>('B2');
   const [active, setActive] = useState<ListeningItem | null>(null);
   const [answers, setAnswers] = useState<Record<number, number>>({});
@@ -135,7 +136,14 @@ export default function IeltsListeningTab() {
           </div>
         ) : (
           <button
-            onClick={() => { setSubmitted(true); recordStudy(); }}
+            onClick={() => {
+              setSubmitted(true);
+              recordStudy();
+              if (active) {
+                const pass = active.questions.length > 0 && correctCount / active.questions.length >= 0.6;
+                recordEnglishActivity(enActivityKey('listen', active.id), pass);
+              }
+            }}
             disabled={!allAnswered}
             className="rounded-full bg-paper text-ink px-6 py-3 font-bold disabled:opacity-40"
           >

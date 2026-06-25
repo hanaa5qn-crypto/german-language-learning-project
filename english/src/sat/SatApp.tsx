@@ -15,10 +15,16 @@ import SatReadingWritingTab from './tabs/SatReadingWritingTab';
 import SatMathTab from './tabs/SatMathTab';
 import SatVocabTab from './tabs/SatVocabTab';
 import SatTestsTab from './tabs/SatTestsTab';
-import DashboardTab from '../DashboardTab';
+import DashboardTab, { type DashDest } from '../DashboardTab';
 
 // Tab keys the shell and home cards share (mirrors IELTS's IeltsTabKey).
 export type SatTabKey = 'dashboard' | 'home' | 'rw' | 'math' | 'vocab' | 'tests';
+
+// The English study library's skills don't all have a SAT tab; map reading/
+// writing to Reading & Writing, vocab/tests directly, and the rest to Home.
+const DASH_TO_SAT: Record<DashDest, SatTabKey> = {
+  read: 'rw', write: 'rw', listen: 'home', speak: 'home', vocab: 'vocab', tests: 'tests',
+};
 
 const TABS: ShellTab[] = [
   { key: 'dashboard', label: 'Dashboard', short: 'Самбар', icon: LayoutDashboard },
@@ -40,7 +46,7 @@ export default function SatApp({
 
   function renderTab() {
     switch (tab) {
-      case 'dashboard': return <DashboardTab />;
+      case 'dashboard': return <DashboardTab onNavigate={(d) => setTab(DASH_TO_SAT[d])} />;
       case 'home': return <SatHomeTab onGo={setTab} />;
       case 'rw': return <SatReadingWritingTab />;
       case 'math': return <SatMathTab />;

@@ -19,6 +19,9 @@ import { subscribeToAuthedProfile, saveProfileProgress, logOutUser } from '../..
 import { calculateStreakWithGrace, localDateKey } from '../../frontend/src/learning';
 import type { UserProfile } from '../../frontend/src/profiles';
 import AccountScreen from '../../frontend/src/AccountScreen';
+import {
+  addEnglishMistake, clearEnglishMistake, type EnglishPlacementResult,
+} from './englishLearning';
 
 // Mirrors the German app's tracker tuning (App.tsx).
 const ACTIVE_IDLE_LIMIT_MS = 2 * 60 * 1000; // stop counting after 2 min idle
@@ -36,6 +39,18 @@ export interface EnglishStats {
   enabled: boolean;
   /** Mark today as studied after an English activity (adds today to studyDaysEn). */
   recordStudy: () => void;
+  /**
+   * Record a completed English library activity for the dashboard's Today's
+   * Session / progress / mistake log. A wrong answer is added to the mistake
+   * log; a right answer clears it. Also marks today as studied.
+   */
+  recordEnglishActivity: (activityId: string, correct: boolean) => void;
+  /** Set the English CEFR target level (clears the pending-placement flag). */
+  setEnglishLevel: (level: string) => void;
+  /** Persist an English placement-test result (level + per-skill scores). */
+  saveEnglishPlacement: (result: EnglishPlacementResult) => void;
+  /** Dismiss the first-run placement without taking it (won't auto-open again). */
+  skipEnglishPlacement: () => void;
   /** Push a profile edit (from the settings screen) into the provider's state. */
   applyProfile: (next: UserProfile) => void;
   /** Open the shared account/settings overlay (from the dashboard). */
@@ -50,6 +65,10 @@ const StatsContext = createContext<EnglishStats>({
   loading: true,
   enabled: false,
   recordStudy: () => {},
+  recordEnglishActivity: () => {},
+  setEnglishLevel: () => {},
+  saveEnglishPlacement: () => {},
+  skipEnglishPlacement: () => {},
   applyProfile: () => {},
   openSettings: () => {},
   logout: () => {},
@@ -119,6 +138,61 @@ export function EnglishStatsProvider({
       console.warn('Could not save English study day to Firestore:', err);
     });
   }, []);
+
+  // Merge a patch into the live profile and persist it. Used by the English
+  // learning actions below (activity completion, level choice, placement).
+  const patchProfile = useCallback((patch: Partial<UserProfile>) => {
+    const p = profileRef.current;
+    if (!canTrack(p)) return;
+    const next: UserProfile = { ...p, ...patch, lastActiveAt: new Date().toISOString() };
+    profileRef.current = next;
+    setProfile(next);
+    saveProfileProgress(next).catch((err) => {
+      console.warn('Could not save English learning state to Firestore:', err);
+    });
+  }, []);
+
+  // Record a completed English library activity: add it to the completion log
+  // (drives progress + Today's Session), and update the mistake log — a wrong
+  // answer is queued for review, a right answer clears any prior mistake. Also
+  // marks today as studied so the streak advances.
+  const recordEnglishActivity = useCallback((activityId: string, correct: boolean) => {
+    const p = profileRef.current;
+    if (!canTrack(p)) return;
+    const completedActivityIdsEn = Array.from(
+      new Set([...(p.completedActivityIdsEn ?? []), activityId]),
+    );
+    const mistakeIdsEn = correct
+      ? clearEnglishMistake(p.mistakeIdsEn ?? [], activityId)
+      : addEnglishMistake(p.mistakeIdsEn ?? [], activityId);
+    const today = localDateKey();
+    const studyDaysEn = (p.studyDaysEn ?? []).includes(today)
+      ? p.studyDaysEn
+      : Array.from(new Set([...(p.studyDaysEn ?? []), today])).sort();
+    patchProfile({ completedActivityIdsEn, mistakeIdsEn, studyDaysEn });
+  }, [patchProfile]);
+
+  const setEnglishLevel = useCallback((level: string) => {
+    patchProfile({ targetLevelEn: level, placementPendingEn: false });
+  }, [patchProfile]);
+
+  const saveEnglishPlacement = useCallback((result: EnglishPlacementResult) => {
+    patchProfile({
+      targetLevelEn: result.level,
+      placementPendingEn: false,
+      placementEn: {
+        takenAt: result.takenAt,
+        level: result.level,
+        totalCorrect: result.totalCorrect,
+        totalQuestions: result.totalQuestions,
+        skillScores: result.skillScores,
+      },
+    });
+  }, [patchProfile]);
+
+  const skipEnglishPlacement = useCallback(() => {
+    patchProfile({ placementPendingEn: false });
+  }, [patchProfile]);
 
   // Accumulate real time-on-task into the ENGLISH seconds map
   // (studySecondsByDateEn), which drives the English weekly leaderboard. Time
@@ -226,6 +300,10 @@ export function EnglishStatsProvider({
     loading,
     enabled: canTrack(profile),
     recordStudy,
+    recordEnglishActivity,
+    setEnglishLevel,
+    saveEnglishPlacement,
+    skipEnglishPlacement,
     applyProfile,
     openSettings,
     logout,
