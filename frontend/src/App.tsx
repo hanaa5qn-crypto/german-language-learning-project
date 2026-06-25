@@ -440,7 +440,18 @@ function LearnerApp() {
         setStudySecondsByDate(normalizedProfile.studySecondsByDate ?? {});
         setActiveTab('profile');
       } else {
-        setCurrentUser(null);
+        // No Firebase session. If the visitor chose "try without account" at the
+        // language gate (AuthGate), enter guest mode here instead of bouncing
+        // them to this track's own landing page.
+        let wantGuest = false;
+        try { wantGuest = localStorage.getItem('vivid-lingua-guest') === '1'; } catch { /* ignore */ }
+        if (wantGuest) {
+          const guest = createGuestProfile();
+          currentUserRef.current = guest;
+          setCurrentUser(guest);
+        } else {
+          setCurrentUser(null);
+        }
         setCompletedActivityIds([]);
         setStudyDays([]);
         setStudySecondsByDate({});
@@ -1519,12 +1530,13 @@ function LearnerApp() {
     // The auth listener clears currentUser once Firebase signs out; we reset the
     // tab immediately so the UI feels responsive.
     setActiveTab('read');
-    // Guests have no Firebase session — the listener won't fire, so clear the
-    // in-memory profile directly and return to the landing page.
+    // Guests have no Firebase session — the listener won't fire. Clear the guest
+    // flag and reload so the top-level AuthGate returns to the login screen
+    // (where they can sign in, sign up, or guest into a language again).
     if (currentUserRef.current?.isGuest) {
       currentUserRef.current = null;
-      setCurrentUser(null);
-      setShowAuth(false);
+      try { localStorage.removeItem('vivid-lingua-guest'); } catch { /* ignore */ }
+      window.location.reload();
       return;
     }
     logOutUser().catch((err) => console.warn('Sign out failed:', err));

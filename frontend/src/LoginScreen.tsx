@@ -58,6 +58,9 @@ interface LoginScreenProps {
   inviteContext?: InviteContext;
   /** Optional: return to the marketing landing page. */
   onBack?: () => void;
+  /** Optional: continue without an account (guest mode). When provided, a
+   *  "Try without account" button is shown below the form. */
+  onGuest?: () => void;
 }
 
 /**
@@ -65,7 +68,7 @@ interface LoginScreenProps {
  * On success, App's auth listener picks up the new session and swaps this
  * screen out — so there's no success callback to wire up here.
  */
-export default function LoginScreen({ inviteContext, onBack }: LoginScreenProps = {}) {
+export default function LoginScreen({ inviteContext, onBack, onGuest }: LoginScreenProps = {}) {
   // Урилгаар ирсэн зочин ихэвчлэн шинэ хэрэглэгч тул бүртгүүлэх горимоор эхэлнэ.
   const [mode, setMode] = useState<Mode>(inviteContext ? 'signup' : 'login');
   const [email, setEmail] = useState('');
@@ -395,6 +398,23 @@ export default function LoginScreen({ inviteContext, onBack }: LoginScreenProps 
                   {isSignup ? 'Нэвтрэх' : 'Бүртгүүлэх'}
                 </button>
               </p>
+
+              {onGuest && (
+                <div className="pt-3">
+                  <div className="flex items-center gap-3 pb-3">
+                    <span className="h-px flex-1 bg-slate-600/40" />
+                    <span className="text-[11px] uppercase tracking-wider text-slate-500">эсвэл</span>
+                    <span className="h-px flex-1 bg-slate-600/40" />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={onGuest}
+                    className="w-full bg-transparent hover:bg-surface-container text-on-surface-variant hover:text-on-surface font-semibold py-3 px-6 rounded-xl border border-surface-variant transition-colors cursor-pointer"
+                  >
+                    Бүртгэлгүй туршиж үзэх · Try without account
+                  </button>
+                </div>
+              )}
             </form>
           </div>
         </div>
