@@ -5,7 +5,7 @@ import {
   getFirebaseAdmin,
   verifyFirebaseBearer,
 } from '../lib/firebaseAdmin';
-import { decideDuelWinner, normalizeCode, randomCode, stackedTrialEndMs, weekMinutes } from '../lib/socialLogic';
+import { decideDuelWinner, normalizeCode, randomCode, weekMinutes } from '../lib/socialLogic';
 
 // =============================================================================
 // Нийгмийн өсөлтийн API — урилга (referral), тулаан (duel), найзуудын
@@ -24,7 +24,6 @@ import { decideDuelWinner, normalizeCode, randomCode, stackedTrialEndMs, weekMin
 const DUEL_QUESTION_COUNT = 10;
 const VALID_LEVELS = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
 const REFERRAL_REDEEM_WINDOW_DAYS = 7;
-const REFERRAL_TRIAL_DAYS = 3;
 
 interface DuelSlot {
   uid: string;
@@ -404,18 +403,12 @@ export function registerSocialRoute(app: Express) {
           return { redeemed: false as const, tooOld: true };
         }
 
-        // Урилгын гол шагнал нь УРЬСАН хүнд олгогдоно: шинэ хэрэглэгч бүртгүүлэхэд
-        // аль хэдийн 3 өдрийн Pro авдаг тул урьсан хүнд 3 өдрийн Pro өгч урамшуулна.
-        // Олон хүн урьвал хоног нэмэгдэж стек болно (одоогийн дуусах хугацаанаас
-        // сунгана). Бодит төлбөртэй захиалгыг бууруулахгүй — зөвхөн хугацааг нь
-        // сунгана. Хоёр тал streak freeze авна.
-        const inviterBilling = (inviter.billing ?? {}) as { status?: string; currentPeriodEnd?: string };
-        const inviterStatus = (inviterBilling.status ?? '').toLowerCase();
-        const inviterPaid = inviterStatus === 'active' || inviterStatus === 'paid';
-        const inviterRewardEnd = new Date(
-          stackedTrialEndMs(inviterBilling.currentPeriodEnd, REFERRAL_TRIAL_DAYS),
-        ).toISOString();
-
+        // Урилгын шагнал нь эдийн засгийн БУС урамшуулал (streak freeze + найз
+        // холболт). Өмнө нь урьсан хүнд Pro эрх (billing.plan='pro') олгодог байсан
+        // нь аюулгүй байдлын ноцтой цоорхой байв: халдагч өөрийн кодоо олон хуурамч
+        // (sock-puppet) дансаар ашиглуулснаар хязгааргүй үнэгүй Pro цуглуулж болдог
+        // байсан (давхар стек хийгддэг тул). Тиймээс referral-аар билинг/эрх ОЛГОХГҮЙ.
+        // Хоёр тал streak freeze авч, найзууд болно.
         tx.set(meRef, {
           referredBy: inviterUid,
           streakFreezeCount: FieldValue.increment(1),
@@ -423,14 +416,9 @@ export function registerSocialRoute(app: Express) {
         tx.set(inviterRef, {
           invitesCount: FieldValue.increment(1),
           streakFreezeCount: FieldValue.increment(1),
-          // Төлбөртэй захиалгатай бол зөвхөн хугацааг сунгана; үгүй бол Pro
-          // туршилт олгож/сунгана.
-          billing: inviterPaid
-            ? { currentPeriodEnd: inviterRewardEnd }
-            : { plan: 'pro', status: 'trialing', interval: 'month', provider: 'referral', currentPeriodEnd: inviterRewardEnd },
         }, { merge: true });
         crossAddFriends(tx, admin.db, uid, inviterUid);
-        return { redeemed: true as const, inviterProTrialDays: REFERRAL_TRIAL_DAYS };
+        return { redeemed: true as const };
       });
 
       if (!outcome.redeemed && outcome.tooOld) {
@@ -439,10 +427,7 @@ export function registerSocialRoute(app: Express) {
       if (!outcome.redeemed && outcome.hasPromo) {
         return res.status(409).json({ error: 'Та аль хэдийн багшийн promo код ашигласан байна. Давхар хэрэглэх боломжгүй.' });
       }
-      return res.json({
-        redeemed: outcome.redeemed,
-        ...(outcome.redeemed && outcome.inviterProTrialDays ? { inviterProTrialDays: outcome.inviterProTrialDays } : {}),
-      });
+      return res.json({ redeemed: outcome.redeemed });
     } catch (err) {
       console.error('Referral redeem failed:', err);
       return res.status(502).json({ error: 'Урилгыг бүртгэж чадсангүй.' });

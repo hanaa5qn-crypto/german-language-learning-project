@@ -4,14 +4,16 @@
 // Powered by Gemini. The audience is Mongolian learners, so every learner-facing
 // text field (feedbackMessage, explanation, strengths, improvements) is returned
 // in MONGOLIAN, while `improved` is an English model rewrite. Matches the client
-// contract in english/src/api.ts (AiReview). This English app is UNGATED — no
-// checkAiAccess/plan gating here. When AI is unavailable we still return HTTP 200
-// with a graceful fallback so the UI keeps working.
+// contract in english/src/api.ts (AiReview). Like the German AI routes, these
+// endpoints are gated by checkAiAccess (verified Firebase user + metered monthly
+// quota) so the paid Gemini model can't be driven by anonymous callers. When AI
+// is unavailable we still return HTTP 200 with a graceful fallback.
 // =============================================================================
 import { Type } from '@google/genai';
 import type { Express } from 'express';
 import { aiClientWithinBudget, audioTooLarge, clampText, clientIp, consumeBudget, rateLimited } from '../lib/aiGuard';
 import { generateContentWithRetry, isGeminiConfigured, getModel } from '../lib/ai';
+import { checkAiAccess } from '../lib/plans';
 
 type ExamKind = 'ielts' | 'sat';
 
@@ -215,6 +217,13 @@ export function registerEnglishReviewRoute(app: Express) {
       return res.status(429).json({ error: 'Хэт олон хүсэлт. Хэсэг хүлээгээд дахин оролдоно уу.' });
     }
 
+    // Require a verified Firebase user and meter monthly quota — same gate as the
+    // German AI routes — so the paid model isn't reachable by anonymous callers.
+    const access = await checkAiAccess(req);
+    if (!access.allowed) {
+      return res.status(access.status).json({ error: access.error, code: access.code });
+    }
+
     const exam = parseExam(req.body?.exam);
     const task = clampText(req.body?.task);
     const prompt = clampText(req.body?.prompt);
@@ -264,6 +273,13 @@ export function registerEnglishReviewRoute(app: Express) {
     if (rateLimited(clientIp(req))) {
       res.setHeader('Retry-After', '60');
       return res.status(429).json({ error: 'Хэт олон хүсэлт. Хэсэг хүлээгээд дахин оролдоно уу.' });
+    }
+
+    // Require a verified Firebase user and meter monthly quota — same gate as the
+    // German AI routes — so the paid model isn't reachable by anonymous callers.
+    const access = await checkAiAccess(req);
+    if (!access.allowed) {
+      return res.status(access.status).json({ error: access.error, code: access.code });
     }
 
     const exam = parseExam(req.body?.exam);

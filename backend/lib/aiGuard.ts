@@ -19,20 +19,12 @@ export const AI_LIMITS = {
 };
 
 export function clientIp(req: Request): string {
-  // Check X-Real-IP first (safely set by Vercel/Render edge proxies)
-  const realIp = req.headers['x-real-ip'];
-  if (realIp && typeof realIp === 'string') {
-    return realIp;
-  }
-
-  // Fall back to X-Forwarded-For if it exists (extract client IP)
-  const forwardedFor = req.headers['x-forwarded-for'];
-  if (forwardedFor && typeof forwardedFor === 'string') {
-    const ips = forwardedFor.split(',');
-    if (ips[0]) return ips[0].trim();
-  }
-
-  // Local/direct connection fallback
+  // Use req.ip, which Express derives from X-Forwarded-For using the configured
+  // `trust proxy` setting (server.ts sets it to 1), so it reflects the real
+  // client as seen by the trusted edge proxy. We must NOT read raw X-Real-IP /
+  // the first X-Forwarded-For entry: a client connecting directly can spoof those
+  // and rotate a fresh "IP" per request, defeating the per-IP rate limit (which
+  // is the primary abuse control on the AI endpoints).
   return (req.ip || req.socket?.remoteAddress || 'unknown').toString();
 }
 
