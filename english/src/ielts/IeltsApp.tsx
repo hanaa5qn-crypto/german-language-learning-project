@@ -18,7 +18,6 @@ import IeltsSpeakingTab from './tabs/IeltsSpeakingTab';
 import IeltsVocabTab from './tabs/IeltsVocabTab';
 import IeltsTestsTab from './tabs/IeltsTestsTab';
 import DashboardTab, { type DashDest } from '../DashboardTab';
-import PracticeGate from '../PracticeGate';
 
 // Map the dashboard's generic skill destinations to IELTS tab keys.
 const DASH_TO_IELTS: Record<DashDest, IeltsTabKey> = {
@@ -50,12 +49,12 @@ export default function IeltsApp({
     switch (tab) {
       case 'dashboard': return <DashboardTab onNavigate={(d) => setTab(DASH_TO_IELTS[d])} />;
       case 'home': return <IeltsHomeTab onGo={setTab} />;
-      case 'reading': return <PracticeGate><IeltsReadingTab /></PracticeGate>;
-      case 'listening': return <PracticeGate><IeltsListeningTab /></PracticeGate>;
-      case 'writing': return <PracticeGate><IeltsWritingTab /></PracticeGate>;
-      case 'speaking': return <PracticeGate><IeltsSpeakingTab /></PracticeGate>;
+      case 'reading': return <IeltsReadingTab />;
+      case 'listening': return <IeltsListeningTab />;
+      case 'writing': return <IeltsWritingTab />;
+      case 'speaking': return <IeltsSpeakingTab />;
       case 'vocab': return <IeltsVocabTab />;
-      case 'tests': return <PracticeGate><IeltsTestsTab /></PracticeGate>;
+      case 'tests': return <IeltsTestsTab />;
       default: return <IeltsHomeTab onGo={setTab} />;
     }
   }

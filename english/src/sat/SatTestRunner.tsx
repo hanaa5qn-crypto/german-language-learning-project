@@ -341,7 +341,7 @@ export default function SatTestRunner({
   test: SatTest;
   onExit: () => void;
 }) {
-  const { recordStudy } = useEnglishStats();
+  const { recordStudy, requirePractice } = useEnglishStats();
   const sections = test.sections;
   const [activeSection, setActiveSection] = useState(0);
   const [current, setCurrent] = useState(0);
@@ -395,6 +395,7 @@ export default function SatTestRunner({
   );
 
   const submitModule = () => {
+    if (!requirePractice()) return; // visitors/free can read the module, not grade it
     setGraded((g) => ({ ...g, [activeSection]: true }));
     setCurrent(0);
     recordStudy();
@@ -519,8 +520,8 @@ export default function SatTestRunner({
         selectedChoice={answers[q.id]}
         gridValue={grids[q.id] ?? ''}
         graded={isGraded}
-        onPickChoice={(i) => setAnswers((a) => ({ ...a, [q.id]: i }))}
-        onGridChange={(v) => setGrids((gv) => ({ ...gv, [q.id]: v }))}
+        onPickChoice={(i) => { if (!requirePractice()) return; setAnswers((a) => ({ ...a, [q.id]: i })); }}
+        onGridChange={(v) => { if (!requirePractice()) return; setGrids((gv) => ({ ...gv, [q.id]: v })); }}
       />
 
       {/* Per-question controls. */}

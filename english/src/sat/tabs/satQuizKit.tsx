@@ -38,7 +38,7 @@ export function gridInCorrect(q: SatQuestion, value: string): boolean {
 // A single self-grading SAT question (passage + MCQ or grid-in) with a worked
 // explanation shown after answering.
 export const SatPracticeCard: React.FC<{ q: SatQuestion; index: number }> = ({ q, index }) => {
-  const { recordStudy } = useEnglishStats();
+  const { recordStudy, requirePractice } = useEnglishStats();
   const gridIn = isGridIn(q);
   const [picked, setPicked] = useState<number | undefined>(undefined);
   const [grid, setGrid] = useState('');
@@ -82,7 +82,7 @@ export const SatPracticeCard: React.FC<{ q: SatQuestion; index: number }> = ({ q
             inputMode="text"
             value={grid}
             disabled={submitted}
-            onChange={(e) => setGrid(e.target.value)}
+            onChange={(e) => { if (!requirePractice()) return; setGrid(e.target.value); }}
             placeholder="e.g. 12 or 3/4 or 0.5"
             className={[
               'w-full sm:w-64 rounded-xl border bg-ink-raise px-4 py-3 text-paper outline-none transition-colors',
@@ -127,7 +127,7 @@ export const SatPracticeCard: React.FC<{ q: SatQuestion; index: number }> = ({ q
                 key={ci}
                 type="button"
                 disabled={submitted}
-                onClick={() => setPicked(ci)}
+                onClick={() => { if (!requirePractice()) return; setPicked(ci); }}
                 className={cls}
               >
                 <span className="mt-0.5 font-bold">{LETTERS[ci]}</span>
@@ -145,7 +145,7 @@ export const SatPracticeCard: React.FC<{ q: SatQuestion; index: number }> = ({ q
           <button
             type="button"
             disabled={!canSubmit}
-            onClick={() => { setSubmitted(true); recordStudy(); }}
+            onClick={() => { if (!requirePractice()) return; setSubmitted(true); recordStudy(); }}
             className="inline-flex items-center gap-2 rounded-full bg-paper text-ink px-5 py-2 text-sm font-semibold disabled:opacity-40"
           >
             <CheckCircle2 className="w-4 h-4" /> Check answer

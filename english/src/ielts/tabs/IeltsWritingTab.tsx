@@ -82,7 +82,7 @@ function countWords(text: string): number {
 }
 
 export default function IeltsWritingTab() {
-  const { recordStudy } = useEnglishStats();
+  const { recordStudy, requirePractice } = useEnglishStats();
   const [selectedId, setSelectedId] = useState<string>(PROMPTS[0].id);
   const [answer, setAnswer] = useState('');
   const [showModel, setShowModel] = useState(false);
@@ -106,6 +106,7 @@ export default function IeltsWritingTab() {
   }
 
   async function getFeedback() {
+    if (!requirePractice()) return; // visitors/free can read the task, not submit
     setLoading(true);
     setError(null);
     setReview(null);

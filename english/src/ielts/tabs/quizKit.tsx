@@ -7,6 +7,7 @@
 import React from 'react';
 import { CheckCircle2, XCircle } from 'lucide-react';
 import { MCQ, EnglishLevel } from '../../types';
+import { useEnglishStats } from '../../stats';
 
 export const IELTS_LEVELS: EnglishLevel[] = ['A2', 'B1', 'B2', 'C1', 'C2'];
 
@@ -24,6 +25,7 @@ export const McqBlock: React.FC<{
   submitted,
   onPick,
 }) => {
+  const { requirePractice } = useEnglishStats();
   return (
     <div className="rounded-2xl bg-ink-raise p-4 sm:p-5">
       <p className="font-semibold mb-3 text-paper">
@@ -49,7 +51,7 @@ export const McqBlock: React.FC<{
               key={ci}
               type="button"
               disabled={submitted}
-              onClick={() => onPick(ci)}
+              onClick={() => { if (!requirePractice()) return; onPick(ci); }}
               className={cls}
             >
               <span className="mt-0.5 font-bold">{String.fromCharCode(65 + ci)}</span>

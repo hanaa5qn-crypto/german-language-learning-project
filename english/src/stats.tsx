@@ -19,9 +19,9 @@ import { subscribeToAuthedProfile, saveProfileProgress, logOutUser } from '../..
 import { calculateStreakWithGrace, localDateKey } from '../../frontend/src/learning';
 import type { UserProfile } from '../../frontend/src/profiles';
 import AccountScreen from '../../frontend/src/AccountScreen';
-import { canInteract } from '../../frontend/src/plans';
+import { canInteract, canAccessAllContent } from '../../frontend/src/plans';
 import { ensureSignupTrial } from '../../frontend/src/promo';
-import { Lock } from 'lucide-react';
+import { Lock, Sparkles } from 'lucide-react';
 import {
   addEnglishMistake, clearEnglishMistake, type EnglishPlacementResult,
 } from './englishLearning';
@@ -68,6 +68,13 @@ export interface EnglishStats {
    * (guests) may browse the free surface but cannot answer, start tests, etc.
    */
   requireAccount: () => boolean;
+  /**
+   * Gate a PRACTICE interaction (answering, grading, taking a test, AI feedback).
+   * Everyone can SEE the questions; only acting on them is gated. Returns true if
+   * the caller may proceed; otherwise opens the right nudge and returns false —
+   * the sign-up prompt for visitors, the upgrade prompt for free accounts.
+   */
+  requirePractice: () => boolean;
 }
 
 const StatsContext = createContext<EnglishStats>({
@@ -85,6 +92,7 @@ const StatsContext = createContext<EnglishStats>({
   logout: () => {},
   canInteract: false,
   requireAccount: () => false,
+  requirePractice: () => false,
 });
 
 // Shared with AuthGate — the localStorage flag that marks a guest session.
@@ -106,6 +114,8 @@ export function EnglishStatsProvider({
   const [settingsOpen, setSettingsOpen] = useState(false);
   // Visitors may browse the free surface but any action opens this sign-up nudge.
   const [guestPromptOpen, setGuestPromptOpen] = useState(false);
+  // Free accounts can SEE practice but must upgrade to interact with it.
+  const [upgradePromptOpen, setUpgradePromptOpen] = useState(false);
   // Grant the 3-day signup trial once per session for a real account (matches the
   // German app). The endpoint is idempotent, so this never double-grants.
   const signupTrialEnsuredRef = useRef(false);
@@ -325,6 +335,22 @@ export function EnglishStatsProvider({
     return true;
   }, []);
 
+  // Gate a PRACTICE interaction (answering, grading, taking a test, AI feedback).
+  // Everyone may SEE the questions; acting on them needs an account + an active
+  // plan. Visitors get the sign-up nudge; free accounts get the upgrade nudge.
+  const requirePractice = useCallback((): boolean => {
+    const p = profileRef.current;
+    if (!canInteract(p)) {
+      setGuestPromptOpen(true);
+      return false;
+    }
+    if (!canAccessAllContent(p)) {
+      setUpgradePromptOpen(true);
+      return false;
+    }
+    return true;
+  }, []);
+
   // Guest taps "Sign up" → drop the guest flag and reload back to the AuthGate
   // hero/login where they can create an account.
   const goSignup = useCallback(() => {
@@ -361,6 +387,7 @@ export function EnglishStatsProvider({
     logout,
     canInteract: canInteract(profile),
     requireAccount,
+    requirePractice,
   };
 
   return (
@@ -395,6 +422,32 @@ export function EnglishStatsProvider({
           </div>
         </div>
       )}
+
+      {/* Free account interaction → upgrade nudge (they can view, not practice). */}
+      {upgradePromptOpen && (
+        <div className="fixed inset-0 z-[210] bg-black/70 backdrop-blur-sm flex items-center justify-center px-4"
+          onClick={() => setUpgradePromptOpen(false)}>
+          <div className="bg-ink-raise border border-ink-line/40 rounded-2xl p-6 max-w-sm w-full space-y-4 text-paper shadow-[0_0_40px_rgba(0,0,0,0.5)]"
+            onClick={(e) => e.stopPropagation()}>
+            <div className="flex flex-col items-center text-center gap-3">
+              <span className="w-14 h-14 rounded-2xl bg-ink-2 border border-ink-line flex items-center justify-center text-paper-2">
+                <Sparkles className="w-7 h-7" />
+              </span>
+              <h3 className="text-lg font-serif font-light">Энэ нь Pro боломж</h3>
+              <p className="text-sm text-paper-2 font-medium">
+                Асуултуудыг үзэх нь үнэгүй. Хариулж, дасгал/шалгалт ажиллуулахын тулд <span className="text-paper font-bold">Самбар (Dashboard)</span> хэсгээс Pro эсвэл Max багц аваарай. (Шинэ бүртгэлд 3 өдрийн бүх эрх нээгдэнэ.)
+              </p>
+            </div>
+            <div className="flex flex-col gap-2">
+              <button onClick={() => setUpgradePromptOpen(false)}
+                className="w-full px-4 py-2.5 rounded-xl bg-paper text-ink text-sm font-bold cursor-pointer hover:bg-white transition-colors">
+                Ойлголоо
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Settings is a true overlay ON TOP of the track, so opening it mid-lesson
           keeps the underlying tab + in-progress lesson state intact. */}
       {settingsOpen && profile && (

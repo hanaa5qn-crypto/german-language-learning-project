@@ -91,7 +91,7 @@ function getRecognitionCtor(): (new () => SpeechRecognitionLike) | null {
 }
 
 export default function IeltsSpeakingTab() {
-  const { recordStudy } = useEnglishStats();
+  const { recordStudy, requirePractice } = useEnglishStats();
   const [selectedId, setSelectedId] = useState<string>(PROMPTS[0].id);
   const [transcript, setTranscript] = useState('');
   const [recording, setRecording] = useState(false);
@@ -161,6 +161,7 @@ export default function IeltsSpeakingTab() {
   }
 
   async function getFeedback() {
+    if (!requirePractice()) return; // visitors/free can read the prompt, not submit
     setLoading(true);
     setError(null);
     setReview(null);

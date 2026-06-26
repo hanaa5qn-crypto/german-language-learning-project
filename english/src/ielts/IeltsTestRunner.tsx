@@ -216,7 +216,7 @@ function BandBanner({
 // Reading paper
 // ===========================================================================
 function ReadingPaper({ passages }: { passages: IeltsReadingPassage[] }) {
-  const { recordStudy } = useEnglishStats();
+  const { recordStudy, requirePractice } = useEnglishStats();
   const [active, setActive] = useState(0);
   const [responses, setResponses] = useState<Record<number, string>>({});
   const [submitted, setSubmitted] = useState(false);
@@ -234,7 +234,10 @@ function ReadingPaper({ passages }: { passages: IeltsReadingPassage[] }) {
     return <p className="text-paper-2">No reading passages in this test.</p>;
   }
 
-  const set = (id: number, v: string) => setResponses((r) => ({ ...r, [id]: v }));
+  const set = (id: number, v: string) => {
+    if (!requirePractice()) return; // visitors/free can read the paper, not answer it
+    setResponses((r) => ({ ...r, [id]: v }));
+  };
 
   return (
     <div className="space-y-5">
@@ -279,7 +282,7 @@ function ReadingPaper({ passages }: { passages: IeltsReadingPassage[] }) {
 
       <PaperActions
         submitted={submitted}
-        onSubmit={() => { setSubmitted(true); recordStudy(); }}
+        onSubmit={() => { if (!requirePractice()) return; setSubmitted(true); recordStudy(); }}
         onReset={() => { setSubmitted(false); setResponses({}); }}
       />
       {submitted && <BandBanner correct={correctCount} total={allQuestions.length} kind="reading" />}
@@ -291,7 +294,7 @@ function ReadingPaper({ passages }: { passages: IeltsReadingPassage[] }) {
 // Listening paper
 // ===========================================================================
 function ListeningPaper({ sections }: { sections: IeltsListeningSection[] }) {
-  const { recordStudy } = useEnglishStats();
+  const { recordStudy, requirePractice } = useEnglishStats();
   const [active, setActive] = useState(0);
   const [responses, setResponses] = useState<Record<number, string>>({});
   const [submitted, setSubmitted] = useState(false);
@@ -310,7 +313,10 @@ function ListeningPaper({ sections }: { sections: IeltsListeningSection[] }) {
     return <p className="text-paper-2">No listening sections in this test.</p>;
   }
 
-  const set = (id: number, v: string) => setResponses((r) => ({ ...r, [id]: v }));
+  const set = (id: number, v: string) => {
+    if (!requirePractice()) return; // visitors/free can read the paper, not answer it
+    setResponses((r) => ({ ...r, [id]: v }));
+  };
 
   const play = () => {
     speak(section.transcript, 0.92);
@@ -390,7 +396,7 @@ function ListeningPaper({ sections }: { sections: IeltsListeningSection[] }) {
 
       <PaperActions
         submitted={submitted}
-        onSubmit={() => { setSubmitted(true); recordStudy(); }}
+        onSubmit={() => { if (!requirePractice()) return; setSubmitted(true); recordStudy(); }}
         onReset={() => { setSubmitted(false); setResponses({}); }}
       />
       {submitted && <BandBanner correct={correctCount} total={allQuestions.length} kind="listening" />}
