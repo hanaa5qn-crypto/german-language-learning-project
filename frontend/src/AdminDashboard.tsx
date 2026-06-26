@@ -2,7 +2,7 @@ import React, { Component, useEffect, useMemo, useState, type ErrorInfo, type Re
 import {
   Activity, AlertCircle, BarChart3, Clock, CreditCard, DollarSign,
   Flame, Gift, GraduationCap, Loader2, LogOut, Plus, RefreshCw, Search, ShieldCheck,
-  Tag, TrendingUp, UserCheck, UserPlus, Users
+  Tag, Trash2, TrendingUp, UserCheck, UserPlus, Users
 } from 'lucide-react';
 import {
   onAuthStateChanged,
@@ -29,6 +29,7 @@ import {
   adminListTeacherCodes,
   adminCreateTeacherCode,
   adminToggleTeacherCode,
+  adminDeleteTeacherCode,
 } from './promo';
 
 const ADMIN_EMAILS = ['hanaa5qn@gmail.com', 'yubndaayubnda@gmail.com'];
@@ -265,6 +266,7 @@ function AdminDashboardInner({ track }: { track?: Track } = {}) {
   const [createError, setCreateError] = useState('');
   const [creating, setCreating] = useState(false);
   const [togglingCode, setTogglingCode] = useState<string | null>(null);
+  const [deletingCode, setDeletingCode] = useState<string | null>(null);
 
   const isAuthedAdmin = isAdminEmail(authUser?.email);
 
@@ -398,6 +400,23 @@ function AdminDashboardInner({ track }: { track?: Track } = {}) {
       setPromoError(err instanceof Error ? err.message : 'Кодын төлөв шинэчилж чадсангүй.');
     } finally {
       setTogglingCode(null);
+    }
+  };
+
+  const handleDeleteCode = async (code: string) => {
+    if (!window.confirm(`"${code}" кодыг бүрмөсөн устгах уу? Устгасны дараа шинээр хэн ч холбож чадахгүй. (Аль хэдийн холбосон сурагчид эхний төлбөрийнхөө хямдралыг хэвээр авна.)`)) {
+      return;
+    }
+    setDeletingCode(code);
+    setPromoError('');
+    try {
+      await adminDeleteTeacherCode(code);
+      setTeacherCodes((prev) => prev.filter((c) => c.code !== code));
+    } catch (err) {
+      console.error('Delete teacher code failed:', err);
+      setPromoError(err instanceof Error ? err.message : 'Кодыг устгаж чадсангүй.');
+    } finally {
+      setDeletingCode(null);
     }
   };
 
@@ -1308,14 +1327,27 @@ function AdminDashboardInner({ track }: { track?: Track } = {}) {
                         )}
                       </td>
                       <td className="px-5 py-4">
-                        <button
-                          onClick={() => handleToggleCode(tc.code, !tc.active)}
-                          disabled={togglingCode === tc.code}
-                          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors disabled:opacity-40 ${tc.active ? 'bg-paper' : 'bg-ink-2 border border-ink-line'}`}
-                          aria-label={tc.active ? 'Идэвхгүй болгох' : 'Идэвхжүүлэх'}
-                        >
-                          <span className={`inline-block h-4 w-4 transform rounded-full transition-transform ${tc.active ? 'bg-ink translate-x-6' : 'bg-paper translate-x-1'}`} />
-                        </button>
+                        <div className="flex items-center gap-3">
+                          <button
+                            onClick={() => handleToggleCode(tc.code, !tc.active)}
+                            disabled={togglingCode === tc.code}
+                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors disabled:opacity-40 ${tc.active ? 'bg-paper' : 'bg-ink-2 border border-ink-line'}`}
+                            aria-label={tc.active ? 'Идэвхгүй болгох' : 'Идэвхжүүлэх'}
+                          >
+                            <span className={`inline-block h-4 w-4 transform rounded-full transition-transform ${tc.active ? 'bg-ink translate-x-6' : 'bg-paper translate-x-1'}`} />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteCode(tc.code)}
+                            disabled={deletingCode === tc.code}
+                            className="text-paper-3 hover:text-red-400 transition-colors disabled:opacity-40 cursor-pointer"
+                            aria-label="Кодыг устгах"
+                            title="Кодыг бүрмөсөн устгах"
+                          >
+                            {deletingCode === tc.code
+                              ? <Loader2 className="w-4 h-4 animate-spin" />
+                              : <Trash2 className="w-4 h-4" />}
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   );

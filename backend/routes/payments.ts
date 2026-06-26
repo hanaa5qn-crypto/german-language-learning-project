@@ -307,6 +307,11 @@ async function checkAndMaybeActivate(invoiceRef: FirebaseFirestore.DocumentRefer
 
 // Loads the buyer's unredeemed teacher promo (null if none or already used on a
 // first payment). Used to discount the checkout and attribute commission.
+//
+// The promo is a snapshot taken at redeem time and is honored even if the admin
+// later deletes/disables the code: students who ALREADY linked it keep their
+// discount. Deleting/disabling only blocks NEW links (redeem checks the live
+// doc), it does not claw back already-granted promos.
 async function loadActivePromo(
   admin: NonNullable<ReturnType<typeof getFirebaseAdmin>>,
   uid: string,

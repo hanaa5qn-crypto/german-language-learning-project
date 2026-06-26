@@ -152,6 +152,26 @@ export function registerPromoRoute(app: Express) {
     return res.json(teacherCodePayload(code, next.data() as Record<string, unknown>));
   });
 
+  // --- Admin: кодыг бүрмөсөн устгах ---------------------------------------------
+  // Устгасны дараа redeem нь 404 өгнө — ШИНЭЭР хэн ч холбож чадахгүй. Аль хэдийн
+  // холбосон сурагчид өөрсдийн promo snapshot-оороо эхний төлбөрийн хямдралаа
+  // хэвээр авна (буцаан хураахгүй).
+  app.delete('/api/admin/teacher-codes/:code', async (req: Request, res: Response) => {
+    const ctx = await requireAdminCtx(req, res);
+    if (!ctx) return;
+    const { admin } = ctx;
+
+    const code = parseTeacherCodeId(req.params.code);
+    if (!code) return res.status(400).json({ error: 'Код буруу байна.' });
+
+    const ref = admin.db.collection('teacherCodes').doc(code);
+    const snap = await ref.get();
+    if (!snap.exists) return res.status(404).json({ error: 'Код олдсонгүй.' });
+
+    await ref.delete();
+    return res.json({ deleted: true, code });
+  });
+
   // --- Сурагч: багшийн кодоо холбох (нэг л удаа, давхцахгүй) --------------------
   app.post('/api/promo/redeem', async (req: Request, res: Response) => {
     const ctx = await requireUserCtx(req, res);
@@ -232,5 +252,47 @@ export function registerPromoRoute(app: Express) {
         firstPaymentDone: Boolean(p.firstPaymentDone),
       },
     });
+  });
+
+  // --- Сурагч: холбосон promo-гоо салгах (өөр код холбохын тулд) ----------------
+  // Зөвхөн ХЭРЭГЛЭЭГҮЙ (firstPaymentDone=false) код салгана — аль хэдийн хямдрал
+  // авсан кодыг буцаахгүй. Салгасны дараа дахин өөр код холбож болно.
+  app.delete('/api/promo/me', async (req: Request, res: Response) => {
+    const ctx = await requireUserCtx(req, res);
+    if (!ctx) return;
+    const { admin, uid } = ctx;
+
+    try {
+      const outcome = await admin.db.runTransaction(async (tx) => {
+        const userRef = admin.db.collection('users').doc(uid);
+        const userSnap = await tx.get(userRef);
+        const me = userSnap.exists ? (userSnap.data() as Record<string, unknown>) : {};
+        if (!me.promo || typeof me.promo !== 'object') {
+          return { ok: false as const, reason: 'none' };
+        }
+        const existing = me.promo as UserPromo;
+        if (existing.firstPaymentDone) {
+          return { ok: false as const, reason: 'used' };
+        }
+        tx.set(userRef, { promo: FieldValue.delete() }, { merge: true });
+        // redeemCount-ийг буцаан тооцно (доош нь 0-ээс хэтрүүлэхгүй).
+        const codeRef = admin.db.collection('teacherCodes').doc(existing.code);
+        const codeSnap = await tx.get(codeRef);
+        if (codeSnap.exists) {
+          const current = Number(codeSnap.data()?.redeemCount ?? 0);
+          tx.set(codeRef, { redeemCount: Math.max(0, current - 1) }, { merge: true });
+        }
+        return { ok: true as const };
+      });
+
+      if (!outcome.ok) {
+        if (outcome.reason === 'none') return res.json({ removed: false, already: true });
+        return res.status(409).json({ error: 'Аль хэдийн ашигласан кодыг салгах боломжгүй.' });
+      }
+      return res.json({ removed: true });
+    } catch (err) {
+      console.error('Promo remove failed:', err);
+      return res.status(502).json({ error: 'Promo кодыг салгаж чадсангүй.' });
+    }
   });
 }

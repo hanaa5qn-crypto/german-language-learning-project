@@ -27,7 +27,7 @@ import TermsPage from './pages/TermsPage';
 import PrivacyPage from './pages/PrivacyPage';
 import ContactPage from './pages/ContactPage';
 import { UserProfile, DEFAULT_PROFILES, createGuestProfile, stripServerOwnedFields, avatarOptions, AVATAR_STYLES, DEFAULT_AVATAR_STYLE } from './profiles';
-import { getMyPromo, redeemPromoCode, ensureSignupTrial, type MyPromo } from './promo';
+import { getMyPromo, redeemPromoCode, removeMyPromo, ensureSignupTrial, type MyPromo } from './promo';
 import LoginScreen from './LoginScreen';
 import LandingPage from './LandingPage';
 import { track, trackVisitOncePerDay } from './analytics';
@@ -1618,6 +1618,23 @@ function LearnerApp() {
     }
   };
 
+  // Холбосон promo-гоо салгаж, өөр код холбох боломж нээнэ.
+  const handleRemoveMyPromo = async () => {
+    setManualPromoLoading(true);
+    setManualPromoError(null);
+    setPaymentMessage(null);
+    try {
+      await removeMyPromo();
+      setMyPromo(null);
+      setManualPromoCode('');
+      setPaymentMessage({ type: 'info', text: 'Код салгагдлаа. Одоо өөр код холбож болно.' });
+    } catch (err: any) {
+      setManualPromoError(err.message || 'Код салгаж чадсангүй.');
+    } finally {
+      setManualPromoLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (!currentUser || isTest) return;
     loadPaymentMethods();
@@ -3015,6 +3032,7 @@ function LearnerApp() {
                   manualPromoError={manualPromoError}
                   manualPromoLoading={manualPromoLoading}
                   handleRedeemManualPromo={handleRedeemManualPromo}
+                  handleRemoveMyPromo={handleRemoveMyPromo}
                   myPromo={myPromo}
                   paymentActionLoading={paymentActionLoading}
                   paymentMessage={paymentMessage}

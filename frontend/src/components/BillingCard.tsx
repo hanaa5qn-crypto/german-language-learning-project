@@ -26,6 +26,7 @@ interface BillingCardProps {
   manualPromoError: string | null;
   manualPromoLoading: boolean;
   handleRedeemManualPromo: (e: React.FormEvent) => void;
+  handleRemoveMyPromo: () => void;
   myPromo: MyPromo | null;
   paymentActionLoading: boolean;
   paymentMessage: { type: 'info' | 'success' | 'error'; text: string } | null;
@@ -52,6 +53,7 @@ export function BillingCard({
   manualPromoError,
   manualPromoLoading,
   handleRedeemManualPromo,
+  handleRemoveMyPromo,
   myPromo,
   paymentActionLoading,
   paymentMessage,
@@ -367,20 +369,38 @@ export function BillingCard({
           <div className="bg-ink-raise border border-ink-line rounded-2xl p-5 space-y-3">
             <p className="text-xs text-paper-3 font-medium uppercase tracking-[0.18em] font-sans">Урамшууллын код / Promo Code</p>
             {myPromo ? (
-              <div className="bg-ink-raise border border-ink-line rounded-xl p-3.5 flex items-center justify-between gap-4">
-                <div>
-                  <p className="text-xs text-paper-2 font-medium">Холбогдсон код: <span className="font-mono font-medium tracking-wide text-paper">{myPromo.code}</span></p>
-                  <p className="text-[11px] text-paper-2 mt-1 font-medium">
-                    {myPromo.teacherName} · {myPromo.discountPercent}% хямдрал эхний захиалгад
-                  </p>
+              <div className="bg-ink-raise border border-ink-line rounded-xl p-3.5 space-y-3">
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <p className="text-xs text-paper-2 font-medium">Холбогдсон код: <span className="font-mono font-medium tracking-wide text-paper">{myPromo.code}</span></p>
+                    <p className="text-[11px] text-paper-2 mt-1 font-medium">
+                      {myPromo.teacherName} · {myPromo.discountPercent}% хямдрал эхний захиалгад
+                    </p>
+                  </div>
+                  <span className={`text-[10px] font-medium uppercase tracking-[0.15em] px-2 py-0.5 rounded-full border ${
+                    myPromo.firstPaymentDone
+                      ? 'bg-ink-raise border-ink-line text-paper-3'
+                      : 'bg-paper border-paper text-ink'
+                  }`}>
+                    {myPromo.firstPaymentDone ? 'АШИГЛАСАН' : 'ИДЭВХТЭЙ'}
+                  </span>
                 </div>
-                <span className={`text-[10px] font-medium uppercase tracking-[0.15em] px-2 py-0.5 rounded-full border ${
-                  myPromo.firstPaymentDone
-                    ? 'bg-ink-raise border-ink-line text-paper-3'
-                    : 'bg-paper border-paper text-ink'
-                }`}>
-                  {myPromo.firstPaymentDone ? 'АШИГЛАСАН' : 'ИДЭВХТЭЙ'}
-                </span>
+                {!myPromo.firstPaymentDone && (
+                  <button
+                    type="button"
+                    onClick={handleRemoveMyPromo}
+                    disabled={manualPromoLoading}
+                    className="inline-flex items-center gap-1.5 text-[11px] font-medium text-paper-3 hover:text-red-400 transition-colors disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed"
+                  >
+                    {manualPromoLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <X className="w-3.5 h-3.5" />}
+                    Кодыг салгаж, өөр код холбох
+                  </button>
+                )}
+                {manualPromoError && (
+                  <p className="text-[11px] text-paper-2 bg-ink-raise border border-ink-line rounded-lg px-2 py-1 font-medium">
+                    {manualPromoError}
+                  </p>
+                )}
               </div>
             ) : (
               <form onSubmit={handleRedeemManualPromo} className="flex gap-2">

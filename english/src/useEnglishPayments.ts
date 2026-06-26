@@ -10,7 +10,7 @@
 // =============================================================================
 import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
 import { getAuthInstance, isFirebaseConfigured } from '../../frontend/src/firebase';
-import { getMyPromo, redeemPromoCode, type MyPromo } from '../../frontend/src/promo';
+import { getMyPromo, redeemPromoCode, removeMyPromo, type MyPromo } from '../../frontend/src/promo';
 import { PLANS, type BillingInterval } from '../../frontend/src/plans';
 import type { UserProfile } from '../../frontend/src/profiles';
 import type {
@@ -94,6 +94,23 @@ export function useEnglishPayments(
       }
     } catch (err: any) {
       setManualPromoError(err?.message || 'Код холбоход алдаа гарлаа.');
+    } finally {
+      setManualPromoLoading(false);
+    }
+  };
+
+  // Холбосон promo-гоо салгаж, өөр код холбох боломж нээнэ.
+  const handleRemoveMyPromo = async () => {
+    setManualPromoLoading(true);
+    setManualPromoError(null);
+    setPaymentMessage(null);
+    try {
+      await removeMyPromo();
+      setMyPromo(null);
+      setManualPromoCode('');
+      setPaymentMessage({ type: 'info', text: 'Код салгагдлаа. Одоо өөр код холбож болно.' });
+    } catch (err: any) {
+      setManualPromoError(err?.message || 'Код салгаж чадсангүй.');
     } finally {
       setManualPromoLoading(false);
     }
@@ -236,7 +253,7 @@ export function useEnglishPayments(
     paymentActionLoading, paymentStatusLoading,
     paymentMessage, setPaymentMessage,
     myPromo, manualPromoCode, setManualPromoCode,
-    manualPromoError, manualPromoLoading, handleRedeemManualPromo,
+    manualPromoError, manualPromoLoading, handleRedeemManualPromo, handleRemoveMyPromo,
     startCheckout, checkBylPaymentStatus,
   };
 }

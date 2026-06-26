@@ -74,6 +74,11 @@ export function getMyPromo(): Promise<{ promo: MyPromo | null }> {
   return promoFetch('/api/promo/me');
 }
 
+// Холбосон promo-гоо салгана (өөр код холбохын тулд). Зөвхөн хэрэглээгүй код.
+export function removeMyPromo(): Promise<{ removed: boolean; already?: boolean }> {
+  return promoFetch('/api/promo/me', { method: 'DELETE' });
+}
+
 // --- Admin -------------------------------------------------------------------
 
 export function adminListTeacherCodes(): Promise<{ codes: TeacherCodeView[] }> {
@@ -94,5 +99,12 @@ export function adminToggleTeacherCode(code: string, active: boolean): Promise<T
   return promoFetch(`/api/admin/teacher-codes/${encodeURIComponent(code)}`, {
     method: 'PATCH',
     body: JSON.stringify({ active }),
+  });
+}
+
+// Кодыг бүрмөсөн устгана — устгасны дараа хэн ч ашиглах боломжгүй.
+export function adminDeleteTeacherCode(code: string): Promise<{ deleted: boolean; code: string }> {
+  return promoFetch(`/api/admin/teacher-codes/${encodeURIComponent(code)}`, {
+    method: 'DELETE',
   });
 }

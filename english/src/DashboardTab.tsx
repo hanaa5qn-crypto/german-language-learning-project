@@ -246,6 +246,7 @@ export default function DashboardTab({ onNavigate }: { onNavigate?: (dest: DashD
           manualPromoError={pay.manualPromoError}
           manualPromoLoading={pay.manualPromoLoading}
           handleRedeemManualPromo={pay.handleRedeemManualPromo}
+          handleRemoveMyPromo={pay.handleRemoveMyPromo}
           myPromo={pay.myPromo}
           paymentActionLoading={pay.paymentActionLoading}
           paymentMessage={pay.paymentMessage}
