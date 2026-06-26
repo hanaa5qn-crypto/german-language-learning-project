@@ -2,7 +2,7 @@ import React, { Component, useEffect, useMemo, useState, type ErrorInfo, type Re
 import {
   Activity, AlertCircle, BarChart3, Clock, CreditCard, DollarSign,
   Flame, Gift, GraduationCap, Loader2, LogOut, Plus, RefreshCw, Search, ShieldCheck,
-  Tag, Trash2, TrendingUp, UserCheck, UserPlus, Users
+  Tag, Trash2, TrendingUp, UserCheck, UserPlus, Users, Check, X
 } from 'lucide-react';
 import {
   onAuthStateChanged,
@@ -267,6 +267,7 @@ function AdminDashboardInner({ track }: { track?: Track } = {}) {
   const [creating, setCreating] = useState(false);
   const [togglingCode, setTogglingCode] = useState<string | null>(null);
   const [deletingCode, setDeletingCode] = useState<string | null>(null);
+  const [confirmDeleteCode, setConfirmDeleteCode] = useState<string | null>(null);
 
   const isAuthedAdmin = isAdminEmail(authUser?.email);
 
@@ -403,10 +404,11 @@ function AdminDashboardInner({ track }: { track?: Track } = {}) {
     }
   };
 
+  // Inline confirm (no window.confirm — it silently no-ops inside Capacitor /
+  // some webviews). First trash click arms confirmDeleteCode; the ✓ button then
+  // actually deletes.
   const handleDeleteCode = async (code: string) => {
-    if (!window.confirm(`"${code}" кодыг бүрмөсөн устгах уу? Устгасны дараа шинээр хэн ч холбож чадахгүй. (Аль хэдийн холбосон сурагчид эхний төлбөрийнхөө хямдралыг хэвээр авна.)`)) {
-      return;
-    }
+    setConfirmDeleteCode(null);
     setDeletingCode(code);
     setPromoError('');
     try {
@@ -1336,17 +1338,38 @@ function AdminDashboardInner({ track }: { track?: Track } = {}) {
                           >
                             <span className={`inline-block h-4 w-4 transform rounded-full transition-transform ${tc.active ? 'bg-ink translate-x-6' : 'bg-paper translate-x-1'}`} />
                           </button>
-                          <button
-                            onClick={() => handleDeleteCode(tc.code)}
-                            disabled={deletingCode === tc.code}
-                            className="text-paper-3 hover:text-red-400 transition-colors disabled:opacity-40 cursor-pointer"
-                            aria-label="Кодыг устгах"
-                            title="Кодыг бүрмөсөн устгах"
-                          >
-                            {deletingCode === tc.code
-                              ? <Loader2 className="w-4 h-4 animate-spin" />
-                              : <Trash2 className="w-4 h-4" />}
-                          </button>
+                          {deletingCode === tc.code ? (
+                            <Loader2 className="w-4 h-4 animate-spin text-paper-3" />
+                          ) : confirmDeleteCode === tc.code ? (
+                            <span className="inline-flex items-center gap-1.5">
+                              <span className="text-[11px] font-medium text-paper-2 mr-0.5">Устгах?</span>
+                              <button
+                                onClick={() => handleDeleteCode(tc.code)}
+                                className="text-red-400 hover:text-red-300 transition-colors cursor-pointer"
+                                aria-label="Устгахыг баталгаажуулах"
+                                title="Тийм, устга"
+                              >
+                                <Check className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() => setConfirmDeleteCode(null)}
+                                className="text-paper-3 hover:text-paper transition-colors cursor-pointer"
+                                aria-label="Болих"
+                                title="Болих"
+                              >
+                                <X className="w-4 h-4" />
+                              </button>
+                            </span>
+                          ) : (
+                            <button
+                              onClick={() => setConfirmDeleteCode(tc.code)}
+                              className="text-paper-3 hover:text-red-400 transition-colors cursor-pointer"
+                              aria-label="Кодыг устгах"
+                              title="Кодыг бүрмөсөн устгах"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>
