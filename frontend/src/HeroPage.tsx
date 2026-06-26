@@ -352,7 +352,7 @@ export default function HeroPage({ onLogin, onSignup, onGuest }: HeroPageProps) 
         <Reveal amount={0.4}>
           <GraduationCap className="mx-auto mb-8 h-8 w-8 text-white/70" strokeWidth={1.25} />
           <blockquote className="text-2xl leading-snug text-[#e5e2e1] md:text-[34px]" style={serif}>
-            “bi baga baihdaa iim l resource heregtei bailaa. tiim uchraas vivid linguag buteesen”
+            “Намайг бага байхад ийм resource байсан бол би одоо 100% scholarship-тэй сурах байлаа.”
           </blockquote>
           <p className="mt-6 text-[11px] font-medium uppercase tracking-[0.25em] text-[#8e9192]">
             Khansumber Altankhuyag — Founder, Vivid Lingua
