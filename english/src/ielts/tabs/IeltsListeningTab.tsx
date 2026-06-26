@@ -5,18 +5,19 @@
 // Azure neural TTS helper using the British voice 'en-GB-SoniaNeural' (the IELTS
 // listening register), offers a reveal-transcript toggle, and grades MCQs.
 // =============================================================================
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
-  Headphones, Play, Square, Eye, EyeOff, ListChecks, RotateCcw, ChevronLeft,
+  Headphones, Play, Pause, Eye, EyeOff, ListChecks, RotateCcw, ChevronLeft,
 } from 'lucide-react';
 import { LISTENING_LIBRARY } from '../../content';
-import { speak, stopSpeaking } from '../../audio';
+import { playTts, pauseTts, resumeTts, stopTts, type TtsState } from '../../../../frontend/src/utils/tts';
 import { ListeningItem, EnglishLevel } from '../../types';
 import { McqBlock, LevelFilter, ScoreBanner, IELTS_LEVELS, isFreeLessonLocked, LockBadge } from './quizKit';
 import { useEnglishStats } from '../../stats';
 import { enActivityKey } from '../../englishLearning';
 
-const IELTS_VOICE = 'en-GB-SoniaNeural';
+// British neural voice — the IELTS listening register.
+const LISTEN_OPTS = { lang: 'en-GB', voice: 'en-GB-SoniaNeural', rate: 0.92 } as const;
 
 export default function IeltsListeningTab({ allContent, onUpgrade }: { allContent: boolean; onUpgrade: () => void }) {
   const { recordStudy, recordEnglishActivity } = useEnglishStats();
@@ -26,7 +27,11 @@ export default function IeltsListeningTab({ allContent, onUpgrade }: { allConten
   const [answers, setAnswers] = useState<Record<number, number>>({});
   const [submitted, setSubmitted] = useState(false);
   const [showTranscript, setShowTranscript] = useState(false);
-  const [playing, setPlaying] = useState(false);
+  // Playback state — drives the play / pause / resume / replay control.
+  const [ttsState, setTtsState] = useState<TtsState>('idle');
+
+  // Never leave audio running when the tab unmounts (navigated away / closed).
+  useEffect(() => () => stopTts(), []);
 
   const sections = useMemo(() => {
     const pool = LISTENING_LIBRARY.filter((p) => IELTS_LEVELS.includes(p.level));
@@ -34,22 +39,16 @@ export default function IeltsListeningTab({ allContent, onUpgrade }: { allConten
   }, [level]);
 
   function open(item: ListeningItem) {
-    stopSpeaking();
+    stopTts();
     setActive(item);
     setAnswers({});
     setSubmitted(false);
     setShowTranscript(false);
-    setPlaying(false);
+    setTtsState('idle');
   }
 
-  function play(item: ListeningItem) {
-    if (playing) {
-      stopSpeaking();
-      setPlaying(false);
-      return;
-    }
-    setPlaying(true);
-    void speak(item.transcript, { voice: IELTS_VOICE, rate: 0.92 }).finally(() => setPlaying(false));
+  function playListen(text: string) {
+    playTts(text, { ...LISTEN_OPTS, onState: setTtsState });
   }
 
   function reset() {
@@ -66,7 +65,7 @@ export default function IeltsListeningTab({ allContent, onUpgrade }: { allConten
     return (
       <div className="max-w-3xl mx-auto px-4 py-6 space-y-6">
         <button
-          onClick={() => { stopSpeaking(); setActive(null); }}
+          onClick={() => { stopTts(); setActive(null); }}
           className="inline-flex items-center gap-1.5 text-sm font-semibold text-paper-2 hover:text-paper"
         >
           <ChevronLeft className="w-4 h-4" /> Бүх дасгал руу буцах
@@ -87,12 +86,26 @@ export default function IeltsListeningTab({ allContent, onUpgrade }: { allConten
             Аудиог сонсоод асуултад хариулна уу. Эхлээд бичвэрийг харалгүй сонсож үзээрэй.
           </p>
           <div className="flex flex-wrap gap-3">
+            {ttsState === 'playing' ? (
+              <button
+                onClick={pauseTts}
+                className="inline-flex items-center gap-2 rounded-full bg-paper text-ink px-5 py-2.5 font-bold"
+              >
+                <Pause className="w-4 h-4" /> Түр зогсоох
+              </button>
+            ) : (
+              <button
+                onClick={() => (ttsState === 'paused' ? resumeTts() : playListen(active.transcript))}
+                className="inline-flex items-center gap-2 rounded-full bg-paper text-ink px-5 py-2.5 font-bold"
+              >
+                <Play className="w-4 h-4" /> {ttsState === 'paused' ? 'Үргэлжлүүлэх' : 'Аудио тоглуулах'}
+              </button>
+            )}
             <button
-              onClick={() => play(active)}
-              className="inline-flex items-center gap-2 rounded-full bg-paper text-ink px-5 py-2.5 font-bold"
+              onClick={() => playListen(active.transcript)}
+              className="inline-flex items-center gap-2 rounded-full bg-ink-2 text-paper px-5 py-2.5 font-semibold hover:bg-ink-raise"
             >
-              {playing ? <Square className="w-4 h-4" /> : <Play className="w-4 h-4" />}
-              {playing ? 'Зогсоох' : 'Аудио тоглуулах'}
+              <RotateCcw className="w-4 h-4" /> Эхнээс
             </button>
             <button
               onClick={() => setShowTranscript((s) => !s)}
