@@ -23,16 +23,30 @@ import {
 } from './profiles';
 import { saveProfileProgress, sendResetEmail } from './auth';
 import { getAuthInstance, getStorageInstance, isFirebaseConfigured } from './firebase';
+import { effectivePlan } from './plans';
 
 const DAILY_GOALS = [5, 10, 15, 30, 60];
 
-// Human label for the current subscription plan.
+// Human label for the plan that ACTUALLY applies right now. Mirrors the
+// dashboard BillingCard via effectivePlan() so founder access, expired trials
+// and legacy records resolve the same way the rest of the app gates on — the
+// raw billing.plan can lag (e.g. an expired trial still stores plan='pro').
 function planLabel(profile: UserProfile): string {
-  const plan = (profile.billing?.plan ?? 'free').toLowerCase();
-  if (plan === 'max') return 'Max';
-  if (plan === 'pro') return 'Pro';
-  if (plan === 'free' || plan === '') return 'Free';
-  return profile.billing?.plan ?? 'Free';
+  switch (effectivePlan(profile)) {
+    case 'founder': return 'Founder';
+    case 'max': return 'Max';
+    case 'pro': return 'Pro';
+    default: return 'Free';
+  }
+}
+
+// Status badge matching the effective plan: free/founder are self-evident; a
+// genuinely-active paid plan shows its real billing status (active/trialing).
+function planStatus(profile: UserProfile): string {
+  const plan = effectivePlan(profile);
+  if (plan === 'founder') return 'founder';
+  if (plan === 'free') return 'free';
+  return (profile.billing?.status ?? 'active').toLowerCase();
 }
 
 interface AccountScreenProps {
@@ -371,7 +385,7 @@ export default function AccountScreen({
           <div className="flex items-center justify-between rounded-xl bg-ink-2 border border-ink-line px-4 py-3">
             <span className="text-sm font-bold text-paper">{planLabel(profile)}</span>
             <span className="text-[11px] text-paper-3 font-medium uppercase tracking-[0.15em]">
-              {profile.billing?.status ?? 'free'}
+              {planStatus(profile)}
             </span>
           </div>
           <p className="text-[11px] text-paper-3 leading-relaxed">
